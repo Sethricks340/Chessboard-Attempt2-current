@@ -45,7 +45,7 @@ stockfish = Stockfish(r"C:\Users\sethr\Downloads\stockfish-windows-x86-64-avx2\s
 # moves_string = ['e2e4', 'f7f5', 'd2d3', 'f5e4', 'd1e2', 'e4d3', 'c2d3', 'e7e5', 'd3d4', 'd8e7', 'e2e5'] #pinned queens
 # moves_string = ['e2e4', 'e7e6', 'f2f4', 'd8e7', 'f4f5', 'e6f5', 'e4e5', 'd7d5'] #pinned en passant
 # moves_string = ['e2e4', 'd7d5', 'e4e5', 'd5d4', 'c2c4', 'f7f5', 'h2h3', 'a7a5', 'h3h4', 'a5a4', 'h4h5', 'g7g5'] #en passants
-moves_string = ['e2e4', 'd7d5', 'e4e5', 'd5d4', 'e5e6', 'd4d3', 'e6f7', 'e8d7', 'h2h3', 'd3c2'] #pawns about to be promoted pawns
+# moves_string = ['e2e4', 'd7d5', 'e4e5', 'd5d4', 'e5e6', 'd4d3', 'e6f7', 'e8d7', 'h2h3', 'd3c2'] #pawns about to be promoted pawns
 # moves_string = ['e2e4', 'd7d5', 'e4e5', 'd5d4', 'e5e6', 'd4d3', 'e6f7', 'e8d7', 'h2h3', 'd3c2', 'f7g8r', 'c2b1q'] #promoted pawns load
 # moves_string = ['g1f3', 'b8c6', 'b1a3', 'g8h6', 'a3c4', 'h6f5'] #multiple pieces to same square
 # moves_string = ['e2e4', 'e7e5', 'f2f4', 'd8f6', 'f4e5', 'd7d6', 'f1d3', 'd6e5', 'g1h3', 'h7h6'] #castling check
@@ -53,7 +53,7 @@ moves_string = ['e2e4', 'd7d5', 'e4e5', 'd5d4', 'e5e6', 'd4d3', 'e6f7', 'e8d7', 
 # moves_string = ['e2e3', 'd7d6', 'b1c3', 'e8d7', 'c3b1', 'd7c6', 'b1c3', 'c6b6', 'c3b1', 'b6a5', 'e3e4', 'd6d5', 'e4d5', 'a5a4', 'g1h3', 'e7e5', 'h3g1', 'h7h6', 'd1g4', 'e5e4', 'f2f4'] #illegal en passant (black king would be in check)
 # moves_string = ['e2e3', 'd7d6', 'b1c3', 'e8d7', 'c3b1', 'd7c6', 'b1c3', 'c6b6', 'c3b1', 'b6a5', 'e3e4', 'd6d5', 'e4d5', 'a5a4', 'g1h3', 'e7e5', 'h3g1', 'h7h6', 'd1g4'] #illegal en passant (black king would be in check)
 # moves_string = ['e2e3', 'd7d6', 'b1c3', 'e8d7', 'c3b1', 'd7c6', 'b1c3', 'c6b6', 'c3b1', 'b6a5', 'e3e4', 'd6d5', 'e4d5', 'a5a4', 'g1h3', 'e7e5', 'h3g1', 'h7h6', 'd1g4', 'a4a5', 'h2h4', 'e5e4', 'f2f4'] # same scenario as above, but no pinned pawns
-# moves_string = [] #empty new game
+moves_string = [] #empty new game
 
 #sets the first position to no moves have been done.
 stockfish.set_position(moves_string)
@@ -152,6 +152,91 @@ position_dict = {
     'Piece.PROMOTED_BLACK_PAWN6': "",
     'Piece.PROMOTED_BLACK_PAWN7': "",
     'Piece.PROMOTED_BLACK_PAWN8': "",
+}
+
+#helper dictionary to print the board
+symbols_dict = {
+    'king': "k",
+    'queen': "q",
+    'bishop': "b",
+    'knight': "n",
+    'rook': "r",
+    'pawn': "p",
+}
+
+#dictionary used print the board to the screen.
+board_dict = {
+    'A1': "",
+    'A2': "",
+    'A3': "",
+    'A4': "",
+    'A5': "",
+    'A6': "",
+    'A7': "",
+    'A8': "",
+
+    'B1': "",
+    'B2': "",
+    'B3': "",
+    'B4': "",
+    'B5': "",
+    'B6': "",
+    'B7': "",
+    'B8': "",
+
+    'C1': "",
+    'C2': "",
+    'C3': "",
+    'C4': "",
+    'C5': "",
+    'C6': "",
+    'C7': "",
+    'C8': "",
+
+    'D1': "",
+    'D2': "",
+    'D3': "",
+    'D4': "",
+    'D5': "",
+    'D6': "",
+    'D7': "",
+    'D8': "",
+
+    'E1': "",
+    'E2': "",
+    'E3': "",
+    'E4': "",
+    'E5': "",
+    'E6': "",
+    'E7': "",
+    'E8': "",
+
+    'F1': "",
+    'F2': "",
+    'F3': "",
+    'F4': "",
+    'F5': "",
+    'F6': "",
+    'F7': "",
+    'F8': "",
+
+    'G1': "",
+    'G2': "",
+    'G3': "",
+    'G4': "",
+    'G5': "",
+    'G6': "",
+    'G7': "",
+    'G8': "",
+
+    'H1': "",
+    'H2': "",
+    'H3': "",
+    'H4': "",
+    'H5': "",
+    'H6': "",
+    'H7': "",
+    'H8': "",
 }
 
 #all of the chess pieces, and what they could be mistaken for
@@ -423,7 +508,44 @@ def iterate_repeated_pieces(piece, square):
 
 #prints the board
 def print_board_visiual():
-    print(stockfish.get_board_visual())
+    # print(stockfish.get_board_visual()) #this was the previous print from stockfish
+    
+    #clear the board dict
+    for square, piece in board_dict.items():
+        board_dict[square] = ""
+    
+    #assign the board dict according to the position dict
+    for piece, square in position_dict.items():
+        if square and (square != "xx"): 
+            board_dict[square.upper()] = piece
+
+    # Go from 8 to 1, and print each line and lane (lane contains characters)
+    for i in range(8, 0, -1):
+        print_line()
+        print_lane(*[get_symbol(letter, i) for letter in "ABCDEFGH"], i)
+    
+    #print the last line and the column letters
+    print_line()
+    print_end_line()
+
+#helper function for print board visual
+def get_symbol(letter, number): 
+    key = f"{letter}{number}"
+    piece = check_for_pieces(board_dict[key])
+    if piece: return str(symbols_dict[piece]).upper() if "white" in board_dict[key].lower() else str(symbols_dict[piece])
+    else: return " "
+
+#print line on the chess board
+def print_line():
+    print("+---+---+---+---+---+---+---+---+")
+    
+#print line on the end of the chess board
+def print_end_line():
+    print(f"  a   b   c   d   e   f   g   h\n")
+
+#print line on the chess board
+def print_lane(a, b, c, d, e, f, g, h, number):
+    print(f"| {a} | {b} | {c} | {d} | {e} | {f} | {g} | {h} | {number}")
 
 #gets all the possible moves, usually 50 works. 30 misses some really bad moves. This function is very slow
 def get_possible_moves():
@@ -433,6 +555,7 @@ def get_possible_moves():
 def print_possible_moves():
     print(f"Possible moves: {get_possible_moves()}")
 
+#process words and parse word command
 def decipher_command(words): 
     command, piece, square = process_words(words)
     return parse_word_command(piece, square, command), piece
@@ -523,6 +646,7 @@ def parse_word_command(piece, wanted_position, command):
     
     else: return "Move not found, please try again 505", False
 
+#implement the command with the capture, and updating the piece positions before printing them again
 def implement_command(command, piece):
     # print(is_en_passant_move(command))
     handle_capture(command)
