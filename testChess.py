@@ -14,6 +14,7 @@
     #FIXED: Promoted pawns in legal moves
     #FIXED: Print the board, without stockfish!
     #FIXED: Castling command takes forever to load (was still using stockfish)
+    #FIXED: black always stays during a capture??
 
     #scenario: Asks for pawn promotion piece, before checks if legal
     #scenario: If king moves to a square it can't, but it would be in check in that square, it shows as check error message
@@ -23,15 +24,7 @@
     #scenario: Notify when the game is over
     #scenario: Work with other commands, like take over, restart, undo, etc;
 
-#NOTES:
-    #example fen
-        # rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
-    # List all available functions and attributes of the Stockfish object
-        # print(dir(stockfish))
-
 import re
-# import StockfishTesting
-# from stockfish import Stockfish
 import os
 
 def clear_screen():
@@ -39,9 +32,6 @@ def clear_screen():
         os.system('cls')
     else:  # macOS/Linux
         os.system('clear')
-
-# Ensure the correct path to Stockfish binary
-# stockfish = Stockfish(r"C:\Users\sethr\Downloads\stockfish-windows-x86-64-avx2\stockfish\stockfish-windows-x86-64-avx2.exe")
 
 # moves_string = ['e2e4'] #first move
 # moves_string = ['e2e4', 'd7d5'] #second move
@@ -51,9 +41,8 @@ def clear_screen():
 # moves_string = ['e2e4', 'd7d5', 'e4e5', 'd5d4', 'c2c4', 'f7f5', 'h2h3', 'a7a5', 'h3h4', 'a5a4', 'h4h5', 'g7g5'] #about to do en passants
 # moves_string = ['e2e4', 'd7d5', 'e4e5', 'd5d4', 'c2c4', 'f7f5', 'h2h3', 'a7a5', 'h3h4', 'a5a4', 'h4h5', 'g7g5', 'h5g6'] #en passant load (white did the en passant)
 # moves_string = ['e2e4', 'd7d5', 'e4e5', 'd5d4', 'e5e6', 'd4d3', 'e6f7', 'e8d7', 'h2h3', 'd3c2'] #pawns about to be promoted pawns
-# moves_string = ['e2e4', 'd7d5', 'e4e5', 'd5d4', 'e5e6', 'd4d3', 'e6f7', 'e8d7', 'h2h3', 'd3c2', 'f7g8r', 'c2b1q'] #promoted pawns load
+moves_string = ['e2e4', 'd7d5', 'e4e5', 'd5d4', 'e5e6', 'd4d3', 'e6f7', 'e8d7', 'h2h3', 'd3c2', 'f7g8r', 'c2b1q'] #promoted pawns load
 # moves_string = ['g1f3', 'b8c6', 'b1a3', 'g8h6', 'a3c4', 'h6f5'] #multiple pieces to same square
-# moves_string = ['e2e4', 'e7e5', 'f2f4', 'd8f6', 'f4e5', 'd7d6', 'f1d3', 'd6e5', 'g1h3', 'h7h6'] #castling check
 # moves_string = ['e2e4', 'c7c6', 'e1e2', 'b8a6', 'e2f3', 'a6b8', 'f3g4', 'b8a6', 'g4h5', 'd8a5', 'e4e5', 'd7d5'] #illegal en passant (white king would be in check)
 # moves_string = ['e2e3', 'd7d6', 'b1c3', 'e8d7', 'c3b1', 'd7c6', 'b1c3', 'c6b6', 'c3b1', 'b6a5', 'e3e4', 'd6d5', 'e4d5', 'a5a4', 'g1h3', 'e7e5', 'h3g1', 'h7h6', 'd1g4', 'e5e4', 'f2f4'] #illegal en passant (black king would be in check)
 # moves_string = ['e2e3', 'd7d6', 'b1c3', 'e8d7', 'c3b1', 'd7c6', 'b1c3', 'c6b6', 'c3b1', 'b6a5', 'e3e4', 'd6d5', 'e4d5', 'a5a4', 'g1h3', 'e7e5', 'h3g1', 'h7h6', 'd1g4'] #illegal en passant (black king would be in check)
@@ -61,40 +50,11 @@ def clear_screen():
 # moves_string = ['e2e3', 'd7d6', 'b1c3', 'e8d7', 'c3b1', 'd7c6', 'b1c3', 'c6b6', 'c3b1', 'b6a5', 'e3e4', 'd6d5', 'e4d5', 'a5a4', 'g1h3', 'e7e5', 'h3g1', 'h7h6', 'd1g4', 'a4a5', 'h2h4', 'e5e4', 'f2f4'] # same scenario as above, but no pinned pawns
 # moves_string = ['g1f3', 'g8f6', 'g2g4', 'g7g5', 'f1h3', 'f8h6', 'e1g1', 'e8g8'] #loaded castling
 # moves_string = ['g1f3', 'g8f6', 'g2g3', 'g7g6', 'f1h3', 'f8h6', 'c2c3', 'c7c6', 'd1b3', 'd8b6', 'd2d4', 'b8a6', 'c1f4', 'd7d5', 'b1a3', 'c8f5', 'b3d5'] #testing illegal castling scenarios. (Black: kingside: can queenside: can't, White: kingside: can queenside: can)
-moves_string = [] #empty new game
-
-#sets the first position using stockfish
-# stockfish.set_position(moves_string)
-
-#stockfish.set_position([])
+# moves_string = [] #empty new game
 
 #used to update the current list of moves made, and transitively the current position. Can be used in tandem with above set position to set a position before playing 
 all_moves = moves_string
 # all_moves = []
-
-#letters in a chess board, in an iterable format. Python is stupid.
-letters = {
-    "a": 1,
-    "b": 2,
-    "c": 3,
-    "d": 4,
-    "e": 5,
-    "f": 6,
-    "g": 7,
-    "h": 8
-}
-
-#letters in a chess board, in an iterable format
-letters_reversed = {
-    1 : "a",
-    2 : "b",
-    3 : "c",
-    4 : "d",
-    5 : "e",
-    6 : "f",
-    7 : "g",
-    8 : "h"
-}
 
 #the abbreviations that are used in pawn promotions
 abbreviation_dict = {
@@ -106,7 +66,7 @@ abbreviation_dict = {
     "k": "king"
 }
 
-#dictionary used to track all the piece positions. different from stockfish, because it keeps track of specific pieces of same type
+#dictionary used to track all the piece positions. Keeps track of specific pieces of same type
 position_dict = {
     'Piece.WHITE_KING': "",
     'Piece.WHITE_QUEEN': "",
@@ -387,7 +347,7 @@ squares_together = {
 #testing a global turn
 global_turn = "White"
 
-#replacement for stockfish
+#load in data from another game
 def set_position(moves_string_list):
     moves = moves_string_list.copy()  #shallow copy of the list
     castle_moves_list = ["e1g1", "e1c1", "e8g8", "e8c8"]
@@ -428,8 +388,6 @@ def main():
 
 #the game loop
 def play_game():
-    # print(get_legal_pawn_normal_moves(get_turn_color()))
-    # get_legal_capture_moves_pawns(get_turn_color())
     words = input(f"{get_turn_color()} to move. Please state a command: ")
     if words == "all moves":
         print_all_moves()
@@ -443,8 +401,6 @@ def play_game():
     (command, possible), piece = decipher_command(words)
 
     if possible: implement_command(command, piece)
-
-    # print(position_dict)
 
     input("press enter")
     clear_screen()
@@ -520,78 +476,20 @@ def locate_pieces_initial():
 def change_promoted_pawn(promoted_pawn, current_move):
     position_dict[replace_text(promoted_pawn, "PAWN", abbreviation_dict[current_move[-1]].upper())] = position_dict.pop(promoted_pawn)
 
-#locates everything on the board by square
-#used by locate_promoted_pawns
-def locate_all_pieces():
-    # temp_location_list = []
-    # for letter in ["a", "b", "c", "d", "e", "f", "g", "h"]:
-    #     for number in ["1", "2", "3", "4", "5", "6", "7", "8"]:
-    #         square = f"{letter}{number}"
-    #         temp_location_list.append(f"{letter}{number}: {str(stockfish.get_what_is_on_square(square))}")
-    
+#pring position dict for debugging
+def print_position_dict_debugging():
     temp_location_list = []
-    for letter in ["a", "b", "c", "d", "e", "f", "g", "h"]:
-        for number in ["1", "2", "3", "4", "5", "6", "7", "8"]:
-            square = f"{letter}{number}"
+    for number in ["8", "7", "6", "5", "4", "3", "2", "1"]:
+        for letter in ["a", "b", "c", "d", "e", "f", "g", "h"]:
             for piece, position in position_dict.items():
-                if position.lower() == square:
-                    temp_location_list.append(f"{letter}{number}: {piece}")
-    return temp_location_list
-
-def locate_promoted_pawns():
-    colors = ["white", "black"]
-    for color in colors:
-        temp_location_list = locate_all_pieces()
-        abnormal_locations = []
-        promoted_pawns = []
-
-        piece_notation = {"queen": "q", "rook": "r", "bishop": "b", "knight": "n"}
-
-        for item in temp_location_list:
-            if color.lower() in item.lower() and not position_in_dict(item[:2]):
-                for piece, notation in piece_notation.items():
-                    if piece in item.lower():
-                        abnormal_locations.append(f"{item} {notation}")
-
-        for item in abnormal_locations:
-            for promoted_pawn in position_dict:
-                if "promoted" in promoted_pawn.lower() and color.lower() in promoted_pawn.lower() and position_dict[promoted_pawn] == "":
-                    promoted_pawns.append((promoted_pawn, item))
-                    break
-        
-        for promoted_pawn in promoted_pawns: 
-            # print(f"promoted_pawn: {promoted_pawn}")
-            position_dict[promoted_pawn[0]] = promoted_pawn[1][:2]
-            change_promoted_pawn(promoted_pawn[0], f"{promoted_pawn[1][:2]}{promoted_pawn[1][-1]}")
-
-def position_in_dict(item):
-    for piece, position in position_dict.items():
-        if item == position:
-            return True
-    return False
-
-#used by locate_pieces_initial to iterate through pieces of the same type
-def iterate_repeated_pieces(piece, square):
-    count = 1
-    max_count = 0
-    type_count_dict = {"queen" : 1, "bishop": 2, "knight" : 2, "rook": 2, "pawn": 8, "king": 1}
-    for dict_piece, type_count in type_count_dict.items():
-        if dict_piece in piece.lower():
-            max_count = type_count
-
-    found = False
-    while not found:
-        if position_dict[f"{piece}{count}"] == "":
-            position_dict[f"{piece}{count}"] = square
-            found = True
-        else:
-            if count >= max_count: return
-            else: count += 1
+                square = f"{letter}{number}"
+                if position == square: temp_location_list.append(f"{position}: {piece}")
+    
+    # print(temp_location_list)
+    print("\n".join(" ".join(temp_location_list[i:i+8]) for i in range(0, len(temp_location_list), 8)))
 
 #prints the board
 def print_board_visiual():
-    # print(stockfish.get_board_visual()) #this was the previous print from stockfish
-    
     #clear the board dict
     for square, piece in board_dict.items():
         board_dict[square] = ""
@@ -629,16 +527,15 @@ def print_end_line():
 def print_lane(a, b, c, d, e, f, g, h, number):
     print(f"| {a} | {b} | {c} | {d} | {e} | {f} | {g} | {h} | {number}")
 
-#gets all the possible moves, usually 50 works. 30 misses some really bad moves. This function is very slow
+#if it is a legal piece move, and it doesn't result in a check afterwards, whether in check already or moving into it
 def get_possible_moves():
-    # return [move['Move'] for move in stockfish.get_top_moves(50)]
     legal_piece_moves = get_legal_piece_moves(get_turn_color())
     legal_piece_moves_copy = legal_piece_moves
     for move in legal_piece_moves_copy: 
         if is_king_in_check(get_turn_color(), test_move = move): legal_piece_moves.remove(move)
     return legal_piece_moves
 
-#prints possibles moves
+#prints possibles moves, not currently used
 def print_possible_moves():
     print(f"Possible moves: {get_possible_moves()}")
 
@@ -943,7 +840,6 @@ def get_promoted_pawn(current_move):
     return "Piece.PROMOTED_" + get_turn_color().upper() + "_PAWN" + get_what_is_on_square_specific(current_move[:2])[-1]
 
 #get the piece in the position dict that is on the given square
-#stockfish doesn't return the specific piece, this returns: 'Piece.WHITE_PAWN2' where stockfish.get_what_is_on_square(square) would return 'Piece.WHITE_PAWN'
 def get_what_is_on_square_specific(square):
     for key, val in position_dict.items():
         if val == square:
@@ -952,9 +848,6 @@ def get_what_is_on_square_specific(square):
 
 #update the position of a piece. The third parameter, command, is a bit confusing right now. it is only used for castling. also reffered to as piece in main
 def update_piece_position(initial_position, new_position, command):
-
-    # print("inside update_piece_position")
-
     turn = get_turn_color()
     rook_moves = {
         ("White", "Castle Kingside"): "h1f1",
@@ -998,22 +891,14 @@ def parse_castle_command(move):
         else: 
             return "Move not found, please try again 764", False
 
-#updates stockfish with the current moves that have been made
-#used by play_game
+#updates all moves with the current moves that have been made
+#only called if not loading a game in implement_command 
 def update_position(current_move):
     all_moves.append(current_move)
-    # stockfish.set_position(all_moves)
-
-#gets the fen position. Not currently used, was used by get_turn_color stockfish version
-# def get_fen():
-#     return stockfish.get_fen_position()
 
 #returns "White" or "Black"
 #used to know which piece type positions to scan
 def get_turn_color():
-    # fen = get_fen()
-    # turn = "White" if " w " in fen else "Black"
-    # return turn
     global  global_turn
     return global_turn
 
@@ -1026,23 +911,9 @@ def handle_capture(move, loading=False, loaded_last_move=""):
         for key, val in position_dict.items():
             if len(move) == 5: 
                 if move[2:4] == val: update_piece_position(move[2:4], "xx", "capture")
-                break
             else:
                 if move[-2:] == val: update_piece_position(move[-2:], "xx", "capture")
-                break
     
-    # stockfish.will_move_be_a_capture returns:
-    #Capture.DIRECT_CAPTURE {or} Capture.NO_CAPTURE {or} Capture.EN_PASSANT
-    #If there is no capture, this function does nothing
-    # CaptureType = str(stockfish.will_move_be_a_capture(move))  # Convert the Capture object to a string
-    # print(stockfish.will_move_be_a_capture(move))
-
-    # if CaptureType == "Capture.DIRECT_CAPTURE":
-    #     if move[-1].isalpha(): update_piece_position(move[2:4], "xx", "capture")
-    #     else: update_piece_position(move[-2:], "xx", "capture")
-    # elif CaptureType == "Capture.EN_PASSANT":
-    #     update_piece_position((decrement_string if get_turn_color() == "White" else increment_string)(move[-2:]), "xx", "capture")
-
 #used by handle_capture for en passant pawn capture positions
 def increment_string(s):
     return re.sub(r'(\d+)$', lambda x: str(int(x.group(1)) + 1), s)
@@ -1281,7 +1152,6 @@ def get_legal_castle_moves(color, legal_capture_moves):
 
 def get_legal_en_passant_moves(color): 
     legal_en_passant_moves = []
-    #e4e5
     if not all_moves:
         return
     last_move = all_moves[-1]
