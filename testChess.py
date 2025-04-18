@@ -17,12 +17,12 @@
     #FIXED: black always stays during a capture??
     #FIXED: Asks for pawn promotion piece, before checks if legal
 
+    #scenario: Notify when the game is over, either by checkmate or stalemate
+    #scenario: If more than one piece can move to the same square, we present an error, but there is no way of fixing it
     #scenario: If king moves to a square it can't, but it would be in check in that square, it shows as check error message
     #scenario: If there are multiple moves to be checked, (piece moves) and none of them are legal, the error message is generic instead of specific check message
     #scenario: Fix error messages
         #note: The above 3 scenarios all have to do with error messages.
-    #scenario: If more than one piece can move to the same square, we present an error, but there is no way of fixing it
-    #scenario: Notify when the game is over, either by checkmate or stalemate
     #scenario: Work with other commands, like take over, restart, undo, etc;
 
 import re
@@ -43,9 +43,9 @@ def clear_screen():
 # moves_string = ['e2e4', 'd7d5', 'e4e5', 'd5d4', 'c2c4', 'f7f5', 'h2h3', 'a7a5', 'h3h4', 'a5a4', 'h4h5', 'g7g5', 'h5g6'] #en passant load (white did the en passant)
 # moves_string = ['e2e4', 'd7d5', 'e4e5', 'd5d4', 'e5e6', 'd4d3', 'e6f7', 'e8d7', 'h2h3', 'd3c2'] #pawns about to be promoted
 # moves_string = ['e2e4', 'd7d5', 'e4e5', 'd5d4', 'e5e6', 'd4d3', 'e6f7', 'e8d7', 'h2h3', 'd3c2', 'f7g8r', 'c2b1q'] #promoted pawns load
-moves_string = ['e2e4', 'd7d5', 'g2g4', 'b7b5', 'd2d3', 'c7c6', 'c1h6', 'g7h6', 'd1f3', 'd8a5', 'c2c3', 
-                'a5b4', 'f3f6', 'e7f6', 'g4g5', 'b4b2', 'e4e5', 'b2d2', 'e1d2', 'b5b4', 'e5e6', 'd5d4', 'g5g6', 
-                'c6c5', 'b1a3', 'c5c4', 'd3c4', 'b4b3', 'g6g7', 'd4d3', 'e6e7', 'b3b2', 'd2e3', 'd3d2', 'a1c1'] #multiple pawns can be promoted to same square, or multiple pawns can be promoted to different squares
+# moves_string = ['e2e4', 'd7d5', 'g2g4', 'b7b5', 'd2d3', 'c7c6', 'c1h6', 'g7h6', 'd1f3', 'd8a5', 'c2c3', 
+#                 'a5b4', 'f3f6', 'e7f6', 'g4g5', 'b4b2', 'e4e5', 'b2d2', 'e1d2', 'b5b4', 'e5e6', 'd5d4', 'g5g6', 
+#                 'c6c5', 'b1a3', 'c5c4', 'd3c4', 'b4b3', 'g6g7', 'd4d3', 'e6e7', 'b3b2', 'd2e3', 'd3d2', 'a1c1'] #multiple pawns can be promoted to same square, or multiple pawns can be promoted to different squares
 # moves_string = ['g1f3', 'b8c6', 'b1a3', 'g8h6', 'a3c4', 'h6f5'] #multiple pieces to same square
 # moves_string = ['e2e4', 'c7c6', 'e1e2', 'b8a6', 'e2f3', 'a6b8', 'f3g4', 'b8a6', 'g4h5', 'd8a5', 'e4e5', 'd7d5'] #illegal en passant (white king would be in check)
 # moves_string = ['e2e3', 'd7d6', 'b1c3', 'e8d7', 'c3b1', 'd7c6', 'b1c3', 'c6b6', 'c3b1', 'b6a5', 'e3e4', 'd6d5', 'e4d5', 'a5a4', 'g1h3', 'e7e5', 'h3g1', 'h7h6', 'd1g4', 'e5e4', 'f2f4'] #illegal en passant (black king would be in check)
@@ -54,6 +54,8 @@ moves_string = ['e2e4', 'd7d5', 'g2g4', 'b7b5', 'd2d3', 'c7c6', 'c1h6', 'g7h6', 
 # moves_string = ['e2e3', 'd7d6', 'b1c3', 'e8d7', 'c3b1', 'd7c6', 'b1c3', 'c6b6', 'c3b1', 'b6a5', 'e3e4', 'd6d5', 'e4d5', 'a5a4', 'g1h3', 'e7e5', 'h3g1', 'h7h6', 'd1g4', 'a4a5', 'h2h4', 'e5e4', 'f2f4'] # same scenario as above, but no pinned pawns
 # moves_string = ['g1f3', 'g8f6', 'g2g4', 'g7g5', 'f1h3', 'f8h6', 'e1g1', 'e8g8'] #loaded castling
 # moves_string = ['g1f3', 'g8f6', 'g2g3', 'g7g6', 'f1h3', 'f8h6', 'c2c3', 'c7c6', 'd1b3', 'd8b6', 'd2d4', 'b8a6', 'c1f4', 'd7d5', 'b1a3', 'c8f5', 'b3d5'] #testing illegal castling scenarios. (Black: kingside: can queenside: can't, White: kingside: can queenside: can)
+moves_string = ['e2e3', 'b8a6', 'd1h5', 'g8h6', 'f1c4', 'h6g4',] #about to be four move checkmate, black is about to loose
+# moves_string = ['g1h3', 'e7e6', 'b1a3', 'd8h4', 'a3b1', 'f8c5', 'h3g1'] #about to be four move checkmate, white is about to loose
 # moves_string = [] #empty new game
 
 #used to update the current list of moves made, and transitively the current position. Can be used in tandem with above set position to set a position before playing 
@@ -397,6 +399,13 @@ def main():
 
 #the game loop
 def play_game():
+    # print(f"length of possible moves list: {len(get_possible_moves())}")
+    # if len(get_possible_moves()) == 0:
+        # if is_king_in_check(get_turn_color()): print(f"Game over by checkmate")
+        # else: print(f"Game over by stalemate")
+        # print("Thanks for playing, come again soon. ")
+        # exit()
+    
     global moves_string, all_moves, abbreviation_dict, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time
     if first_time:
         words = input(f"Hello and welcome to the world of magic chess! My name is Phoenix. You can resume a recent game or start a new game. {get_turn_color()} to move, please state a command: ")
@@ -409,6 +418,9 @@ def play_game():
     elif words.lower() == "position dict":
         print(position_dict)
         play_game()
+    elif words.lower() == "possible moves":
+        print(get_possible_moves())
+        play_game()
         
     #decipher the command out of the words
     #if the move isn't possible, then the command is the error message
@@ -420,12 +432,21 @@ def play_game():
     clear_screen()
     print_board_visiual()
 
+    #if there are no available moves for the person that did not just make a move, then it is either a checkmate or a stalemate
+    if len(get_possible_moves()) == 0:
+        if is_king_in_check(get_turn_color()): print(f"Game over, {'black' if get_turn_color().lower() == 'white' else 'white'} wins by checkmate")
+        else: print(f"Game over by stalemate")
+        print("Thanks for playing, play again soon! \n-Pheonix")
+        exit()
+
     #print (or say) the command
     print(command)
     if is_king_in_check(get_turn_color()): print(f"{get_turn_color()} king is in check")
 
     if words != "quit":
         play_game()
+    else:
+        print("Thanks for playing, play again soon! \n-Pheonix")
 
 #can also be used to test things before the game starts
 def set_initials():
@@ -550,9 +571,10 @@ def print_lane(a, b, c, d, e, f, g, h, number):
 def get_possible_moves():
     global moves_string, all_moves, abbreviation_dict, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time
     legal_piece_moves = get_legal_piece_moves(get_turn_color())
-    legal_piece_moves_copy = legal_piece_moves
-    for move in legal_piece_moves_copy: 
-        if is_king_in_check(get_turn_color(), test_move = move): legal_piece_moves.remove(move)
+    legal_piece_moves = [
+        move for move in get_legal_piece_moves(get_turn_color())
+        if not is_king_in_check(get_turn_color(), test_move=move)
+    ]
     return legal_piece_moves
 
 #prints possibles moves, not currently used
@@ -678,7 +700,6 @@ def ask_pawn_promotion():
         else: 
             promoted = input("Sorry, I didn't get that. Would you like to promote the pawn to?: ")
     return promoted_symbol
-
 
 #used to remove everything before the wake word
 def remove_before_word(text, word):
