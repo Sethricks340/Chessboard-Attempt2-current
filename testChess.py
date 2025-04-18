@@ -19,9 +19,10 @@
     #scenario: Asks for pawn promotion piece, before checks if legal
     #scenario: If king moves to a square it can't, but it would be in check in that square, it shows as check error message
     #scenario: If there are multiple moves to be checked, (piece moves) and none of them are legal, the error message is generic instead of specific check message
+    #scenario: Fix error messages
         #note: The above 3 scenarios all have to do with error messages.
     #scenario: If more than one piece can move to the same square, we present an error, but there is no way of fixing it
-    #scenario: Notify when the game is over
+    #scenario: Notify when the game is over, either by checkmate or stalemate
     #scenario: Work with other commands, like take over, restart, undo, etc;
 
 import re
