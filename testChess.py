@@ -15,8 +15,8 @@
     #FIXED: Print the board, without stockfish!
     #FIXED: Castling command takes forever to load (was still using stockfish)
     #FIXED: black always stays during a capture??
+    #FIXED: Asks for pawn promotion piece, before checks if legal
 
-    #scenario: Asks for pawn promotion piece, before checks if legal
     #scenario: If king moves to a square it can't, but it would be in check in that square, it shows as check error message
     #scenario: If there are multiple moves to be checked, (piece moves) and none of them are legal, the error message is generic instead of specific check message
     #scenario: Fix error messages
@@ -41,8 +41,11 @@ def clear_screen():
 # moves_string = ['e2e4', 'e7e6', 'f2f4', 'd8e7', 'f4f5', 'e6f5', 'e4e5', 'd7d5'] #pinned en passant
 # moves_string = ['e2e4', 'd7d5', 'e4e5', 'd5d4', 'c2c4', 'f7f5', 'h2h3', 'a7a5', 'h3h4', 'a5a4', 'h4h5', 'g7g5'] #about to do en passants
 # moves_string = ['e2e4', 'd7d5', 'e4e5', 'd5d4', 'c2c4', 'f7f5', 'h2h3', 'a7a5', 'h3h4', 'a5a4', 'h4h5', 'g7g5', 'h5g6'] #en passant load (white did the en passant)
-# moves_string = ['e2e4', 'd7d5', 'e4e5', 'd5d4', 'e5e6', 'd4d3', 'e6f7', 'e8d7', 'h2h3', 'd3c2'] #pawns about to be promoted pawns
+# moves_string = ['e2e4', 'd7d5', 'e4e5', 'd5d4', 'e5e6', 'd4d3', 'e6f7', 'e8d7', 'h2h3', 'd3c2'] #pawns about to be promoted
 # moves_string = ['e2e4', 'd7d5', 'e4e5', 'd5d4', 'e5e6', 'd4d3', 'e6f7', 'e8d7', 'h2h3', 'd3c2', 'f7g8r', 'c2b1q'] #promoted pawns load
+moves_string = ['e2e4', 'd7d5', 'g2g4', 'b7b5', 'd2d3', 'c7c6', 'c1h6', 'g7h6', 'd1f3', 'd8a5', 'c2c3', 
+                'a5b4', 'f3f6', 'e7f6', 'g4g5', 'b4b2', 'e4e5', 'b2d2', 'e1d2', 'b5b4', 'e5e6', 'd5d4', 'g5g6', 
+                'c6c5', 'b1a3', 'c5c4', 'd3c4', 'b4b3', 'g6g7', 'd4d3', 'e6e7', 'b3b2', 'd2e3', 'd3d2', 'a1c1'] #multiple pawns can be promoted to same square, or multiple pawns can be promoted to different squares
 # moves_string = ['g1f3', 'b8c6', 'b1a3', 'g8h6', 'a3c4', 'h6f5'] #multiple pieces to same square
 # moves_string = ['e2e4', 'c7c6', 'e1e2', 'b8a6', 'e2f3', 'a6b8', 'f3g4', 'b8a6', 'g4h5', 'd8a5', 'e4e5', 'd7d5'] #illegal en passant (white king would be in check)
 # moves_string = ['e2e3', 'd7d6', 'b1c3', 'e8d7', 'c3b1', 'd7c6', 'b1c3', 'c6b6', 'c3b1', 'b6a5', 'e3e4', 'd6d5', 'e4d5', 'a5a4', 'g1h3', 'e7e5', 'h3g1', 'h7h6', 'd1g4', 'e5e4', 'f2f4'] #illegal en passant (black king would be in check)
@@ -51,7 +54,7 @@ def clear_screen():
 # moves_string = ['e2e3', 'd7d6', 'b1c3', 'e8d7', 'c3b1', 'd7c6', 'b1c3', 'c6b6', 'c3b1', 'b6a5', 'e3e4', 'd6d5', 'e4d5', 'a5a4', 'g1h3', 'e7e5', 'h3g1', 'h7h6', 'd1g4', 'a4a5', 'h2h4', 'e5e4', 'f2f4'] # same scenario as above, but no pinned pawns
 # moves_string = ['g1f3', 'g8f6', 'g2g4', 'g7g5', 'f1h3', 'f8h6', 'e1g1', 'e8g8'] #loaded castling
 # moves_string = ['g1f3', 'g8f6', 'g2g3', 'g7g6', 'f1h3', 'f8h6', 'c2c3', 'c7c6', 'd1b3', 'd8b6', 'd2d4', 'b8a6', 'c1f4', 'd7d5', 'b1a3', 'c8f5', 'b3d5'] #testing illegal castling scenarios. (Black: kingside: can queenside: can't, White: kingside: can queenside: can)
-moves_string = [] #empty new game
+# moves_string = [] #empty new game
 
 #used to update the current list of moves made, and transitively the current position. Can be used in tandem with above set position to set a position before playing 
 all_moves = moves_string
@@ -413,7 +416,7 @@ def play_game():
 
     if possible: implement_command(command, piece)
 
-    input("press enter")
+    # input("press enter")
     clear_screen()
     print_board_visiual()
 
@@ -610,36 +613,35 @@ def parse_word_command(piece, wanted_position, command):
         possible_piece_moves = []
         found_piece = ""
 
-        if piece == "pawn" and (wanted_position[-1] == "8" or wanted_position[-1] == "1"):
-            print("This move will be a pawn promotion.")
-            promoted = input("What would you like to promote the pawn to?: ")
-            while True:
-                found_piece = check_for_pieces(promoted)
-                if found_piece and found_piece != "pawn" and found_piece != "king": 
-                    if found_piece == "knight":
-                        promoted_symbol = "n"
-                    else:
-                        promoted_symbol = found_piece[0]
-
-                    break
-                else: 
-                    promoted = input("Sorry, I didn't get that. Would you like to promote the pawn to?: ")
-
         if command == "castle":
             return parse_castle_command(piece)
 
         piece_positions = piece_type_spaces(piece, get_turn_color())
         for position in piece_positions:
             possible_piece_moves.append(f"{position}{wanted_position.lower()}")
-            if found_piece: possible_piece_moves.append(f"{position}{wanted_position.lower()}{promoted_symbol.lower()}")
+            if position and piece == "pawn" and ((wanted_position[-1] == "8" and position[1] == "7") or (wanted_position[-1] == "1" and position[1] == "2")):
+                    for abbreviation, abbreviation_piece in abbreviation_dict.items():
+                        if abbreviation not in ["k", "p"]:
+                            possible_piece_moves.append(f"{position}{wanted_position.lower()}{abbreviation}")
 
-        possible_piece_moves_copy = possible_piece_moves
-        for potential_move in possible_piece_moves_copy:
-            if potential_move.lower().startswith("xx") and potential_move not in possible_piece_moves:
-                possible_piece_moves.remove(potential_move)
-            if potential_move.lower() not in get_legal_piece_moves(get_turn_color()) and potential_move not in possible_piece_moves:
-                # print(potential_move)
-                possible_piece_moves.remove(potential_move)
+        #This filters through possible piece moves and removes values that are not valid
+        possible_piece_moves = [
+            move for move in possible_piece_moves  # loop through each move
+            if not move.lower().startswith("xx")  # keep if it doesn't start with xx
+            and move.lower() in get_legal_piece_moves(get_turn_color())  # keep if it's legal
+            and len(move) != 2  # keep if it's not just 2 characters
+        ]
+
+        promotion_count = sum(1 for move in possible_piece_moves if len(move) == 5)
+        # print(f"promotion_count: {promotion_count}")
+        if promotion_count == 4:
+            return f"{possible_piece_moves[0][:4]}{ask_pawn_promotion()}", True
+        elif promotion_count > 4:
+            #multiple pawns can be promoted
+            pass
+    
+        # print(possible_piece_moves)
+        # input()
 
         if len(possible_piece_moves) > 0:
             return is_list_move_legal(possible_piece_moves)
@@ -660,6 +662,23 @@ def implement_command(command, piece, update=True, loaded_last_move=""):
         update_piece_position(command[:2], command[-2:], piece) #piece is actually a command for castling. fix lingo later
     if update: update_position(command) #Update all moves
     toggle_turn_color()
+
+#used to ask what the user wants to promote their pawn to
+def ask_pawn_promotion():
+    #  if piece == "pawn" and (wanted_position[-1] == "8" or wanted_position[-1] == "1"):
+    promoted = input("What would you like to promote the pawn to?: ")
+    while True:
+        found_piece = check_for_pieces(promoted)
+        if found_piece and found_piece != "pawn" and found_piece != "king": 
+            if found_piece == "knight":
+                promoted_symbol = "n"
+            else:
+                promoted_symbol = found_piece[0]
+            break
+        else: 
+            promoted = input("Sorry, I didn't get that. Would you like to promote the pawn to?: ")
+    return promoted_symbol
+
 
 #used to remove everything before the wake word
 def remove_before_word(text, word):
