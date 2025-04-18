@@ -41,7 +41,7 @@ def clear_screen():
 # moves_string = ['e2e4', 'd7d5', 'e4e5', 'd5d4', 'c2c4', 'f7f5', 'h2h3', 'a7a5', 'h3h4', 'a5a4', 'h4h5', 'g7g5'] #about to do en passants
 # moves_string = ['e2e4', 'd7d5', 'e4e5', 'd5d4', 'c2c4', 'f7f5', 'h2h3', 'a7a5', 'h3h4', 'a5a4', 'h4h5', 'g7g5', 'h5g6'] #en passant load (white did the en passant)
 # moves_string = ['e2e4', 'd7d5', 'e4e5', 'd5d4', 'e5e6', 'd4d3', 'e6f7', 'e8d7', 'h2h3', 'd3c2'] #pawns about to be promoted pawns
-moves_string = ['e2e4', 'd7d5', 'e4e5', 'd5d4', 'e5e6', 'd4d3', 'e6f7', 'e8d7', 'h2h3', 'd3c2', 'f7g8r', 'c2b1q'] #promoted pawns load
+# moves_string = ['e2e4', 'd7d5', 'e4e5', 'd5d4', 'e5e6', 'd4d3', 'e6f7', 'e8d7', 'h2h3', 'd3c2', 'f7g8r', 'c2b1q'] #promoted pawns load
 # moves_string = ['g1f3', 'b8c6', 'b1a3', 'g8h6', 'a3c4', 'h6f5'] #multiple pieces to same square
 # moves_string = ['e2e4', 'c7c6', 'e1e2', 'b8a6', 'e2f3', 'a6b8', 'f3g4', 'b8a6', 'g4h5', 'd8a5', 'e4e5', 'd7d5'] #illegal en passant (white king would be in check)
 # moves_string = ['e2e3', 'd7d6', 'b1c3', 'e8d7', 'c3b1', 'd7c6', 'b1c3', 'c6b6', 'c3b1', 'b6a5', 'e3e4', 'd6d5', 'e4d5', 'a5a4', 'g1h3', 'e7e5', 'h3g1', 'h7h6', 'd1g4', 'e5e4', 'f2f4'] #illegal en passant (black king would be in check)
@@ -50,7 +50,7 @@ moves_string = ['e2e4', 'd7d5', 'e4e5', 'd5d4', 'e5e6', 'd4d3', 'e6f7', 'e8d7', 
 # moves_string = ['e2e3', 'd7d6', 'b1c3', 'e8d7', 'c3b1', 'd7c6', 'b1c3', 'c6b6', 'c3b1', 'b6a5', 'e3e4', 'd6d5', 'e4d5', 'a5a4', 'g1h3', 'e7e5', 'h3g1', 'h7h6', 'd1g4', 'a4a5', 'h2h4', 'e5e4', 'f2f4'] # same scenario as above, but no pinned pawns
 # moves_string = ['g1f3', 'g8f6', 'g2g4', 'g7g5', 'f1h3', 'f8h6', 'e1g1', 'e8g8'] #loaded castling
 # moves_string = ['g1f3', 'g8f6', 'g2g3', 'g7g6', 'f1h3', 'f8h6', 'c2c3', 'c7c6', 'd1b3', 'd8b6', 'd2d4', 'b8a6', 'c1f4', 'd7d5', 'b1a3', 'c8f5', 'b3d5'] #testing illegal castling scenarios. (Black: kingside: can queenside: can't, White: kingside: can queenside: can)
-# moves_string = [] #empty new game
+moves_string = [] #empty new game
 
 #used to update the current list of moves made, and transitively the current position. Can be used in tandem with above set position to set a position before playing 
 all_moves = moves_string
@@ -347,8 +347,11 @@ squares_together = {
 #testing a global turn
 global_turn = "White"
 
+first_time = True
+
 #load in data from another game
 def set_position(moves_string_list):
+    global moves_string, all_moves, abbreviation_dict, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time
     moves = moves_string_list.copy()  #shallow copy of the list
     castle_moves_list = ["e1g1", "e1c1", "e8g8", "e8c8"]
     castle_data = {
@@ -374,10 +377,12 @@ def set_position(moves_string_list):
 
 #print all the moves that have occurred so far
 def print_all_moves():
+    global moves_string, all_moves, abbreviation_dict, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time
     print(f"all_moves: {all_moves}")
 
 #used to replace text in a string. Currently used for converting promoted pawns to their new piece type
 def replace_text(text, word, replace):
+    global moves_string, all_moves, abbreviation_dict, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time
     new_text = text.replace(word, replace)
     return new_text
 
@@ -388,7 +393,12 @@ def main():
 
 #the game loop
 def play_game():
-    words = input(f"{get_turn_color()} to move. Please state a command: ")
+    global moves_string, all_moves, abbreviation_dict, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time
+    if first_time:
+        words = input(f"Hello and welcome to the world of magic chess! My name is Phoenix. You can resume a recent game or start a new game. {get_turn_color()} to move, please state a command: ")
+        first_time = False
+    else: words = input(f"{get_turn_color()} to move. Please state a command: ")
+    
     if words == "all moves":
         print_all_moves()
         play_game()
@@ -415,26 +425,27 @@ def play_game():
 
 #can also be used to test things before the game starts
 def set_initials():
+    global moves_string, all_moves, abbreviation_dict, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time
     locate_pieces_initial()
     set_position(moves_string)
     get_color_turn_initial()
-    input("Hello and welcome to the world of magic chess! My name is Phoenix. You can resume a recent game or start a new game. Please state a command: ")
     clear_screen()
     print_board_visiual()
 
 #it is white if there have been no moves, otherwise count the moves_string
 def get_color_turn_initial():
-    global global_turn
+    global moves_string, all_moves, abbreviation_dict, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time
     if len(moves_string) > 0: global_turn = "Black" if len(moves_string) % 2 == 1 else "White"
     else: global_turn = "White"
 
 #change the turn color from White to Black, and from Black to White
 def toggle_turn_color():
-    global global_turn
+    global moves_string, all_moves, abbreviation_dict, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time
     global_turn = "Black" if global_turn == "White" else "White"
 
 #Locates all of the initial pieces' positions, and puts them in the positions dictionary
 def locate_pieces_initial():
+    global moves_string, all_moves, abbreviation_dict, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time
     position_dict_temp = {
         'Piece.WHITE_KING': 'e1', 
         'Piece.WHITE_QUEEN': 'd1', 
@@ -474,10 +485,12 @@ def locate_pieces_initial():
         position_dict[temp] = position
 
 def change_promoted_pawn(promoted_pawn, current_move):
+    global moves_string, all_moves, abbreviation_dict, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time
     position_dict[replace_text(promoted_pawn, "PAWN", abbreviation_dict[current_move[-1]].upper())] = position_dict.pop(promoted_pawn)
 
 #pring position dict for debugging
 def print_position_dict_debugging():
+    global moves_string, all_moves, abbreviation_dict, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time
     temp_location_list = []
     for number in ["8", "7", "6", "5", "4", "3", "2", "1"]:
         for letter in ["a", "b", "c", "d", "e", "f", "g", "h"]:
@@ -490,6 +503,7 @@ def print_position_dict_debugging():
 
 #prints the board
 def print_board_visiual():
+    global moves_string, all_moves, abbreviation_dict, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time
     #clear the board dict
     for square, piece in board_dict.items():
         board_dict[square] = ""
@@ -510,6 +524,7 @@ def print_board_visiual():
 
 #helper function for print board visual
 def get_symbol(letter, number): 
+    global moves_string, all_moves, abbreviation_dict, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time
     key = f"{letter}{number}"
     piece = check_for_pieces(board_dict[key])
     if piece: return str(symbols_dict[piece]).upper() if "white" in board_dict[key].lower() else str(symbols_dict[piece])
@@ -529,6 +544,7 @@ def print_lane(a, b, c, d, e, f, g, h, number):
 
 #if it is a legal piece move, and it doesn't result in a check afterwards, whether in check already or moving into it
 def get_possible_moves():
+    global moves_string, all_moves, abbreviation_dict, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time
     legal_piece_moves = get_legal_piece_moves(get_turn_color())
     legal_piece_moves_copy = legal_piece_moves
     for move in legal_piece_moves_copy: 
@@ -547,7 +563,7 @@ def decipher_command(words):
 #decipher the command out of the given words
 #command (e2e4), piece (pawn), square (e4) = process_words(words)
 def process_words(words):
-    global pieces
+    global moves_string, all_moves, abbreviation_dict, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time
 
     #remove everything before phoenix
     words = remove_before_word(words, "phoenix")
@@ -588,6 +604,7 @@ def process_words(words):
 #takes the command (pawn to E4) and turns it into -> e2e4
 #does this by looking at each pawns initial position, splicing it with the wanted position, and then seeing if any of those are legal
 def parse_word_command(piece, wanted_position, command):
+    global moves_string, all_moves, abbreviation_dict, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time
     if piece is not None:
         possible_piece_moves = []
         found_piece = ""
@@ -632,8 +649,7 @@ def parse_word_command(piece, wanted_position, command):
 
 #implement the command with the capture, and updating the piece positions before printing them again
 def implement_command(command, piece, update=True, loaded_last_move=""):
-    # print("inside implement_command")
-    # print(is_en_passant_move(command))
+    global moves_string, all_moves, abbreviation_dict, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time
     if update: handle_capture(command)
     else: handle_capture(command, loading=True, loaded_last_move=loaded_last_move)
 
@@ -665,10 +681,7 @@ def check_intentions(text):
                 intent_counts[intent] += 1
                 # Once a phrase from an intent is found, break out of the loop to avoid double-counting
                 break
-
-    # Debug: print the counts (for debugging purposes)
-    # print("Intent counts:", intent_counts)
-
+            
     # Choose the intent with the highest count.
     best_intent = max(intent_counts, key=intent_counts.get)
     if intent_counts[best_intent] > 0:
@@ -678,7 +691,7 @@ def check_intentions(text):
 #check for castles in a string
 #used by process words
 def check_for_castles(words):
-    global castles #global castles variable
+    global moves_string, all_moves, abbreviation_dict, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time
     count = 0 #number of castle commands found
     castle_found = "" #the key to the dictionary
 
@@ -702,7 +715,7 @@ def check_for_castles(words):
 #check for pieces in a string
 #used by process words
 def check_for_pieces(words):
-    global pieces
+    global moves_string, all_moves, abbreviation_dict, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time
     count = 0
     found_piece = ""
     for piece, synonyms in pieces.items():
@@ -719,6 +732,7 @@ def check_for_pieces(words):
 #check for squares in a string
 #used by process words
 def check_square(words):
+    global moves_string, all_moves, abbreviation_dict, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time
     inv_letter_count, word_search, square_letter = check_square_letter(words)
 
     if inv_letter_count == 1:
@@ -740,7 +754,7 @@ def check_square(words):
 #check for square letters in a string
 #used by check_square
 def check_square_letter(words):
-    global letter_squares_separate
+    global moves_string, all_moves, abbreviation_dict, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time
     count = 0
     square_letter = ""
     word_search = ""
@@ -757,7 +771,7 @@ def check_square_letter(words):
 #check for square numbers in a string
 #used by check_square
 def check_square_number(words, square_letter):
-    global number_squares_separate
+    global moves_string, all_moves, abbreviation_dict, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time
     next_word = find_next_word(words, square_letter)
     for number, homonym in number_squares_separate.items():
         for word in homonym:
@@ -768,7 +782,7 @@ def check_square_number(words, square_letter):
 #check for squares together in a string
 #used by check_square
 def check_squares_together(words):
-    global squares_together
+    global moves_string, all_moves, abbreviation_dict, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time
     count = 0
     square = ""
     for word1 in words.lower().split(): #go through each word in the input
@@ -785,7 +799,6 @@ def check_squares_together(words):
 #used to check if a single move is legal in the current position
 #used by parse_castle_command
 def is_single_move_legal(user_input):
-    # return is_move_legal(user_input)
     possible_moves = get_possible_moves()
     if user_input.lower() in possible_moves:
         return True
@@ -796,13 +809,9 @@ def is_single_move_legal(user_input):
 #returns the move that is found, None if there is not one found, and False if there are multiple found
 #used by parse_word_command
 def is_list_move_legal(user_list):
+    global moves_string, all_moves, abbreviation_dict, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time
     found_move = ""
     count = 0
-    # possible_moves = get_possible_moves()
-    # print(f"inside is_list_move_legal: possible_moves: {possible_moves} user_list: {user_list}")
-    # print(len(user_list))
-    # print(f"user_list: {user_list}")
-
     if len(user_list) > 1:
         for item in user_list:
             message, legal = is_move_legal(item)
@@ -828,6 +837,7 @@ def is_list_move_legal(user_list):
 #used to find the positions of a desired piece type
 #example: returns all the positions of the black pawns
 def piece_type_spaces(wanted_piece, color):
+    global moves_string, all_moves, abbreviation_dict, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time
     piece_positions = []
     for piece in position_dict:
         if ((wanted_piece.lower() in piece.lower()) and (color.lower() in piece.lower())):
@@ -841,6 +851,7 @@ def get_promoted_pawn(current_move):
 
 #get the piece in the position dict that is on the given square
 def get_what_is_on_square_specific(square):
+    global moves_string, all_moves, abbreviation_dict, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time
     for key, val in position_dict.items():
         if val == square:
             return key
@@ -848,6 +859,7 @@ def get_what_is_on_square_specific(square):
 
 #update the position of a piece. The third parameter, command, is a bit confusing right now. it is only used for castling. also reffered to as piece in main
 def update_piece_position(initial_position, new_position, command):
+    global moves_string, all_moves, abbreviation_dict, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time
     turn = get_turn_color()
     rook_moves = {
         ("White", "Castle Kingside"): "h1f1",
@@ -865,12 +877,14 @@ def update_piece_position(initial_position, new_position, command):
         update_piece_position(rook_moves[turn, command][:2], rook_moves[turn, command][-2:], "Rook move") #move the rook
 
 def update_promoted_pawn_position(current_move, piece): 
+    global moves_string, all_moves, abbreviation_dict, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time
     promoted_pawn = get_promoted_pawn(current_move)
     position_dict[get_promoted_pawn(current_move)] = current_move[2:4]
     change_promoted_pawn(promoted_pawn, current_move)
     update_piece_position(current_move[:2], "xx", piece)
 
 def update_piece_position_no_castles(initial_position, new_position):
+    global moves_string, all_moves, abbreviation_dict, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time
     for key, val in position_dict.items():
         if val == initial_position:
             position_dict[key] = new_position
@@ -894,18 +908,19 @@ def parse_castle_command(move):
 #updates all moves with the current moves that have been made
 #only called if not loading a game in implement_command 
 def update_position(current_move):
+    global moves_string, all_moves, abbreviation_dict, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time
     all_moves.append(current_move)
 
 #returns "White" or "Black"
 #used to know which piece type positions to scan
 def get_turn_color():
-    global  global_turn
+    global global_turn
     return global_turn
 
 #the position of pieces that are captured are "xx"
 #works with normal captures and en passants
 def handle_capture(move, loading=False, loaded_last_move=""):
-    # print(f"is_en_passant_move() for move: {move}: {is_en_passant_move(move, loading=loading, loaded_last_move=loaded_last_move)}")
+    global moves_string, all_moves, abbreviation_dict, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time
     if is_en_passant_move(move, loading=loading, loaded_last_move=loaded_last_move): update_piece_position((decrement_string if get_turn_color() == "White" else increment_string)(move[-2:]), "xx", "capture")
     else: 
         for key, val in position_dict.items():
@@ -941,22 +956,18 @@ def find_next_word(words, target):
     return False  # Return False if not found
 
 def is_move_legal(move):
+    global moves_string, all_moves, abbreviation_dict, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time
     #if king is not in check after move
-    # print(f"{move}")
-    # print(f"legal piece moves before king check ({move}): {get_legal_piece_moves(get_turn_color())}")
     if is_king_in_check(get_turn_color(), test_move = move): 
-        # print(f"{move} would put king in check")
         return f"{get_turn_color()} king would be in check after {move}", False
     #if it is in the list of legal piece moves
     if move not in get_legal_piece_moves(get_turn_color()): 
-        # print(f"legal {get_turn_color()} piece moves after king check ({move}): {get_legal_piece_moves(get_turn_color())}")
-        # print(f"get_legal_king_moves({get_turn_color()}): {get_legal_king_moves(get_turn_color())}")
-        # print(f"{move} is not a legal piece move")
         return "Move not found, please try again 833", False
     return "", True
 
 #see if the king is in check with the current position
 def is_king_in_check(color, legal_king_threaten_moves_test_opposite = [], test_move = ""): 
+    global moves_string, all_moves, abbreviation_dict, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time
     removed_piece = "None"
     en_passant_removed_square = ""
     if test_move: 
@@ -999,7 +1010,7 @@ def is_king_in_check(color, legal_king_threaten_moves_test_opposite = [], test_m
     return False
 
 def is_en_passant_move(given_move, loading = False, loaded_last_move = ""):
-    #given_move = e4e5
+    global moves_string, all_moves, abbreviation_dict, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time
     color = get_turn_color()
     opposite_color = "black" if color.lower() == "white" else "white"
     potential_position = given_move[2:4]
@@ -1035,9 +1046,11 @@ def is_en_passant_move(given_move, loading = False, loaded_last_move = ""):
     return True
 
 def do_temp_capture(removed_piece):
+    global moves_string, all_moves, abbreviation_dict, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time
     position_dict[removed_piece] = "xx"
 
 def undo_temp_capture(removed_piece, square, en_passant_removed_square):
+    global moves_string, all_moves, abbreviation_dict, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time
     if en_passant_removed_square: 
         position_dict[removed_piece] = en_passant_removed_square
         return
@@ -1076,6 +1089,7 @@ def get_legal_pawn_promotion_capture_moves(color):
     return legal_promoted_pawn_moves
 
 def get_legal_castle_moves(color, legal_capture_moves): 
+    global moves_string, all_moves, abbreviation_dict, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time
     legal_castle_moves = []
     castle_kingside = True
     castle_queenside = True
@@ -1151,6 +1165,7 @@ def get_legal_castle_moves(color, legal_capture_moves):
     return legal_castle_moves
 
 def get_legal_en_passant_moves(color): 
+    global moves_string, all_moves, abbreviation_dict, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time
     legal_en_passant_moves = []
     if not all_moves:
         return
@@ -1181,6 +1196,7 @@ def get_legal_en_passant_moves(color):
 
 #Pawns moving 1 and 2 spaces forward
 def get_legal_pawn_normal_moves(color): 
+    global moves_string, all_moves, abbreviation_dict, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time
     legal_pawn_normal_moves = []
     pawn_positions = [pawn for pawn in piece_type_spaces("pawn", color) if pawn and pawn != "xx" and not pawn[-1].isalpha()]
     # pawn_positions = [pawn for pawn in piece_type_spaces("pawn", color) if (pawn and (pawn != "xx"))]  # Remove empty strings and xxs
@@ -1200,6 +1216,7 @@ def get_legal_pawn_normal_moves(color):
 
 #Pawns moving diagonal
 def get_legal_capture_moves_pawns(color):
+    global moves_string, all_moves, abbreviation_dict, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time
     #not doing enpassant, because this is for scanning for checks
     legal_pawn_capture_moves = []
     pawn_positions = [pawn for pawn in piece_type_spaces("pawn", color) if pawn and pawn != "xx" and not pawn[-1].isalpha()]
@@ -1222,6 +1239,7 @@ def get_legal_capture_moves_pawns(color):
     return legal_pawn_capture_moves
 
 def get_legal_knight_moves(color):
+    global moves_string, all_moves, abbreviation_dict, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time
     opposite_color = "black" if color.lower() == "white" else "white"
     legal_knight_moves = []
     knight_positions = [knight for knight in piece_type_spaces("knight", color) if (knight and (knight != "xx") and not knight[-1].isalpha())]  # Remove empty strings and xxs
@@ -1240,6 +1258,7 @@ def get_legal_knight_moves(color):
     return legal_knight_moves     
 
 def get_legal_bishop_moves(color): 
+    global moves_string, all_moves, abbreviation_dict, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time
     opposite_color = "black" if color.lower() == "white" else "white"
     legal_bishop_capture_moves = []
     bishop_positions = [bishop for bishop in piece_type_spaces("bishop", color) if (bishop and (bishop != "xx") and not bishop[-1].isalpha())]  # Remove empty strings and xxs
@@ -1272,6 +1291,7 @@ def get_legal_bishop_moves(color):
     return legal_bishop_capture_moves
 
 def get_legal_rook_moves(color): 
+    global moves_string, all_moves, abbreviation_dict, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time
     opposite_color = "black" if color.lower() == "white" else "white"
     legal_rook_capture_moves = []
     rook_positions = [rook for rook in piece_type_spaces("rook", color) if (rook and (rook != "xx") and not rook[-1].isalpha())]  # Remove empty strings and xxs
@@ -1304,6 +1324,7 @@ def get_legal_rook_moves(color):
     return legal_rook_capture_moves
 
 def get_legal_queen_moves(color): 
+    global moves_string, all_moves, abbreviation_dict, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time
     opposite_color = "black" if color.lower() == "white" else "white"
     legal_queen_capture_moves = []
     queen_positions = [queen for queen in piece_type_spaces("queen", color) if (queen and (queen != "xx") and not queen[-1].isalpha())]  # Remove empty strings and xxs
@@ -1339,6 +1360,7 @@ def get_legal_queen_moves(color):
     return legal_queen_capture_moves
 
 def get_legal_king_moves(color):
+    global moves_string, all_moves, abbreviation_dict, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time
     opposite_color = "black" if color.lower() == "white" else "white"
     legal_king_moves = []
     king_positions = [king for king in piece_type_spaces("king", color) if (king and (king != "xx") and not king[-1].isalpha())]  # Remove empty strings and xxs
@@ -1358,6 +1380,7 @@ def get_legal_king_moves(color):
     return legal_king_moves
 
 def get_legal_promoted_pawn_moves(color):
+    global moves_string, all_moves, abbreviation_dict, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time
     opposite_color = "black" if color.lower() == "white" else "white"
     #not doing enpassant, because this is for scanning for checks
     legal_pawn_promotion_moves = []
