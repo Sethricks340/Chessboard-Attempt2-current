@@ -17,11 +17,11 @@
     #FIXED: black always stays during a capture??
     #FIXED: Asks for pawn promotion piece, before checks if legal
     #FIXED: Notify when the game is over, either by checkmate or stalemate
+    #FIXED: If more than one piece can move to the same square, we present an error, but there is no way of fixing it
 
-    #scenario: If more than one piece can move to the same square, we present an error, but there is no way of fixing it
     #scenario: If king moves to a square it can't, but it would be in check in that square, it shows as check error message
     #scenario: If there are multiple moves to be checked, (piece moves) and none of them are legal, the error message is generic instead of specific check message
-    #scenario: Fix error messages
+    #scenario: FIX ERROR MESSAGES
         #note: The above 3 scenarios all have to do with error messages.
     #scenario: Work with other commands, like take over, restart, undo, etc;
 
@@ -47,7 +47,7 @@ def clear_screen():
 # moves_string = ['e2e4', 'd7d5', 'g2g4', 'b7b5', 'd2d3', 'c7c6', 'c1h6', 'g7h6', 'd1f3', 'd8a5', 'c2c3', 
 #                 'a5b4', 'f3f6', 'e7f6', 'g4g5', 'b4b2', 'e4e5', 'b2d2', 'e1d2', 'b5b4', 'e5e6', 'd5d4', 'g5g6', 
 #                 'c6c5', 'b1a3', 'c5c4', 'd3c4', 'b4b3', 'g6g7', 'd4d3', 'e6e7', 'b3b2', 'd2e3', 'd3d2', 'a1c1'] #multiple pawns can be promoted to same square, or multiple pawns can be promoted to different squares
-# moves_string = ['g1f3', 'b8c6', 'b1a3', 'g8h6', 'a3c4', 'h6f5'] #multiple pieces to same square
+moves_string = ['g1f3', 'b8c6', 'b1a3', 'g8h6', 'a3c4', 'h6f5'] #multiple pieces to same square
 # moves_string = ['e2e4', 'c7c6', 'e1e2', 'b8a6', 'e2f3', 'a6b8', 'f3g4', 'b8a6', 'g4h5', 'd8a5', 'e4e5', 'd7d5'] #illegal en passant (white king would be in check)
 # moves_string = ['e2e3', 'd7d6', 'b1c3', 'e8d7', 'c3b1', 'd7c6', 'b1c3', 'c6b6', 'c3b1', 'b6a5', 'e3e4', 'd6d5', 'e4d5', 'a5a4', 'g1h3', 'e7e5', 'h3g1', 'h7h6', 'd1g4', 'e5e4', 'f2f4'] #illegal en passant (black king would be in check)
 # moves_string = ['e2e3', 'd7d6', 'b1c3', 'e8d7', 'c3b1', 'd7c6', 'b1c3', 'c6b6', 'c3b1', 'b6a5', 'e3e4', 'd6d5', 'e4d5', 'a5a4', 'g1h3', 'e7e5', 'h3g1', 'h7h6', 'd1g4'] #illegal en passant (black king would be in check)
@@ -67,7 +67,7 @@ def clear_screen():
 #                  'b8a6', 'b6a6', 'c8b7', 'a6b7', 'a7a6', 'b7a6', 'a8a7', 'a6a7', 'f7f5', 'a7c5', 'f8d6', 'c5d6', 
 #                  'f5f4', 'd6f4', 'e6e5', 'f4e5', 'e8d8', 'f1b5', 'd8c8', 'e5d4', 'c8b8', 'b2b3', 'b8a8', 'c1a3', 
 #                  'a8b8', 'a3c5', 'b8a8', 'b5a6', 'a8b8', 'c5a7', 'b8a8'] #about to be stalemate, black king not in check but no black moves possible. any move that does not protect the bishop on a7 will be stalemate
-moves_string = [] #empty new game
+# moves_string = [] #empty new game
 
 #used to update the current list of moves made, and transitively the current position. Can be used in tandem with above set position to set a position before playing 
 all_moves = moves_string
@@ -698,12 +698,9 @@ def parse_word_command(piece, wanted_position, command):
         if promotion_count == 4:
             return f"{possible_piece_moves[0][:4]}{ask_pawn_promotion()}", True
         elif promotion_count > 4:
-            #multiple pawns can be promoted
-            pass
-    
-        # print(possible_piece_moves)
-        # input()
-
+            #multiple pawns can be promoted to same square, clarify which one
+            return f"{clarify_which_piece(wanted_position)}{wanted_position.lower()}{ask_pawn_promotion()}", True
+            
         if len(possible_piece_moves) > 0:
             return is_list_move_legal(possible_piece_moves)
         else:
@@ -724,6 +721,28 @@ def implement_command(command, piece, update=True, loaded_last_move=""):
     if update: update_position(command) #Update all moves
     toggle_turn_color()
     board_positions_list.append(get_possible_moves(get_turn_color()) + get_possible_moves(get_opposite_turn_color()) + [get_turn_color()])
+
+#used when more than one piece of the same type can move to the same square, to clarify which one to move
+def clarify_which_piece(wanted_position):
+    clarified_words = input("Please clarify which piece you would like to move: ")
+    square = check_square(clarified_words)
+    while True:
+        if square:
+            if wanted_position[-1] in ["1", "8"]:
+                if f"{square.lower()}{wanted_position.lower()}q" in get_possible_moves():
+                    return square.lower()
+                else: 
+                    clarified_words = input("Sorry, I didn't get that. Please clarify which piece you would like to move: ")
+                    square = check_square(clarified_words)
+            else:
+                if f"{square.lower()}{wanted_position.lower()}" in get_possible_moves():
+                    return square.lower()
+                else:
+                    clarified_words = input("Sorry, I didn't get that. Please clarify which piece you would like to move: ")
+                    square = check_square(clarified_words)
+        else: 
+            clarified_words = input("Sorry, I didn't get that. Please clarify which piece you would like to move: ")
+            square = check_square(clarified_words)
 
 #used to ask what the user wants to promote their pawn to
 def ask_pawn_promotion():
@@ -913,7 +932,8 @@ def is_list_move_legal(user_list):
     elif count == 0:
         return "Move not found, please try again 695", False
     else:
-        return "Please clarify which piece you'd like to move", False
+        return f"{clarify_which_piece(user_list[0][-2:])}{user_list[0][-2:]}", True
+        # return "Please clarify which piece you'd like to move", False
 
 #used to find the positions of a desired piece type
 #example: returns all the positions of the black pawns
