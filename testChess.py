@@ -16,8 +16,8 @@
     #FIXED: Castling command takes forever to load (was still using stockfish)
     #FIXED: black always stays during a capture??
     #FIXED: Asks for pawn promotion piece, before checks if legal
+    #FIXED: Notify when the game is over, either by checkmate or stalemate
 
-    #scenario: Notify when the game is over, either by checkmate or stalemate
     #scenario: If more than one piece can move to the same square, we present an error, but there is no way of fixing it
     #scenario: If king moves to a square it can't, but it would be in check in that square, it shows as check error message
     #scenario: If there are multiple moves to be checked, (piece moves) and none of them are legal, the error message is generic instead of specific check message
@@ -58,8 +58,16 @@ def clear_screen():
 # moves_string = ['e2e3', 'b8a6', 'd1h5', 'g8h6', 'f1c4', 'h6g4',] #about to be four move checkmate, black is about to loose
 # moves_string = ['g1h3', 'e7e6', 'b1a3', 'd8h4', 'a3b1', 'f8c5', 'h3g1'] #about to be four move checkmate, white is about to loose
 # moves_string = ['g1f3', 'g8f6', 'f3g1', 'f6g8', 'g1f3', 'g8f6', 'f3g1'] #about to be a stalemate by repetition
-moves_string = ['g1f3', 'b8c6', 'g2g3', 'b7b6', 'f1h3', 'c8a6', 'b1c3', 'g8f6', 'f3g5', 'c6e5', 'g5f3', 'e5c6', 'f3g1', 'c6b8', 'c3b1', 'a6b7', 'b1c3', 'b7a6', 'g1f3'] #about to be a stalemate by repetition, with a bunch of moves inbetween (knight to c6)
-# moves_string = [] #empty new game
+# moves_string = ['g1f3', 'b8c6', 'g2g3', 'b7b6', 'f1h3', 'c8a6', 'b1c3', 'g8f6', 'f3g5', 'c6e5', 'g5f3', 'e5c6', 'f3g1', 'c6b8', 'c3b1', 'a6b7', 'b1c3', 'b7a6', 'g1f3'] #about to be a stalemate by repetition, with a bunch of moves inbetween (knight to c6)
+# moves_string = ['g1f3', 'e7e6', 'f3g1', 'd8h4', 'g1f3', 'h4h2', 'f3g1', 'h2h1', 'g1h3', 'h1h3', 'g2g4', 'h3g4', 'f2f4', 'g4f4', 'd2d4', 'f4d4', 'c2c4', 'd4c4', 
+#                 'b2b4', 'c4b4', 'd1d2', 'b4b1', 'd2d1', 'b1c1', 'a2a3', 'c1a3', 'e1f2', 'a3a1', 'f2g3', 'a1d1', 'g3h4', 'd1e2', 'h4h3', 'e2f1', 
+#                 'h3h4', 'g7g6', 'h4g5', 'f1f2', 'g5g4', 'd7d5', 'g4h3', 'f2g1', 'h3h4'] #about to be stalemate, white king not in check but no white moves possible. (black pawn to e5 will cause this)
+# moves_string =  ['e2e3', 'b8a6', 'd1g4', 'a6b8', 'g4g7', 'b8a6', 'g7h8', 'a6b8', 'h8h7', 'b8a6', 'h7g8', 
+#                  'a6b8', 'g1f3', 'e7e6', 'f3g1', 'd8g5', 'g8g5', 'd7d5', 'g5d5', 'c7c5', 'd5c5', 'b7b6', 'c5b6', 
+#                  'b8a6', 'b6a6', 'c8b7', 'a6b7', 'a7a6', 'b7a6', 'a8a7', 'a6a7', 'f7f5', 'a7c5', 'f8d6', 'c5d6', 
+#                  'f5f4', 'd6f4', 'e6e5', 'f4e5', 'e8d8', 'f1b5', 'd8c8', 'e5d4', 'c8b8', 'b2b3', 'b8a8', 'c1a3', 
+#                  'a8b8', 'a3c5', 'b8a8', 'b5a6', 'a8b8', 'c5a7', 'b8a8'] #about to be stalemate, black king not in check but no black moves possible. any move that does not protect the bishop on a7 will be stalemate
+moves_string = [] #empty new game
 
 #used to update the current list of moves made, and transitively the current position. Can be used in tandem with above set position to set a position before playing 
 all_moves = moves_string
@@ -431,10 +439,10 @@ def play_game():
     clear_screen()
     print_board_visiual()
 
-    #if there are no available moves for the person that did not just make a move, then it is either a checkmate or a stalemate
+    #if there are no available moves for the person that did not just make a move in this function (aka whose turn it is), then it is either a checkmate or a stalemate
     if len(get_possible_moves()) == 0:
         if is_king_in_check(get_turn_color()): print(f"Game over, {'black' if get_turn_color().lower() == 'white' else 'white'} wins by checkmate")
-        else: print(f"Game over by stalemate")
+        else: print(f"Game over by stalemate. {get_turn_color().lower()} doesn't have any legal moves.")
         print("Thanks for playing, play again soon! \n-Pheonix")
         exit()
 
