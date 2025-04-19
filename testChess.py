@@ -1,4 +1,5 @@
 #errors to fix:
+    #FIXED: black always stays during a capture??
     #FIXED: If white pawn taken, position_dict not updated for removal. Causes problems when another piece wants to move to that position.
     #FIXED: Castling, position_dict not updated for moving the rook. Causes problems with the rook moving the rook. 
         #note: These scenarios are similar, in that all_moves is updated correctly, but position_dict is not. So it looks right, but it is not.
@@ -14,7 +15,6 @@
     #FIXED: Promoted pawns in legal moves
     #FIXED: Print the board, without stockfish!
     #FIXED: Castling command takes forever to load (was still using stockfish)
-    #FIXED: black always stays during a capture??
     #FIXED: Asks for pawn promotion piece, before checks if legal
     #FIXED: Notify when the game is over, either by checkmate or stalemate
     #FIXED: If more than one piece can move to the same square, we present an error, but there is no way of fixing it
@@ -22,6 +22,8 @@
     #FIXED: If there are multiple moves to be checked, (piece moves) and none of them are legal, the error message is generic instead of specific check message
     
     #scenario: Work with other commands, like take over, restart, undo, etc;
+    #scenario: Make it so get_all_moves and get_legal_piece moves is only generated once per turn, and the functions access global variables instead of generating it again
+    #scenario: Order the possible moves from least to best, so that it can be used by the computer
 
 import re
 import os
@@ -447,7 +449,7 @@ def play_game():
     elif words.lower() == "board positions list":
         print_board_positions()
         play_game()
-        
+    
     #decipher the command out of the words
     #if the move isn't possible, then the command is the error message
     (command, possible), piece = decipher_command(words)
@@ -619,6 +621,9 @@ def print_board_positions():
         print(f"{list}: {count}\n")
 
 #if it is a legal piece move, and it doesn't result in a check afterwards, whether in check already or moving into it
+#turn is an optional variable that allows you to look at the other player's possible moves as well. 
+#It is used to update the board_positions_dict to scan for repeated board positions for a draw
+#TODO
 def get_possible_moves(turn=""):
     global moves_string, all_moves, abbreviation_dict, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time
     if not turn:
@@ -954,15 +959,6 @@ def check_squares_together(words):
     else:
         return False
 
-#used to check if a single move is legal in the current position
-#used by parse_castle_command
-def is_single_move_legal(user_input):
-    possible_moves = get_possible_moves()
-    if user_input.lower() in possible_moves:
-        return True
-    else:
-        return False
-
 #used to find the positions of a desired piece type
 #example: returns all the positions of the black pawns
 def piece_type_spaces(wanted_piece, color):
@@ -1029,10 +1025,10 @@ def parse_castle_command(move):
     }
 
     if move in ["Castle Kingside", "Castle Queenside"]:
-        if is_single_move_legal(castle_moves[(turn, move)]):
+        if castle_moves[(turn, move)].lower() in get_possible_moves():
             return castle_moves[(turn, move)], True
         else: 
-            return "Move not found, please try again", False
+            return "Castle move not legal, please try again", False
 
 #updates all moves with the current moves that have been made
 #only called if not loading a game in implement_command 
@@ -1089,16 +1085,6 @@ def find_next_word(words, target):
         if words[i] == target.lower():
             return words[i + 1]  # Return the next word
     return False  # Return False if not found
-
-def is_move_legal(move):
-    global moves_string, all_moves, abbreviation_dict, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time
-    #if king is not in check after move
-    if is_king_in_check(get_turn_color(), test_move = move): 
-        return f"{get_turn_color()} king would be in check after {move}", False
-    #if it is in the list of legal piece moves
-    if move not in get_legal_piece_moves(get_turn_color()): 
-        return "Move not found, please try again", False
-    return "", True
 
 #see if the king is in check with the current position
 def is_king_in_check(color, legal_king_threaten_moves_test_opposite = [], test_move = ""): 
@@ -1191,8 +1177,9 @@ def undo_temp_capture(removed_piece, square, en_passant_removed_square):
         return
     position_dict[removed_piece] = square
 
+#TODO
 def get_legal_piece_moves(color):
-    opposite_color = "black" if color.lower() == "white" else "white"
+    opposite_color = get_opposite_turn_color().lower()
     legal_king_threaten_moves_test = get_legal_king_threaten_moves(color)
     legal_king_threaten_moves_opposite = get_legal_king_threaten_moves(opposite_color)
     legal_moves = sum([
@@ -1375,7 +1362,6 @@ def get_legal_capture_moves_pawns(color):
 
 def get_legal_knight_moves(color):
     global moves_string, all_moves, abbreviation_dict, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time
-    opposite_color = "black" if color.lower() == "white" else "white"
     legal_knight_moves = []
     knight_positions = [knight for knight in piece_type_spaces("knight", color) if (knight and (knight != "xx") and not knight[-1].isalpha())]  # Remove empty strings and xxs
     directions = [(1, 2), (-1, 2), (-2, 1), (-2, -1), (-1, -2), (1, -2), (2, 1), (2, -1)]  # (delta_file, delta_rank) for 8 knight positions
@@ -1394,7 +1380,7 @@ def get_legal_knight_moves(color):
 
 def get_legal_bishop_moves(color): 
     global moves_string, all_moves, abbreviation_dict, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time
-    opposite_color = "black" if color.lower() == "white" else "white"
+    opposite_color = get_opposite_turn_color().lower()
     legal_bishop_capture_moves = []
     bishop_positions = [bishop for bishop in piece_type_spaces("bishop", color) if (bishop and (bishop != "xx") and not bishop[-1].isalpha())]  # Remove empty strings and xxs
     directions = [(1, 1), (-1, 1), (-1, -1), (1, -1)]  # (delta_file, delta_rank) for the four diagonals
@@ -1427,7 +1413,7 @@ def get_legal_bishop_moves(color):
 
 def get_legal_rook_moves(color): 
     global moves_string, all_moves, abbreviation_dict, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time
-    opposite_color = "black" if color.lower() == "white" else "white"
+    opposite_color = get_opposite_turn_color().lower()
     legal_rook_capture_moves = []
     rook_positions = [rook for rook in piece_type_spaces("rook", color) if (rook and (rook != "xx") and not rook[-1].isalpha())]  # Remove empty strings and xxs
     directions = [(0, 1), (0, -1), (1, 0), (-1, 0)]  # (delta_file, delta_rank) for up, down, right, left
@@ -1460,7 +1446,7 @@ def get_legal_rook_moves(color):
 
 def get_legal_queen_moves(color): 
     global moves_string, all_moves, abbreviation_dict, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time
-    opposite_color = "black" if color.lower() == "white" else "white"
+    opposite_color = get_opposite_turn_color().lower()
     legal_queen_capture_moves = []
     queen_positions = [queen for queen in piece_type_spaces("queen", color) if (queen and (queen != "xx") and not queen[-1].isalpha())]  # Remove empty strings and xxs
     # print(f"{color} queen_postions: {queen_positions}")
@@ -1496,7 +1482,6 @@ def get_legal_queen_moves(color):
 
 def get_legal_king_moves(color):
     global moves_string, all_moves, abbreviation_dict, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time
-    opposite_color = "black" if color.lower() == "white" else "white"
     legal_king_moves = []
     king_positions = [king for king in piece_type_spaces("king", color) if (king and (king != "xx") and not king[-1].isalpha())]  # Remove empty strings and xxs
     directions = [(0, 1), (0, -1), (1, 0), (-1, 0), (1, 1), (-1, 1), (-1, -1), (1, -1)]  # (delta_file, delta_rank) for up, down, right, left, and diagonals
@@ -1516,7 +1501,6 @@ def get_legal_king_moves(color):
 
 def get_legal_promoted_pawn_moves(color):
     global moves_string, all_moves, abbreviation_dict, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time
-    opposite_color = "black" if color.lower() == "white" else "white"
     #not doing enpassant, because this is for scanning for checks
     legal_pawn_promotion_moves = []
     pawn_positions = [pawn for pawn in piece_type_spaces("pawn", color) if pawn and pawn != "xx" and not pawn[-1].isalpha()]
