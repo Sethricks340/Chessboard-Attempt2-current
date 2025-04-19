@@ -687,6 +687,9 @@ def process_words(words):
 
 #takes the command (pawn to E4) and turns it into -> e2e4
 #does this by looking at each pawns initial position, splicing it with the wanted position, and then seeing if any of those are legal
+#first it splices all the squares from piece type spaces with the wanted_position, and filters out the ones that aren't legal
+#The it counts how many there are, and checks how many of them are legal if king is in not in check after.
+#It then continues with the command, clarifies which piece to move, or displays the appropriate error message.
 def parse_word_command(piece, wanted_position, command):
     global moves_string, all_moves, abbreviation_dict, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time
     if piece is not None:
@@ -739,12 +742,12 @@ def parse_word_command(piece, wanted_position, command):
             #check if in check after
                 #if in check after, present check error message
                 if is_king_in_check(get_turn_color(), test_move = possible_piece_moves[0]): 
-                    return f"{get_turn_color()} king would be in check after {possible_piece_moves[0]}, please try again. 713", False
+                    return f"{get_turn_color()} king would be in check after {possible_piece_moves[0]}, please try again.", False
                 else: #else do the move
                     return f"{possible_piece_moves[0]}", True
 
         elif len(possible_piece_moves) == 0:
-            return "Move not found, please try again 718", False
+            return "Move not found, please try again", False
         else:
             #more than one, sort through how many result in check
             possible_piece_moves = [
@@ -760,8 +763,8 @@ def parse_word_command(piece, wanted_position, command):
                 return f"{possible_piece_moves[0]}", True
             #if none legal, present check error message
             else:
-                return f"{get_turn_color()} king would be in check after this move, please try again. 734", False
-    else: return "Move not found, please try again 735", False
+                return f"{get_turn_color()} king would be in check after this move, please try again.", False
+    else: return "Move not found, please try again.", False
 
 #implement the command with the capture, and updating the piece positions before printing them again
 def implement_command(command, piece, update=True, loaded_last_move=""):
@@ -960,36 +963,6 @@ def is_single_move_legal(user_input):
     else:
         return False
 
-#used to check if any of the moves in a list is legal
-#returns the move that is found, None if there is not one found, and False if there are multiple found
-#used by parse_word_command
-def is_list_move_legal(user_list):
-    global moves_string, all_moves, abbreviation_dict, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time
-    found_move = ""
-    count = 0
-    if len(user_list) > 1:
-        for item in user_list:
-            message, legal = is_move_legal(item)
-            if legal:
-                count += 1
-                found_move = item.lower()
-    else: 
-        message, legal = is_move_legal(user_list[0].lower())
-        if legal:
-            found_move = user_list[0].lower()
-            # count = 1
-            return found_move, True
-        else:
-            return message, False
-
-    if count == 1:
-        return found_move, True
-    elif count == 0:
-        return "Move not found, please try again 695", False
-    else:
-        return f"{clarify_which_piece(user_list[0][-2:])}{user_list[0][-2:]}", True
-        # return "Please clarify which piece you'd like to move", False
-
 #used to find the positions of a desired piece type
 #example: returns all the positions of the black pawns
 def piece_type_spaces(wanted_piece, color):
@@ -1059,7 +1032,7 @@ def parse_castle_command(move):
         if is_single_move_legal(castle_moves[(turn, move)]):
             return castle_moves[(turn, move)], True
         else: 
-            return "Move not found, please try again 764", False
+            return "Move not found, please try again", False
 
 #updates all moves with the current moves that have been made
 #only called if not loading a game in implement_command 
@@ -1124,7 +1097,7 @@ def is_move_legal(move):
         return f"{get_turn_color()} king would be in check after {move}", False
     #if it is in the list of legal piece moves
     if move not in get_legal_piece_moves(get_turn_color()): 
-        return "Move not found, please try again 833", False
+        return "Move not found, please try again", False
     return "", True
 
 #see if the king is in check with the current position
