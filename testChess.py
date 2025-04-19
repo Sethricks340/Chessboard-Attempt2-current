@@ -27,6 +27,7 @@
 
 import re
 import os
+from collections import Counter
 
 def clear_screen():
     if os.name == 'nt':  # Windows
@@ -54,13 +55,15 @@ def clear_screen():
 # moves_string = ['e2e3', 'd7d6', 'b1c3', 'e8d7', 'c3b1', 'd7c6', 'b1c3', 'c6b6', 'c3b1', 'b6a5', 'e3e4', 'd6d5', 'e4d5', 'a5a4', 'g1h3', 'e7e5', 'h3g1', 'h7h6', 'd1g4', 'a4a5', 'h2h4', 'e5e4', 'f2f4'] # same scenario as above, but no pinned pawns
 # moves_string = ['g1f3', 'g8f6', 'g2g4', 'g7g5', 'f1h3', 'f8h6', 'e1g1', 'e8g8'] #loaded castling
 # moves_string = ['g1f3', 'g8f6', 'g2g3', 'g7g6', 'f1h3', 'f8h6', 'c2c3', 'c7c6', 'd1b3', 'd8b6', 'd2d4', 'b8a6', 'c1f4', 'd7d5', 'b1a3', 'c8f5', 'b3d5'] #testing illegal castling scenarios. (Black: kingside: can queenside: can't, White: kingside: can queenside: can)
-moves_string = ['e2e3', 'b8a6', 'd1h5', 'g8h6', 'f1c4', 'h6g4',] #about to be four move checkmate, black is about to loose
+# moves_string = ['e2e3', 'b8a6', 'd1h5', 'g8h6', 'f1c4', 'h6g4',] #about to be four move checkmate, black is about to loose
 # moves_string = ['g1h3', 'e7e6', 'b1a3', 'd8h4', 'a3b1', 'f8c5', 'h3g1'] #about to be four move checkmate, white is about to loose
+# moves_string = ['g1f3', 'g8f6', 'f3g1', 'f6g8', 'g1f3', 'g8f6', 'f3g1'] #about to be a stalemate by repetition
+moves_string = ['g1f3', 'b8c6', 'g2g3', 'b7b6', 'f1h3', 'c8a6', 'b1c3', 'g8f6', 'f3g5', 'c6e5', 'g5f3', 'e5c6', 'f3g1', 'c6b8', 'c3b1', 'a6b7', 'b1c3', 'b7a6', 'g1f3'] #about to be a stalemate by repetition, with a bunch of moves inbetween (knight to c6)
 # moves_string = [] #empty new game
 
 #used to update the current list of moves made, and transitively the current position. Can be used in tandem with above set position to set a position before playing 
 all_moves = moves_string
-# all_moves = []
+board_positions_list = []
 
 #the abbreviations that are used in pawn promotions
 abbreviation_dict = {
@@ -219,7 +222,7 @@ pieces = {
     "queen": ["queen", "lady"],
     "rook": ["rook", "castle"],
     "bishop": ["bishop", "clergy"],
-    "knight": ["knight", "night", "horse", "nigh"],
+    "knight": ["knight", "night", "horse", "nigh", "nite"],
     "pawn": ["pawn", "pond", "upon", "ponder", "panda", "power", "pontiff", "pine"]
 }
 
@@ -399,13 +402,6 @@ def main():
 
 #the game loop
 def play_game():
-    # print(f"length of possible moves list: {len(get_possible_moves())}")
-    # if len(get_possible_moves()) == 0:
-        # if is_king_in_check(get_turn_color()): print(f"Game over by checkmate")
-        # else: print(f"Game over by stalemate")
-        # print("Thanks for playing, come again soon. ")
-        # exit()
-    
     global moves_string, all_moves, abbreviation_dict, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time
     if first_time:
         words = input(f"Hello and welcome to the world of magic chess! My name is Phoenix. You can resume a recent game or start a new game. {get_turn_color()} to move, please state a command: ")
@@ -420,6 +416,9 @@ def play_game():
         play_game()
     elif words.lower() == "possible moves":
         print(get_possible_moves())
+        play_game()
+    elif words.lower() == "board positions list":
+        print_board_positions()
         play_game()
         
     #decipher the command out of the words
@@ -439,6 +438,13 @@ def play_game():
         print("Thanks for playing, play again soon! \n-Pheonix")
         exit()
 
+    # print(f"check_for_repetition_draw(): {check_for_repetition_draw()}")
+    if check_for_repetition_draw():
+        print(f"Game over by stalemate by repetition")
+        print("Thanks for playing, play again soon! \n-Pheonix")
+        exit()
+
+
     #print (or say) the command
     print(command)
     if is_king_in_check(get_turn_color()): print(f"{get_turn_color()} king is in check")
@@ -452,6 +458,7 @@ def play_game():
 def set_initials():
     global moves_string, all_moves, abbreviation_dict, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time
     locate_pieces_initial()
+    board_positions_list.append(get_possible_moves(get_turn_color()) + get_possible_moves(get_opposite_turn_color()) + [get_turn_color()])
     set_position(moves_string)
     get_color_turn_initial()
     clear_screen()
@@ -567,14 +574,38 @@ def print_end_line():
 def print_lane(a, b, c, d, e, f, g, h, number):
     print(f"| {a} | {b} | {c} | {d} | {e} | {f} | {g} | {h} | {number}")
 
+#uses the board_position_list to compare all of the board's past positions, and see if there are 3 repetitions of them
+def check_for_repetition_draw():
+    global board_positions_list
+    # Convert each inner list to a tuple so it can be counted
+    hashable_positions = [tuple(position) for position in board_positions_list]
+    counts = Counter(hashable_positions)
+    return any(count >= 3 for count in counts.values())
+
+#used for debugging the board positions list
+def print_board_positions():
+    global board_positions_list
+    # Convert each inner list to a tuple so it can be counted
+    hashable_positions = [tuple(position) for position in board_positions_list]
+    counts = Counter(hashable_positions)
+    for list, count in counts.items():
+        print(f"{list}: {count}\n")
+
 #if it is a legal piece move, and it doesn't result in a check afterwards, whether in check already or moving into it
-def get_possible_moves():
+def get_possible_moves(turn=""):
     global moves_string, all_moves, abbreviation_dict, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time
-    legal_piece_moves = get_legal_piece_moves(get_turn_color())
-    legal_piece_moves = [
-        move for move in get_legal_piece_moves(get_turn_color())
-        if not is_king_in_check(get_turn_color(), test_move=move)
-    ]
+    if not turn:
+        legal_piece_moves = get_legal_piece_moves(get_turn_color())
+        legal_piece_moves = [
+            move for move in get_legal_piece_moves(get_turn_color())
+            if not is_king_in_check(get_turn_color(), test_move=move)
+        ]
+    else: 
+        legal_piece_moves = get_legal_piece_moves(turn)
+        legal_piece_moves = [
+            move for move in get_legal_piece_moves(turn)
+            if not is_king_in_check(turn, test_move=move)
+        ]
     return legal_piece_moves
 
 #prints possibles moves, not currently used
@@ -684,6 +715,7 @@ def implement_command(command, piece, update=True, loaded_last_move=""):
         update_piece_position(command[:2], command[-2:], piece) #piece is actually a command for castling. fix lingo later
     if update: update_position(command) #Update all moves
     toggle_turn_color()
+    board_positions_list.append(get_possible_moves(get_turn_color()) + get_possible_moves(get_opposite_turn_color()) + [get_turn_color()])
 
 #used to ask what the user wants to promote their pawn to
 def ask_pawn_promotion():
@@ -957,6 +989,12 @@ def update_position(current_move):
 def get_turn_color():
     global global_turn
     return global_turn
+
+#opposite of get_turn_color, get who's turn it is NOT
+def get_opposite_turn_color():
+    global global_turn
+    opposite_color = "Black" if global_turn == "White" else "White"
+    return opposite_color
 
 #the position of pieces that are captured are "xx"
 #works with normal captures and en passants
