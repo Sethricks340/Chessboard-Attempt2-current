@@ -450,6 +450,10 @@ def play_game():
         print_board_positions()
         play_game()
     
+    if check_intentions(words): 
+        print(check_intentions(words))
+        input()
+
     #decipher the command out of the words
     #if the move isn't possible, then the command is the error message
     (command, possible), piece = decipher_command(words)
@@ -657,11 +661,11 @@ def process_words(words):
     #remove everything before phoenix
     words = remove_before_word(words, "phoenix")
 
-    #check if the words have phrases for an intention. If not, it is ignored and continues on.
-    intentions = check_intentions(words)
-    if intentions:
-        #if there is an explicit intention, return it. Done with process_words
-        return intentions, None, None
+    # #check if the words have phrases for an intention. If not, it is ignored and continues on.
+    # intentions = check_intentions(words)
+    # if intentions:
+    #     #if there is an explicit intention, return it. Done with process_words
+    #     return intentions, None, None
 
     #check if the words have phrases for a castle. If not, it is ignored and continues on.
     castling = check_for_castles(words)
@@ -829,8 +833,8 @@ def remove_before_word(text, word):
     return parts[1] if len(parts) > 1 else text  # Return everything after the word
 
 #check intentions in a string
-#used by process words
 def check_intentions(text):
+    global intents
     text = text.lower()
     intent_counts = {intent: 0 for intent in intents}
 
@@ -849,7 +853,7 @@ def check_intentions(text):
     best_intent = max(intent_counts, key=intent_counts.get)
     if intent_counts[best_intent] > 0:
         return best_intent
-    return None
+    return False
 
 #check for castles in a string
 #used by process words
