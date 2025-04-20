@@ -21,6 +21,7 @@
     #FIXED: If king moves to a square it can't, but it woucld be in check in that square, it shows as check error message
     #FIXED: If there are multiple moves to be checked, (piece moves) and none of them are legal, the error message is generic instead of specific check message
     
+    #scenario: King in check started not working for some reason
     #scenario: Work with other commands, like take over, restart, undo, etc;
     #scenario: Make it so get_all_moves and get_legal_piece moves is only generated once per turn, and the functions access global variables instead of generating it again
     #scenario: Order the possible moves from least to best, so that it can be used by the computer
