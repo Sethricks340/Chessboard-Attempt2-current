@@ -268,6 +268,19 @@ intents = {
     "list": ["list", "list commands", "options"]
 }
 
+confirmation_responses = {
+    "affirmative": [
+        "yes", "yeah", "yep", "yup", "sure", "of course", "definitely", "absolutely", 
+        "certainly", "indeed", "affirmative", "roger", "aye", "ok", "okay", "fine", 
+        "you bet", "totally", "uh-huh", "alright", "sure thing", "for sure", "why not"
+    ],
+    "negative": [
+        "no", "nope", "nah", "not at all", "never", "absolutely not", "no way", 
+        "negative", "nay", "uh-uh", "not really", "i don't think so", "by no means", 
+        "no thanks", "no thank you", "not happening", "out of the question", "forget it", "cancel"
+    ]
+}
+
 #different ways to say castle
 castles = {
     "Kingside": ["castle king side", "castle kingside", "castle kings i'd", "castle kings hide", "castle king's side", "castle kings side",
@@ -450,22 +463,16 @@ def play_game_loop():
         print_board_positions()
         play_game_loop()
         
-    intention_check = check_intentions(words)    
-    if intention_check: 
-        intention_possible = is_intention_possible(intention_check)
-        if intention_possible: implement_intention(intention_check)
-        clear_screen()
-        print_board_visiual()
-        print_intention(intention_check, possible=intention_possible)
-        play_game_loop()
-    
+    intention_check = check_intentions(words) 
+    #if there is an intention instead of a move   
+    if intention_check: process_intention(intention_check)
+
     #decipher the command out of the words
     #if the move isn't possible, then the command is the error message
     (command, possible), piece = decipher_command(words)
 
     if possible: implement_command(command, piece)
 
-    # input("press enter")
     clear_screen()
     print_board_visiual()
 
@@ -481,7 +488,6 @@ def play_game_loop():
         print(f"Game over - stalemate by repetition")
         print("Thanks for playing, play again soon! \n-Pheonix")
         exit()
-
 
     #print (or say) the command
     print(command)
@@ -662,12 +668,6 @@ def process_words(words):
 
     #remove everything before phoenix
     words = remove_before_word(words, "phoenix")
-
-    #check if the words have phrases for an intention. If not, it is ignored and continues on.
-    # intentions = check_intentions(words)
-    # if intentions:
-    #     #if there is an explicit intention, return it. Done with process_words
-    #     return intentions, None, None
 
     #check if the words have phrases for a castle. If not, it is ignored and continues on.
     castling = check_for_castles(words)
@@ -857,40 +857,140 @@ def check_intentions(text):
         return best_intent
     return False
 
-def implement_intention(intention):
-    if intention == "undo":
-        undo_last_move()
+def check_confirmation_response(text):
+    text = text.lower()
+    match_counts = {response_type: 0 for response_type in confirmation_responses}
+
+    for response_type, phrases in confirmation_responses.items():
+        for phrase in sorted(phrases, key=len, reverse=True):
+            pattern = r'\b' + re.escape(phrase) + r'\b'
+            if re.search(pattern, text):
+                match_counts[response_type] += 1
+                break  # Stop after first match for this type
+
+    best_match = max(match_counts, key=match_counts.get)
+    return best_match if match_counts[best_match] > 0 else False
+
+def implement_intention(intention, computer_color=""):
+    if intention == "undo": undo_last_move()
+    elif intention == "restart": restart_game()
+    elif intention == "takeover": computer_takeover(computer_color)
     else: return
 
-def print_intention(intention, possible=True):
+def computer_takeover(color): pass
+
+def print_intention(intention, possible=True, computer_color=""):
     if intention == "undo":
         if possible: print("Undoing the last move.")
         else: print("No move to undo.")
+    elif intention == "start":
+        if possible: print("Starting a new game. (Logic not yet created)")
+        else: print("Game is already in progress.")
+    elif intention == "restart":
+        if possible: print("Restarting the game.")
+        else: print("Game is already in starting position.")
+    elif intention == "end":
+        if possible: print("Ending the game. (Logic not yet created)")
+        else: print("Game is already in starting position.")
+    elif intention == "takeover":
+        if possible: print(f"{computer_color} will be taken over by the computer (when there is one, the logic isn't created)")
+        else: print("Game has already been taken over.")
+    elif intention == "list":
+        print(f"{intention} intention logic not yet created.")
+    else: print(f"{intention} intention logic not recognized.")
 
 def is_intention_possible(intention):
+    # undo, start, restart, end, takeover, list
     if intention == "undo": return True if all_moves else False
+    elif intention == "start": return False if all_moves else True
+    elif intention == "restart": return True if all_moves else False
+    elif intention == "end": return True
+    elif intention == "takeover": return True
+    elif intention == "list": return True
     else: return False
-
+ 
+#logic to undo the last move in all moves. used by implement_intention
 def undo_last_move():
+    global position_dict, all_moves, board_positions_list
+    #Can't undo a move if there aren't any to undo
+    if not all_moves: return
+    position_dict_temp = position_dict.copy()
+    for piece, position in position_dict_temp.items():
+        position_dict[piece] == ""
+        #remove promoted pieces from the dictionary
+        if "promoted" in piece.lower() and "pawn" not in piece.lower(): position_dict.pop(piece, None) 
+    #set initial board position
+    locate_pieces_initial()
+    board_positions_list.clear()
+    board_positions_list.append(get_initial_board_position())
+    all_moves.pop()
+    set_position(all_moves)
+    get_color_turn_initial(all_moves)
+
+def restart_game():
     global position_dict, all_moves, board_positions_list
     if not all_moves: return
     position_dict_temp = position_dict.copy()
     for piece, position in position_dict_temp.items():
         position_dict[piece] == ""
-        # 'Piece.PROMOTED_WHITE_QUEEN5': 'g8'
-        if "promoted" in piece.lower():
-            if "pawn" not in piece.lower():
-                position_dict.pop(piece, None)  # Won’t raise an error
-    
-    #set initial board position
+        #remove promoted pieces from the dictionary
+        if "promoted" in piece.lower() and "pawn" not in piece.lower(): position_dict.pop(piece, None) 
     locate_pieces_initial()
     board_positions_list.clear()
     board_positions_list.append(get_initial_board_position())
-
-    all_moves.pop()
-    set_position(all_moves)
+    all_moves.clear()
     get_color_turn_initial(all_moves)
 
+def get_confirm_message(intention):
+    if intention == "undo": return f"Are you sure you want to undo the last move? This can not be undone. "
+    elif intention == "start": return "" #no confirmation needed
+    elif intention == "restart": return "Are you sure you want to restart the game? This can not be undone. "
+    elif intention == "end": return "Are you sure you want to end the game? This can not be undone. "
+    elif intention == "takeover": return f"Are you sure you want a computer to take over this game? "
+    elif intention == "list": "" #no confirmation needed
+    else: return ""
+
+def process_intention(intention_check):
+    intention_possible = is_intention_possible(intention_check)
+    intention_message = get_confirm_message(intention_check)
+    
+    def execute_intention(do_intention=False, do_print_intention=False, cancel_intention=False, confirmation_not_clear=False, computer_takeover = False):
+        computer_color = ""
+        if computer_takeover: computer_color = input("What color would you like the computer to take over for? (Logic not yet created) ")
+        if do_intention: implement_intention(intention_check, computer_color=computer_color)
+        clear_screen() #do always
+        print_board_visiual() #do always
+        if do_print_intention: print_intention(intention_check, possible=intention_possible, computer_color=computer_color)
+        if cancel_intention: print(f"Canceling {intention_check} command.")
+        if confirmation_not_clear: print("Sorry, I didn't get that. Please try again.")
+        play_game_loop() #do always
+
+    #if possible, see if it needs to be confirmed
+    if intention_possible: 
+        #if confirmation is needed
+        if intention_message: 
+            intention_confirmation = input(intention_message)
+            response = check_confirmation_response(intention_confirmation)
+
+            #if the user responds yes or no
+            if response:
+                #positive
+                if response.lower() == "affirmative": 
+                    if intention_check == "takeover": execute_intention(do_intention=True, do_print_intention=True, computer_takeover = True)
+                    else: execute_intention(do_intention=True, do_print_intention=True)
+                #negative
+                else: execute_intention(cancel_intention=True)
+            
+            #confirmation wasn't clear
+            else: execute_intention(confirmation_not_clear=True)
+        
+        #if possible but no confirmation needed
+        else: execute_intention(do_intention=True, do_print_intention=True)
+        
+    #if not possible, print the error message in print_intention
+    else: execute_intention(do_print_intention=True)
+
+#The first board position. used to add to board positions list
 def get_initial_board_position():
     return ['b1c3', 'b1a3', 'g1h3', 'g1f3', 'a2a3', 'a2a4', 'b2b3', 'b2b4', 
             'c2c3', 'c2c4', 'd2d3', 'd2d4', 'e2e3', 'e2e4', 'f2f3', 'f2f4', 'g2g3', 
