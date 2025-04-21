@@ -1,5 +1,4 @@
 #errors to fix:
-    #FIXED: black always stays during a capture??
     #FIXED: If white pawn taken, position_dict not updated for removal. Causes problems when another piece wants to move to that position.
     #FIXED: Castling, position_dict not updated for moving the rook. Causes problems with the rook moving the rook. 
         #note: These scenarios are similar, in that all_moves is updated correctly, but position_dict is not. So it looks right, but it is not.
@@ -15,16 +14,14 @@
     #FIXED: Promoted pawns in legal moves
     #FIXED: Print the board, without stockfish!
     #FIXED: Castling command takes forever to load (was still using stockfish)
+    #FIXED: black always stays during a capture??
     #FIXED: Asks for pawn promotion piece, before checks if legal
     #FIXED: Notify when the game is over, either by checkmate or stalemate
     #FIXED: If more than one piece can move to the same square, we present an error, but there is no way of fixing it
     #FIXED: If king moves to a square it can't, but it woucld be in check in that square, it shows as check error message
     #FIXED: If there are multiple moves to be checked, (piece moves) and none of them are legal, the error message is generic instead of specific check message
     
-    #scenario: King in check started not working for some reason
     #scenario: Work with other commands, like take over, restart, undo, etc;
-    #scenario: Make it so get_all_moves and get_legal_piece moves is only generated once per turn, and the functions access global variables instead of generating it again
-    #scenario: Order the possible moves from least to best, so that it can be used by the computer
 
 import re
 import os
@@ -39,17 +36,17 @@ def clear_screen():
 # moves_string = ['e2e4'] #first move
 # moves_string = ['e2e4', 'd7d5'] #second move
 # moves_string = ['e2e4', 'd7d5', 'e4d5'] #third move
-moves_string = ['e2e4', 'f7f5', 'd2d3', 'f5e4', 'd1e2', 'e4d3', 'c2d3', 'e7e5', 'd3d4', 'd8e7', 'e2e5'] #pinned queens
+# moves_string = ['e2e4', 'f7f5', 'd2d3', 'f5e4', 'd1e2', 'e4d3', 'c2d3', 'e7e5', 'd3d4', 'd8e7', 'e2e5'] #pinned queens
 # moves_string = ['e2e4', 'e7e6', 'f2f4', 'd8e7', 'f4f5', 'e6f5', 'e4e5', 'd7d5'] #pinned en passant
 # moves_string = ['e2e4', 'd7d5', 'e4e5', 'd5d4', 'c2c4', 'f7f5', 'h2h3', 'a7a5', 'h3h4', 'a5a4', 'h4h5', 'g7g5'] #about to do en passants
 # moves_string = ['e2e4', 'd7d5', 'e4e5', 'd5d4', 'c2c4', 'f7f5', 'h2h3', 'a7a5', 'h3h4', 'a5a4', 'h4h5', 'g7g5', 'h5g6'] #en passant load (white did the en passant)
 # moves_string = ['e2e4', 'd7d5', 'e4e5', 'd5d4', 'e5e6', 'd4d3', 'e6f7', 'e8d7', 'h2h3', 'd3c2'] #pawns about to be promoted
 # moves_string = ['e2e4', 'd7d5', 'e4e5', 'd5d4', 'e5e6', 'd4d3', 'e6f7', 'e8d7', 'h2h3', 'd3c2', 'f7g8r', 'c2b1q'] #promoted pawns load
 # moves_string = ['e2e4', 'd7d5', 'g2g4', 'b7b5', 'd2d3', 'c7c6', 'c1h6', 'g7h6', 'd1f3', 'd8a5', 'c2c3', 
-#                 'a5b4', 'f3f6', 'e7f6', 'g4g5', 'b4b2', 'e4e5', 'b2d2', 'e1d2', 'b5b4', 'e5e6', 'd5d4', 'g5g6', 
-#                 'c6c5', 'b1a3', 'c5c4', 'd3c4', 'b4b3', 'g6g7', 'd4d3', 'e6e7', 'b3b2', 'd2e3', 'd3d2', 'a1c1'] #multiple pawns can be promoted to same square, or multiple pawns can be promoted to different squares
+                # 'a5b4', 'f3f6', 'e7f6', 'g4g5', 'b4b2', 'e4e5', 'b2d2', 'e1d2', 'b5b4', 'e5e6', 'd5d4', 'g5g6', 
+                # 'c6c5', 'b1a3', 'c5c4', 'd3c4', 'b4b3', 'g6g7', 'd4d3', 'e6e7', 'b3b2', 'd2e3', 'd3d2', 'a1c1'] #multiple pawns can be promoted to same square, or multiple pawns can be promoted to different squares
 # moves_string = ['e2e4', 'd7d5', 'e4e5', 'd5d4', 'e5e6', 'd4d3', 'e6f7', 'e8d7', 
-#                 'c2c3', 'b7b5', 'a2a3', 'b5b4', 'a3a4', 'b4c3', 'd2c3', 'd3d2', 'e1e2'] #pawn can't be promoted because it is pinned
+                # 'c2c3', 'b7b5', 'a2a3', 'b5b4', 'a3a4', 'b4c3', 'd2c3', 'd3d2', 'e1e2'] #pawn can't be promoted because it is pinned
 # moves_string = ['g1f3', 'b8c6', 'b1a3', 'g8h6', 'a3c4', 'h6f5'] #multiple pieces to same square
 # moves_string = ['g1f3', 'b8c6', 'b1a3', 'g8h6', 'a3c4', 'h6f5', 'f3e5', 'c6d4', 'c4e3', 'd4e2', 'e1e2', 'e7e6', 'e2e1', 'h7h6', 'f1c4', 'h6h5', 'c4e6', 'd8e7', 'e6b3', 'a7a6', 'e3c4'] #two pinned knights
 # moves_string = ['g1f3', 'b8c6', 'b1a3', 'g8h6', 'a3c4', 'h6f5', 'f3e5', 'c6d4', 'c4e3', 'd4e2', 'e1e2', 'e7e6', 'e2e1', 
@@ -68,7 +65,7 @@ moves_string = ['e2e4', 'f7f5', 'd2d3', 'f5e4', 'd1e2', 'e4d3', 'c2d3', 'e7e5', 
 # moves_string = ['e2e3', 'd7d6', 'b1c3', 'e8d7', 'c3b1', 'd7c6', 'b1c3', 'c6b6', 'c3b1', 'b6a5', 'e3e4', 'd6d5', 'e4d5', 'a5a4', 'g1h3', 'e7e5', 'h3g1', 'h7h6', 'd1g4', 'a4a5', 'h2h4', 'e5e4', 'f2f4'] # same scenario as above, but no pinned pawns
 # moves_string = ['e2e3', 'd7d6', 'b1c3', 'e8d7', 'c3b1', 'd7c6', 'b1c3', 'c6b6', 'c3b1', 'b6a5', 'e3e4', 'd6d5', 'e4d5', 'a5a4', 'g1h3', 'e7e5', 'h3g1', 'h7h6', 'd1g4', 'a4a5', 'h2h4', 'e5e4', 'f2f4'] # same scenario as above, but no pinned pawns
 # moves_string = ['g1f3', 'g8f6', 'g2g4', 'g7g5', 'f1h3', 'f8h6', 'e1g1', 'e8g8'] #loaded castling
-# moves_string = ['g1f3', 'g8f6', 'g2g3', 'g7g6', 'f1h3', 'f8h6', 'c2c3', 'c7c6', 'd1b3', 'd8b6', 'd2d4', 'b8a6', 'c1f4', 'd7d5', 'b1a3', 'c8f5', 'b3d5'] #testing illegal castling scenarios. (Black: kingside: can queenside: can't, White: kingside: can queenside: can)
+moves_string = ['g1f3', 'g8f6', 'g2g3', 'g7g6', 'f1h3', 'f8h6', 'c2c3', 'c7c6', 'd1b3', 'd8b6', 'd2d4', 'b8a6', 'c1f4', 'd7d5', 'b1a3', 'c8f5', 'b3d5'] #testing illegal castling scenarios. (Black: kingside: can queenside: can't, White: kingside: can queenside: can)
 # moves_string = ['e2e3', 'b8a6', 'd1h5', 'g8h6', 'f1c4', 'h6g4',] #about to be four move checkmate, black is about to loose
 # moves_string = ['g1h3', 'e7e6', 'b1a3', 'd8h4', 'a3b1', 'f8c5', 'h3g1'] #about to be four move checkmate, white is about to loose
 # moves_string = ['g1f3', 'g8f6', 'f3g1', 'f6g8', 'g1f3', 'g8f6', 'f3g1'] #about to be a stalemate by repetition
@@ -450,17 +447,7 @@ def play_game():
     elif words.lower() == "board positions list":
         print_board_positions()
         play_game()
-    elif words.lower() == "turn":
-        print(get_turn_color())
-        play_game()
-    elif words.lower() == "opposite turn":
-        print(get_opposite_turn_color())
-        play_game()
-    
-    if check_intentions(words): 
-        print(check_intentions(words))
-        input()
-
+        
     #decipher the command out of the words
     #if the move isn't possible, then the command is the error message
     (command, possible), piece = decipher_command(words)
@@ -484,10 +471,10 @@ def play_game():
         print("Thanks for playing, play again soon! \n-Pheonix")
         exit()
 
+
     #print (or say) the command
     print(command)
     if is_king_in_check(get_turn_color()): print(f"{get_turn_color()} king is in check")
-    if is_king_in_check(get_opposite_turn_color()): print(f"{get_opposite_turn_color()} (opposite) king is in check")
 
     if words != "quit":
         play_game()
@@ -632,9 +619,6 @@ def print_board_positions():
         print(f"{list}: {count}\n")
 
 #if it is a legal piece move, and it doesn't result in a check afterwards, whether in check already or moving into it
-#turn is an optional variable that allows you to look at the other player's possible moves as well. 
-#It is used to update the board_positions_dict to scan for repeated board positions for a draw
-#TODO
 def get_possible_moves(turn=""):
     global moves_string, all_moves, abbreviation_dict, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time
     if not turn:
@@ -668,11 +652,11 @@ def process_words(words):
     #remove everything before phoenix
     words = remove_before_word(words, "phoenix")
 
-    # #check if the words have phrases for an intention. If not, it is ignored and continues on.
-    # intentions = check_intentions(words)
-    # if intentions:
-    #     #if there is an explicit intention, return it. Done with process_words
-    #     return intentions, None, None
+    #check if the words have phrases for an intention. If not, it is ignored and continues on.
+    intentions = check_intentions(words)
+    if intentions:
+        #if there is an explicit intention, return it. Done with process_words
+        return intentions, None, None
 
     #check if the words have phrases for a castle. If not, it is ignored and continues on.
     castling = check_for_castles(words)
@@ -757,9 +741,6 @@ def parse_word_command(piece, wanted_position, command):
         if len(possible_piece_moves) == 1:
             #check if in check after
                 #if in check after, present check error message
-                print(f" 760 {is_king_in_check(get_turn_color(), test_move = possible_piece_moves[0])}")
-                print(f" 760 {possible_piece_moves[0]}")
-                input()
                 if is_king_in_check(get_turn_color(), test_move = possible_piece_moves[0]): 
                     return f"{get_turn_color()} king would be in check after {possible_piece_moves[0]}, please try again.", False
                 else: #else do the move
@@ -843,8 +824,8 @@ def remove_before_word(text, word):
     return parts[1] if len(parts) > 1 else text  # Return everything after the word
 
 #check intentions in a string
+#used by process words
 def check_intentions(text):
-    global intents
     text = text.lower()
     intent_counts = {intent: 0 for intent in intents}
 
@@ -863,7 +844,7 @@ def check_intentions(text):
     best_intent = max(intent_counts, key=intent_counts.get)
     if intent_counts[best_intent] > 0:
         return best_intent
-    return False
+    return None
 
 #check for castles in a string
 #used by process words
@@ -973,6 +954,15 @@ def check_squares_together(words):
     else:
         return False
 
+#used to check if a single move is legal in the current position
+#used by parse_castle_command
+# def is_single_move_legal(user_input):
+#     possible_moves = get_possible_moves()
+#     if user_input.lower() in possible_moves:
+#         return True
+#     else:
+#         return False
+
 #used to find the positions of a desired piece type
 #example: returns all the positions of the black pawns
 def piece_type_spaces(wanted_piece, color):
@@ -1039,6 +1029,7 @@ def parse_castle_command(move):
     }
 
     if move in ["Castle Kingside", "Castle Queenside"]:
+        # if is_single_move_legal(castle_moves[(turn, move)]):
         if castle_moves[(turn, move)].lower() in get_possible_moves():
             return castle_moves[(turn, move)], True
         else: 
@@ -1059,7 +1050,7 @@ def get_turn_color():
 #opposite of get_turn_color, get who's turn it is NOT
 def get_opposite_turn_color():
     global global_turn
-    opposite_color = "black" if global_turn.lower() == "white" else "white"
+    opposite_color = "Black" if global_turn == "White" else "White"
     return opposite_color
 
 #the position of pieces that are captured are "xx"
@@ -1100,35 +1091,58 @@ def find_next_word(words, target):
             return words[i + 1]  # Return the next word
     return False  # Return False if not found
 
+# def is_move_legal(move):
+#     global moves_string, all_moves, abbreviation_dict, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time
+#     #if king is not in check after move
+#     if is_king_in_check(get_turn_color(), test_move = move): 
+#         return f"{get_turn_color()} king would be in check after {move}", False
+#     #if it is in the list of legal piece moves
+#     if move not in get_legal_piece_moves(get_turn_color()): 
+#         return "Move not found, please try again", False
+#     return "", True
+
 #see if the king is in check with the current position
 def is_king_in_check(color, legal_king_threaten_moves_test_opposite = [], test_move = ""): 
     global moves_string, all_moves, abbreviation_dict, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time
     removed_piece = "None"
     en_passant_removed_square = ""
     if test_move: 
+        # print("824")
         if is_en_passant_move(test_move): 
             en_passant_removed_square = test_move[2] + chr(ord(test_move[3]) + (-1 if get_turn_color().lower() == "white" else 1))
             removed_piece = get_what_is_on_square_specific(en_passant_removed_square)
+            # print(test_move[2] + chr(ord(test_move[3]) + (-1 if get_turn_color().lower() == "white" else 1)))
         else: removed_piece = get_what_is_on_square_specific(test_move[-2:])
+        # print(f"removed_piece: {removed_piece}")
+        # print(f"test_move: {test_move}")
+        # print(f"test_move[-2:]: {test_move[-2:]}")
         if removed_piece != "None": 
             do_temp_capture(removed_piece)
+            # print("829")
         update_piece_position_no_castles(test_move[:2], test_move[-2:])
-    opposite_color = get_opposite_turn_color().lower()
+    opposite_color = "black" if color.lower() == "white" else "white"
     king_positions = [king for king in piece_type_spaces("king", color) if (king and (king != "xx"))]  # Remove empty strings and xxs
     if not legal_king_threaten_moves_test_opposite: legal_king_threaten_moves_test_opposite = get_legal_king_threaten_moves(opposite_color)
-    print(f"1119 {get_legal_king_threaten_moves(opposite_color)}")
     for move in legal_king_threaten_moves_test_opposite:
         for king in king_positions:
             if move[2:4] == king:
                 if test_move: 
                     update_piece_position_no_castles(test_move[-2:], test_move[:2])
+                    # print("838")
                 if removed_piece != "None": 
+                    # (test_move[2] + chr(ord(test_move[3]) + (-1 if get_turn_color().lower() == "white" else 1))) if is_en_passant_move(test_move) else test_move[:2]
                     undo_temp_capture(removed_piece, test_move[-2:], en_passant_removed_square)
+                    # undo_temp_capture(removed_piece, (test_move[2] + chr(ord(test_move[3]) + (-1 if get_turn_color().lower() == "white" else 1))) if is_en_passant_move(test_move) else test_move[:2])
+                    # print("841")
                 return True
     if test_move: 
         update_piece_position_no_castles(test_move[-2:], test_move[:2])
+        # print("845")
     if removed_piece != "None": 
         undo_temp_capture(removed_piece, test_move[-2:], en_passant_removed_square)
+        # print((test_move[2] + chr(ord(test_move[3]) + (-1 if get_turn_color().lower() == "white" else 1))) if is_en_passant_move(test_move) else test_move[:2])
+        # undo_temp_capture(removed_piece, (test_move[2] + chr(ord(test_move[3]) + (-1 if get_turn_color().lower() == "white" else 1))) if is_en_passant_move(test_move) else test_move[:2])
+        # print("848")
     return False
 
 def is_en_passant_move(given_move, loading = False, loaded_last_move = ""):
@@ -1178,9 +1192,8 @@ def undo_temp_capture(removed_piece, square, en_passant_removed_square):
         return
     position_dict[removed_piece] = square
 
-#TODO
 def get_legal_piece_moves(color):
-    opposite_color = get_opposite_turn_color().lower()
+    opposite_color = "black" if color.lower() == "white" else "white"
     legal_king_threaten_moves_test = get_legal_king_threaten_moves(color)
     legal_king_threaten_moves_opposite = get_legal_king_threaten_moves(opposite_color)
     legal_moves = sum([
@@ -1363,6 +1376,7 @@ def get_legal_capture_moves_pawns(color):
 
 def get_legal_knight_moves(color):
     global moves_string, all_moves, abbreviation_dict, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time
+    opposite_color = "black" if color.lower() == "white" else "white"
     legal_knight_moves = []
     knight_positions = [knight for knight in piece_type_spaces("knight", color) if (knight and (knight != "xx") and not knight[-1].isalpha())]  # Remove empty strings and xxs
     directions = [(1, 2), (-1, 2), (-2, 1), (-2, -1), (-1, -2), (1, -2), (2, 1), (2, -1)]  # (delta_file, delta_rank) for 8 knight positions
@@ -1381,7 +1395,7 @@ def get_legal_knight_moves(color):
 
 def get_legal_bishop_moves(color): 
     global moves_string, all_moves, abbreviation_dict, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time
-    opposite_color = get_opposite_turn_color().lower()
+    opposite_color = "black" if color.lower() == "white" else "white"
     legal_bishop_capture_moves = []
     bishop_positions = [bishop for bishop in piece_type_spaces("bishop", color) if (bishop and (bishop != "xx") and not bishop[-1].isalpha())]  # Remove empty strings and xxs
     directions = [(1, 1), (-1, 1), (-1, -1), (1, -1)]  # (delta_file, delta_rank) for the four diagonals
@@ -1414,7 +1428,7 @@ def get_legal_bishop_moves(color):
 
 def get_legal_rook_moves(color): 
     global moves_string, all_moves, abbreviation_dict, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time
-    opposite_color = get_opposite_turn_color().lower()
+    opposite_color = "black" if color.lower() == "white" else "white"
     legal_rook_capture_moves = []
     rook_positions = [rook for rook in piece_type_spaces("rook", color) if (rook and (rook != "xx") and not rook[-1].isalpha())]  # Remove empty strings and xxs
     directions = [(0, 1), (0, -1), (1, 0), (-1, 0)]  # (delta_file, delta_rank) for up, down, right, left
@@ -1447,7 +1461,7 @@ def get_legal_rook_moves(color):
 
 def get_legal_queen_moves(color): 
     global moves_string, all_moves, abbreviation_dict, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time
-    opposite_color = get_opposite_turn_color().lower()
+    opposite_color = "black" if color.lower() == "white" else "white"
     legal_queen_capture_moves = []
     queen_positions = [queen for queen in piece_type_spaces("queen", color) if (queen and (queen != "xx") and not queen[-1].isalpha())]  # Remove empty strings and xxs
     # print(f"{color} queen_postions: {queen_positions}")
@@ -1483,6 +1497,7 @@ def get_legal_queen_moves(color):
 
 def get_legal_king_moves(color):
     global moves_string, all_moves, abbreviation_dict, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time
+    opposite_color = "black" if color.lower() == "white" else "white"
     legal_king_moves = []
     king_positions = [king for king in piece_type_spaces("king", color) if (king and (king != "xx") and not king[-1].isalpha())]  # Remove empty strings and xxs
     directions = [(0, 1), (0, -1), (1, 0), (-1, 0), (1, 1), (-1, 1), (-1, -1), (1, -1)]  # (delta_file, delta_rank) for up, down, right, left, and diagonals
@@ -1502,6 +1517,7 @@ def get_legal_king_moves(color):
 
 def get_legal_promoted_pawn_moves(color):
     global moves_string, all_moves, abbreviation_dict, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time
+    opposite_color = "black" if color.lower() == "white" else "white"
     #not doing enpassant, because this is for scanning for checks
     legal_pawn_promotion_moves = []
     pawn_positions = [pawn for pawn in piece_type_spaces("pawn", color) if pawn and pawn != "xx" and not pawn[-1].isalpha()]
