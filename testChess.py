@@ -21,10 +21,12 @@
     #FIXED: If king moves to a square it can't, but it woucld be in check in that square, it shows as check error message
     #FIXED: If there are multiple moves to be checked, (piece moves) and none of them are legal, the error message is generic instead of specific check message
     #FIXED: when doing the "undo" intention, board positions list is acting weird. stalemate isn't working properly
+    #FIXED: add 50 move draw
+    #FIXED: undo moves, doesn't update 50 move draw variables
     
     #scenario: Work with other commands, like take over, restart, undo, etc;
     #scenario: can't undo a checkmate or stalemate
-    #scenario: add 50 move draw, and insufficient material draw. (ex; king vs king)
+    #scneario: add insufficient material draw. (ex; king vs king)
 
 import re
 import os
@@ -76,11 +78,11 @@ def clear_screen():
 # moves_string = ['g1f3', 'e7e6', 'f3g1', 'd8h4', 'g1f3', 'h4h2', 'f3g1', 'h2h1', 'g1h3', 'h1h3', 'g2g4', 'h3g4', 'f2f4', 'g4f4', 'd2d4', 'f4d4', 'c2c4', 'd4c4', 
 #                 'b2b4', 'c4b4', 'd1d2', 'b4b1', 'd2d1', 'b1c1', 'a2a3', 'c1a3', 'e1f2', 'a3a1', 'f2g3', 'a1d1', 'g3h4', 'd1e2', 'h4h3', 'e2f1', 
 #                 'h3h4', 'g7g6', 'h4g5', 'f1f2', 'g5g4', 'd7d5', 'g4h3', 'f2g1', 'h3h4'] #about to be stalemate, white king not in check but no white moves possible. (black pawn to e5 will cause this)
-moves_string =  ['e2e3', 'b8a6', 'd1g4', 'a6b8', 'g4g7', 'b8a6', 'g7h8', 'a6b8', 'h8h7', 'b8a6', 'h7g8', 
-                 'a6b8', 'g1f3', 'e7e6', 'f3g1', 'd8g5', 'g8g5', 'd7d5', 'g5d5', 'c7c5', 'd5c5', 'b7b6', 'c5b6', 
-                 'b8a6', 'b6a6', 'c8b7', 'a6b7', 'a7a6', 'b7a6', 'a8a7', 'a6a7', 'f7f5', 'a7c5', 'f8d6', 'c5d6', 
-                 'f5f4', 'd6f4', 'e6e5', 'f4e5', 'e8d8', 'f1b5', 'd8c8', 'e5d4', 'c8b8', 'b2b3', 'b8a8', 'c1a3', 
-                 'a8b8', 'a3c5', 'b8a8', 'b5a6', 'a8b8', 'c5a7', 'b8a8'] #about to be stalemate, black king not in check but no black moves possible. any move where the bishop on a7 is stil protected will be a stalemate. (queen to e5, king can take bishop. pawn to h3- stalemate.)
+# moves_string =  ['e2e3', 'b8a6', 'd1g4', 'a6b8', 'g4g7', 'b8a6', 'g7h8', 'a6b8', 'h8h7', 'b8a6', 'h7g8', 
+#                  'a6b8', 'g1f3', 'e7e6', 'f3g1', 'd8g5', 'g8g5', 'd7d5', 'g5d5', 'c7c5', 'd5c5', 'b7b6', 'c5b6', 
+#                  'b8a6', 'b6a6', 'c8b7', 'a6b7', 'a7a6', 'b7a6', 'a8a7', 'a6a7', 'f7f5', 'a7c5', 'f8d6', 'c5d6', 
+#                  'f5f4', 'd6f4', 'e6e5', 'f4e5', 'e8d8', 'f1b5', 'd8c8', 'e5d4', 'c8b8', 'b2b3', 'b8a8', 'c1a3', 
+#                  'a8b8', 'a3c5', 'b8a8', 'b5a6', 'a8b8', 'c5a7', 'b8a8'] #about to be stalemate, black king not in check but no black moves possible. any move where the bishop on a7 is stil protected will be a stalemate. (queen to e5, king can take bishop. pawn to h3- stalemate.)
 # moves_string = ['e2e4', 'd7d5', 'e4e5', 'd5d4', 'e5e6', 'd4d3', 'e6f7', 'e8d7', 'c2c3', 'b7b5', 'a2a3', 'b5b4', 
 #                 'a3a4', 'b4c3', 'd2c3', 'd3d2', 'e1e2', 'h7h5', 'd1e1', 'h5h4', 'g2g4', 'h4g3', 
 #                 'h2h4', 'g3f2', 'h1h2', 'g7g6', 'e1d1', 'g6g5', 'g1f3', 'g5g4', 'f3e1'] #multiple pawns can be promoted to same square, but one of them is pinned
@@ -89,6 +91,14 @@ moves_string =  ['e2e3', 'b8a6', 'd1g4', 'a6b8', 'g4g7', 'b8a6', 'g7h8', 'a6b8',
 #                 'h2h4', 'g3f2', 'h1h2', 'g7g6', 'e1d1', 'g6g5', 'g1f3', 'g5g4', 'f3e1', 'd7d6', 'c3c4', 
 #                 'd6e5', 'c4c5', 'e5d4', 'b2b3', 'd4d5', 'c1b2', 'd5e4', 'b2e5', 'e4d5', 'h2h3', 'd5e4', 
 #                 'e5h2', 'e4d4', 'h2g1'] #multiple pawns can be promoted to same square, but both of them are pinned
+moves_string = ['e2e4', 'd7d5', 'e4d5', 'd8d5', 'd1e2', 'd5d4', 'e2e3', 'd4e4', 'b1c3', 'e4d4', 'e3f3', 'd4e4', 'f1e2', 'e4e3', 
+                'f3e4', 'e3f4', 'e4f5', 'f4g5', 'f5g4', 'g5h4', 'g4a4', 'b8c6', 'a4g4', 'h4g5', 'g4h5', 'g5a5', 'h5h3', 'a5b4', 
+                'h3g4', 'c6e5', 'g1f3', 'b4e4', 'f3g5', 'e5f3', 'e1f1', 'f3d4', 'g4f4', 'e4f5', 'f4e3', 'f5h3', 'e3e5', 'h3f5', 
+                'e5c5', 'f5d5', 'c5c4', 'd5c5', 'c4b4', 'c5c4', 'b4b3', 'c4b4', 'b3a4', 'd4b5', 'a4b3', 'b4e4', 'b3d5', 'e4d4', 
+                'd5e5', 'd4e4', 'c3d5', 'e4d4', 'g5f3', 'g8f6', 'd5c3', 'b5d6', 'c3e4', 'f6d5', 'f3g5', 'd6b5', 'e5f5', 'd5c3', 
+                'f5g4', 'd4e5', 'g4f3', 'e5f5', 'f3d3', 'f5f3', 'd3d5', 'f3f5', 'd5e5', 'f5e6', 'e5f5', 'e6e5', 'f5f6', 'c3d5', 
+                'g5f3', 'b5c3', 'f6f5', 'e5d4', 'f5e5', 'd4c5', 'e5d4', 'c5d6', 'd4e5', 'd6c5', 'e5h5', 'c3b5', 'h5g4', 'c5a3', 
+                'g4g5', 'b5c3', 'g5e5', 'c3b5', 'e5d6'] #about to be a draw by 50 moves (50 moves each side since the last time a pawn was moved or a piece was captured)
 # moves_string = [] #empty new game
 
 #used to update the current list of moves made, and transitively the current position. Can be used in tandem with above set position to set a position before playing 
@@ -160,6 +170,29 @@ position_dict = {
     'Piece.PROMOTED_black_PAWN7': "",
     'Piece.PROMOTED_black_PAWN8': "",
 }
+
+#dictionary used to track all the piece positions. Keeps track of specific pieces of same type
+pawn_pawn_temp_position_dict = {
+    'Piece.white_PAWN1': 'a2', 
+    'Piece.white_PAWN2': 'b2', 
+    'Piece.white_PAWN3': 'c2', 
+    'Piece.white_PAWN4': 'd2', 
+    'Piece.white_PAWN5': 'e2', 
+    'Piece.white_PAWN6': 'f2', 
+    'Piece.white_PAWN7': 'g2', 
+    'Piece.white_PAWN8': 'h2', 
+
+    'Piece.black_PAWN1': 'a7', 
+    'Piece.black_PAWN2': 'b7', 
+    'Piece.black_PAWN3': 'c7', 
+    'Piece.black_PAWN4': 'd7', 
+    'Piece.black_PAWN5': 'e7', 
+    'Piece.black_PAWN6': 'f7', 
+    'Piece.black_PAWN7': 'g7', 
+    'Piece.black_PAWN8': 'h7'
+}
+
+captured_pieces_list = []
 
 #helper dictionary to print the board
 symbols_dict = {
@@ -401,6 +434,9 @@ global_turn = "white"
 
 first_time = True
 
+fifty_move_rule_count = 0
+fifty_move_rule_bool = False
+
 #load in data from another game
 def set_position(moves_string_list):
     global moves_string, all_moves, abbreviation_dict, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time
@@ -463,6 +499,9 @@ def play_game_loop():
     elif words.lower() == "board positions list":
         print_board_positions()
         play_game_loop()
+    elif words.lower() == "50 move logic":
+        print(f"fifty_move_rule_count: {fifty_move_rule_count}\nfifty_move_rule_bool: {fifty_move_rule_bool}\ncaptured_pieces_list: {captured_pieces_list}")
+        play_game_loop()
         
     intention_check = check_intentions(words) 
     #if there is an intention instead of a move   
@@ -490,6 +529,11 @@ def play_game_loop():
         print("Thanks for playing, play again soon! \n-Pheonix")
         exit()
 
+    if fifty_move_rule_bool:
+        print(f"Game over - draw by 50 move rule")
+        print("Thanks for playing, play again soon! \n-Pheonix")
+        exit()
+
     #print (or say) the command
     print(command)
     if is_king_in_check(get_turn_color()): print(f"{get_turn_color()} king is in check")
@@ -501,7 +545,9 @@ def play_game_loop():
 
 #can also be used to test things before the game starts
 def set_initials():
-    global moves_string, all_moves, abbreviation_dict, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time
+    global moves_string, all_moves, abbreviation_dict, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time, fifty_move_rule_bool, fifty_move_rule_count
+    reset_50_move_logic()
+    # input(f"{fifty_move_rule_count}: {fifty_move_rule_bool}")
     locate_pieces_initial()
     board_positions_list.append(get_initial_board_position())
     set_position(all_moves)
@@ -512,6 +558,12 @@ def set_initials():
 def reset_global_turn():
     global global_turn
     global_turn = "white"
+
+def reset_50_move_logic():
+    global moves_string, all_moves, abbreviation_dict, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time, fifty_move_rule_bool, fifty_move_rule_count
+    fifty_move_rule_count = 0
+    fifty_move_rule_bool = False
+    captured_pieces_list.clear()
 
 #it is white if there have been no moves, otherwise count the moves_string
 def get_color_turn_initial(moves):
@@ -524,10 +576,8 @@ def toggle_turn_color():
     global moves_string, all_moves, abbreviation_dict, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time
     global_turn = "black" if global_turn == "white" else "white"
 
-#Locates all of the initial pieces' positions, and puts them in the positions dictionary
-def locate_pieces_initial():
-    global moves_string, all_moves, abbreviation_dict, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time
-    position_dict_temp = {
+def get_pieces_initial():
+    return {
         'Piece.white_KING': 'e1', 
         'Piece.white_QUEEN': 'd1', 
         'Piece.white_BISHOP1': 'c1', 
@@ -561,7 +611,11 @@ def locate_pieces_initial():
         'Piece.black_PAWN7': 'g7', 
         'Piece.black_PAWN8': 'h7'
         }
-    
+
+#Locates all of the initial pieces' positions, and puts them in the positions dictionary
+def locate_pieces_initial():
+    global moves_string, all_moves, abbreviation_dict, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time
+    position_dict_temp = get_pieces_initial()
     for temp, position in position_dict_temp.items():
         position_dict[temp] = position
 
@@ -630,6 +684,29 @@ def check_for_repetition_draw():
     hashable_positions = [tuple(position) for position in board_positions_list]
     counts = Counter(hashable_positions)
     return any(count >= 3 for count in counts.values())
+
+def check_for_50_move_draw(move):
+    global fifty_move_rule_count, position_dict, captured_pieces_list, fifty_move_rule_bool
+    pawn_moved, piece_taken = False, False
+
+    for piece, position in position_dict.items():
+        #check if the last two in move are a pawn, means a pawn was moved
+        if (move[-2:] == position) and ("pawn" in piece.lower()) and ("promoted" not in piece.lower()): 
+            pawn_moved = True
+        
+        #check if a piece was taken this move
+        if position == "xx":
+            if piece.lower() not in captured_pieces_list:
+                captured_pieces_list.append(piece.lower())
+                piece_taken = True
+
+    if pawn_moved or piece_taken:
+        fifty_move_rule_count = 0
+        return False
+    else:
+        fifty_move_rule_count += 1
+        if fifty_move_rule_count >= 100: fifty_move_rule_bool = True
+        return True
 
 #used for debugging the board positions list
 def print_board_positions():
@@ -784,7 +861,7 @@ def parse_word_command(piece, wanted_position, command):
 
 #implement the command with the capture, and updating the piece positions before printing them again
 def implement_command(command, piece, update=True, loaded_last_move=""):
-    global moves_string, all_moves, abbreviation_dict, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time
+    global moves_string, all_moves, abbreviation_dict, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time, fifty_move_rule_bool, fifty_move_rule_count
     if update: handle_capture(command)
     else: handle_capture(command, loading=True, loaded_last_move=loaded_last_move)
 
@@ -795,6 +872,7 @@ def implement_command(command, piece, update=True, loaded_last_move=""):
     if update: update_position(command) #Update all moves
     toggle_turn_color()
     board_positions_list.append(get_possible_moves(get_turn_color()) + get_possible_moves("black" if get_turn_color() == "white" else "white") + [get_turn_color()])
+    check_for_50_move_draw(command)
 
 #used when more than one piece of the same type can move to the same square, to clarify which one to move
 def clarify_which_piece(wanted_position):
@@ -940,6 +1018,7 @@ def restart_game():
         #remove promoted pieces from the dictionary
         if "promoted" in piece.lower() and "pawn" not in piece.lower(): position_dict.pop(piece, None) 
     locate_pieces_initial()
+    reset_50_move_logic()
     board_positions_list.clear()
     board_positions_list.append(get_initial_board_position())
     all_moves.clear()
