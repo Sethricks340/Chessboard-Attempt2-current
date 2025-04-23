@@ -23,20 +23,15 @@
     #FIXED: when doing the "undo" intention, board positions list is acting weird. stalemate isn't working properly
     #FIXED: add 50 move draw
     #FIXED: undo or restart, doesn't update 50 move draw variables
-    
-    #scenario: add insufficient material draw. currently working on: check_for_insufficient_material_draw()
-        #king vs king (TESTED)
-        # king and bishop vs king
-        # king and knight vs king
-        # king and bishop vs king and bishop (same-colored bishops)
+    #FIXED: add insufficient material draw. currently working on: check_for_insufficient_material_draw()
 
-    #scenario: When promoting a pawn, the position dict still has the old promoted key. ex: 'Piece.PROMOTED_white_PAWN5'
     #scenario: Work with other commands, like take over, restart, undo, etc;
     #scenario: can't undo a checkmate or stalemate
 
 import re
 import os
 from collections import Counter
+from PHOENIX import PHOENIX
 
 def clear_screen():
     if os.name == 'nt':  # Windows
@@ -52,7 +47,7 @@ def clear_screen():
 # moves_string = ['e2e4', 'd7d5', 'e4e5', 'd5d4', 'c2c4', 'f7f5', 'h2h3', 'a7a5', 'h3h4', 'a5a4', 'h4h5', 'g7g5'] #about to do en passants
 # moves_string = ['e2e4', 'd7d5', 'e4e5', 'd5d4', 'c2c4', 'f7f5', 'h2h3', 'a7a5', 'h3h4', 'a5a4', 'h4h5', 'g7g5', 'h5g6'] #en passant load (white did the en passant)
 # moves_string = ['e2e4', 'd7d5', 'e4e5', 'd5d4', 'e5e6', 'd4d3', 'e6f7', 'e8d7', 'h2h3', 'd3c2'] #pawns about to be promoted
-# moves_string = ['e2e4', 'd7d5', 'e4e5', 'd5d4', 'e5e6', 'd4d3', 'e6f7', 'e8d7', 'h2h3', 'd3c2', 'f7g8r', 'c2b1q'] #promoted pawns load
+moves_string = ['e2e4', 'd7d5', 'e4e5', 'd5d4', 'e5e6', 'd4d3', 'e6f7', 'e8d7', 'h2h3', 'd3c2', 'f7g8r', 'c2b1q'] #promoted pawns load
 # moves_string = ['e2e4', 'd7d5', 'g2g4', 'b7b5', 'd2d3', 'c7c6', 'c1h6', 'g7h6', 'd1f3', 'd8a5', 'c2c3', 
                 # 'a5b4', 'f3f6', 'e7f6', 'g4g5', 'b4b2', 'e4e5', 'b2d2', 'e1d2', 'b5b4', 'e5e6', 'd5d4', 'g5g6', 
                 # 'c6c5', 'b1a3', 'c5c4', 'd3c4', 'b4b3', 'g6g7', 'd4d3', 'e6e7', 'b3b2', 'd2e3', 'd3d2', 'a1c1'] #multiple pawns can be promoted to same square, or multiple pawns can be promoted to different squares
@@ -128,7 +123,7 @@ def clear_screen():
 #                 'c7b7', 'b2a2', 'b7a8', 'a2a1', 'e1f2', 'a1d1', 'a8a7', 'd1d3', 'a7a6', 'c8b7', 'a6e6', 'e8f8', 'e6d6', 'f8f7', 'd6c5', 'b7c6', 
 #                 'c5c6', 'd3f3', 'f2g1', 'f3f4', 'g1g2', 'f4f1', 'g2f1', 'f7e7', 'c6e6', 'e7d8', 'e6e8', 'd8e8', 'e4f6', 'e8f7', 'f1e2', 'f7f6', 
 #                 'e2d2', 'e5d3', 'd2d3'] #about to be draw by insufficient material (king vs knight and king, black or white)
-moves_string = [] #empty new game
+# moves_string = [] #empty new game
 
 #used to update the current list of moves made, and transitively the current position. Can be used in tandem with above set position to set a position before playing 
 all_moves = moves_string
@@ -198,27 +193,6 @@ position_dict = {
     'Piece.PROMOTED_black_PAWN6': "",
     'Piece.PROMOTED_black_PAWN7': "",
     'Piece.PROMOTED_black_PAWN8': "",
-}
-
-#dictionary used to track all the piece positions. Keeps track of specific pieces of same type
-pawn_pawn_temp_position_dict = {
-    'Piece.white_PAWN1': 'a2', 
-    'Piece.white_PAWN2': 'b2', 
-    'Piece.white_PAWN3': 'c2', 
-    'Piece.white_PAWN4': 'd2', 
-    'Piece.white_PAWN5': 'e2', 
-    'Piece.white_PAWN6': 'f2', 
-    'Piece.white_PAWN7': 'g2', 
-    'Piece.white_PAWN8': 'h2', 
-
-    'Piece.black_PAWN1': 'a7', 
-    'Piece.black_PAWN2': 'b7', 
-    'Piece.black_PAWN3': 'c7', 
-    'Piece.black_PAWN4': 'd7', 
-    'Piece.black_PAWN5': 'e7', 
-    'Piece.black_PAWN6': 'f7', 
-    'Piece.black_PAWN7': 'g7', 
-    'Piece.black_PAWN8': 'h7'
 }
 
 captured_pieces_list = []
@@ -580,6 +554,10 @@ def play_game_loop():
 #can also be used to test things before the game starts
 def set_initials():
     global moves_string, all_moves, abbreviation_dict, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time, fifty_move_rule_bool, fifty_move_rule_count
+    # Example of how to use a class in python
+    engine = PHOENIX(1, 2, 3, 4)
+    engine.rev()
+    input()
     reset_50_move_logic()
     # input(f"{fifty_move_rule_count}: {fifty_move_rule_bool}")
     locate_pieces_initial()
