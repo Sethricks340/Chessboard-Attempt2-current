@@ -22,11 +22,16 @@
     #FIXED: If there are multiple moves to be checked, (piece moves) and none of them are legal, the error message is generic instead of specific check message
     #FIXED: when doing the "undo" intention, board positions list is acting weird. stalemate isn't working properly
     #FIXED: add 50 move draw
-    #FIXED: undo moves, doesn't update 50 move draw variables
+    #FIXED: undo or restart, doesn't update 50 move draw variables
     
+    #scenario: add insufficient material draw. currently working on: check_for_insufficient_material_draw()
+        #king vs king (TESTED)
+        # king and bishop vs king
+        # king and knight vs king
+        # king and bishop vs king and bishop (same-colored bishops)
+
     #scenario: Work with other commands, like take over, restart, undo, etc;
     #scenario: can't undo a checkmate or stalemate
-    #scneario: add insufficient material draw. (ex; king vs king)
 
 import re
 import os
@@ -91,14 +96,19 @@ def clear_screen():
 #                 'h2h4', 'g3f2', 'h1h2', 'g7g6', 'e1d1', 'g6g5', 'g1f3', 'g5g4', 'f3e1', 'd7d6', 'c3c4', 
 #                 'd6e5', 'c4c5', 'e5d4', 'b2b3', 'd4d5', 'c1b2', 'd5e4', 'b2e5', 'e4d5', 'h2h3', 'd5e4', 
 #                 'e5h2', 'e4d4', 'h2g1'] #multiple pawns can be promoted to same square, but both of them are pinned
-moves_string = ['e2e4', 'd7d5', 'e4d5', 'd8d5', 'd1e2', 'd5d4', 'e2e3', 'd4e4', 'b1c3', 'e4d4', 'e3f3', 'd4e4', 'f1e2', 'e4e3', 
-                'f3e4', 'e3f4', 'e4f5', 'f4g5', 'f5g4', 'g5h4', 'g4a4', 'b8c6', 'a4g4', 'h4g5', 'g4h5', 'g5a5', 'h5h3', 'a5b4', 
-                'h3g4', 'c6e5', 'g1f3', 'b4e4', 'f3g5', 'e5f3', 'e1f1', 'f3d4', 'g4f4', 'e4f5', 'f4e3', 'f5h3', 'e3e5', 'h3f5', 
-                'e5c5', 'f5d5', 'c5c4', 'd5c5', 'c4b4', 'c5c4', 'b4b3', 'c4b4', 'b3a4', 'd4b5', 'a4b3', 'b4e4', 'b3d5', 'e4d4', 
-                'd5e5', 'd4e4', 'c3d5', 'e4d4', 'g5f3', 'g8f6', 'd5c3', 'b5d6', 'c3e4', 'f6d5', 'f3g5', 'd6b5', 'e5f5', 'd5c3', 
-                'f5g4', 'd4e5', 'g4f3', 'e5f5', 'f3d3', 'f5f3', 'd3d5', 'f3f5', 'd5e5', 'f5e6', 'e5f5', 'e6e5', 'f5f6', 'c3d5', 
-                'g5f3', 'b5c3', 'f6f5', 'e5d4', 'f5e5', 'd4c5', 'e5d4', 'c5d6', 'd4e5', 'd6c5', 'e5h5', 'c3b5', 'h5g4', 'c5a3', 
-                'g4g5', 'b5c3', 'g5e5', 'c3b5', 'e5d6'] #about to be a draw by 50 moves (50 moves each side since the last time a pawn was moved or a piece was captured)
+# moves_string = ['e2e4', 'd7d5', 'e4d5', 'd8d5', 'd1e2', 'd5d4', 'e2e3', 'd4e4', 'b1c3', 'e4d4', 'e3f3', 'd4e4', 'f1e2', 'e4e3', 
+#                 'f3e4', 'e3f4', 'e4f5', 'f4g5', 'f5g4', 'g5h4', 'g4a4', 'b8c6', 'a4g4', 'h4g5', 'g4h5', 'g5a5', 'h5h3', 'a5b4', 
+#                 'h3g4', 'c6e5', 'g1f3', 'b4e4', 'f3g5', 'e5f3', 'e1f1', 'f3d4', 'g4f4', 'e4f5', 'f4e3', 'f5h3', 'e3e5', 'h3f5', 
+#                 'e5c5', 'f5d5', 'c5c4', 'd5c5', 'c4b4', 'c5c4', 'b4b3', 'c4b4', 'b3a4', 'd4b5', 'a4b3', 'b4e4', 'b3d5', 'e4d4', 
+#                 'd5e5', 'd4e4', 'c3d5', 'e4d4', 'g5f3', 'g8f6', 'd5c3', 'b5d6', 'c3e4', 'f6d5', 'f3g5', 'd6b5', 'e5f5', 'd5c3', 
+#                 'f5g4', 'd4e5', 'g4f3', 'e5f5', 'f3d3', 'f5f3', 'd3d5', 'f3f5', 'd5e5', 'f5e6', 'e5f5', 'e6e5', 'f5f6', 'c3d5', 
+#                 'g5f3', 'b5c3', 'f6f5', 'e5d4', 'f5e5', 'd4c5', 'e5d4', 'c5d6', 'd4e5', 'd6c5', 'e5h5', 'c3b5', 'h5g4', 'c5a3', 
+#                 'g4g5', 'b5c3', 'g5e5', 'c3b5', 'e5d6'] #about to be a draw by 50 moves (50 moves each side since the last time a pawn was moved or a piece was captured)
+
+moves_string = ['e2e4', 'd7d5', 'd1h5', 'd8d6', 'h5d5', 'd6e5', 'd5f7', 'e8d8', 'f7g8', 'e5b2', 'g8h8', 'b2a1', 'h8h7', 'a1a2', 'h7g7', 
+                'a2b1', 'g7f8', 'd8d7', 'f8c8', 'd7c6', 'c8b8', 'b1c1', 'e1e2', 'c1c2', 'b8a8', 'c2d2', 'e2f3', 'd2f2', 'f3g4', 'f2g1', 
+                'a8a7', 'g1g2', 'g4f5', 'g2h1', 'a7b7', 'c6c5', 'b7c7', 'c5d4', 'c7e7', 'h1h2', 'e7h4', 'h2f4', 'f5f4', 'd4c5', 'f4f3', 
+                'c5d6', 'f3g2', 'd6e5', 'h4f4', 'e5d4', 'f4h6', 'd4e4', 'f1d3', 'e4d3', 'h6e3'] #about to be draw by insufficient material (king vs king)
 # moves_string = [] #empty new game
 
 #used to update the current list of moves made, and transitively the current position. Can be used in tandem with above set position to set a position before playing 
@@ -534,6 +544,11 @@ def play_game_loop():
         print("Thanks for playing, play again soon! \n-Pheonix")
         exit()
 
+    if check_for_insufficient_material_draw():
+        print(f"Game over - draw by insufficient material")
+        print("Thanks for playing, play again soon! \n-Pheonix")
+        exit()
+
     #print (or say) the command
     print(command)
     if is_king_in_check(get_turn_color()): print(f"{get_turn_color()} king is in check")
@@ -707,6 +722,69 @@ def check_for_50_move_draw(move):
         fifty_move_rule_count += 1
         if fifty_move_rule_count >= 100: fifty_move_rule_bool = True
         return True
+
+def check_for_insufficient_material_draw():
+    black_bishop_count_total = 0
+    black_dark_bishop_count = 0
+    black_light_bishop_count = 0
+
+    white_bishop_count_total = 0
+    white_dark_bishop_count = 0
+    white_light_bishop_count = 0
+
+    black_knight_count = 0
+    white_knight_count = 0
+
+    for piece, position in position_dict.items():
+        #any position that has a queen is not insufficient material
+        if "queen" in piece.lower() and position and position != "xx": return False
+        #same with rook
+        if "rook" in piece.lower() and position and position != "xx": return False
+        #same with pawn (can be promoted)
+        if "pawn" in piece.lower() and position and position != "xx": return False
+        #black bishop count
+        if "bishop" in piece.lower() and "black" in piece.lower() and position and position != "xx": 
+            black_bishop_count_total += 1
+            if is_dark_square(position): black_dark_bishop_count += 1
+            else: black_light_bishop_count += 1
+        #white bishop count
+        if "bishop" in piece.lower() and "white" in piece.lower() and position and position != "xx": 
+            white_bishop_count_total += 1
+            if is_dark_square(position): white_dark_bishop_count += 1
+            else: white_light_bishop_count += 1
+        #black bishop count
+        if "knight" in piece.lower() and "black" in piece.lower() and position and position != "xx": black_knight_count += 1
+        #white bishop count
+        if "knight" in piece.lower() and "white" in piece.lower() and position and position != "xx": white_knight_count += 1
+
+    # king vs king
+
+    if all(x == 0 for x in [black_bishop_count_total, white_bishop_count_total, black_knight_count, white_knight_count]): return True
+
+    # king and bishop vs king
+    if black_bishop_count_total + white_bishop_count_total == 1: return True
+    
+    # king and knight vs king
+    if black_knight_count + white_knight_count == 1: return True
+    
+    # king and bishop vs king and bishop (same-colored bishops)
+    if ((black_dark_bishop_count == 1 and white_dark_bishop_count == 1 and black_light_bishop_count == 0 and white_light_bishop_count == 0) or 
+    (black_light_bishop_count == 1 and white_light_bishop_count == 1 and black_dark_bishop_count == 0 and white_dark_bishop_count == 0)) and \
+    (black_bishop_count_total + white_bishop_count_total == 2): return True
+
+    input("you were not supposed to get here. line 775. press enter.")
+    return False
+
+#used by check for insufficient material to see if a bishop is on a dark or light
+def is_dark_square(square):
+    file = square[0].lower()  # e.g., 'e'
+    rank = int(square[1])     # e.g., 4
+
+    # Convert file letter to a number (a=1, b=2, ..., h=8)
+    file_index = ord(file) - ord('a') + 1
+
+    # Dark if sum is even, light if odd
+    return (file_index + rank) % 2 == 0
 
 #used for debugging the board positions list
 def print_board_positions():
