@@ -30,6 +30,7 @@
         # king and knight vs king
         # king and bishop vs king and bishop (same-colored bishops)
 
+    #scenario: When promoting a pawn, the position dict still has the old promoted key. ex: 'Piece.PROMOTED_white_PAWN5'
     #scenario: Work with other commands, like take over, restart, undo, etc;
     #scenario: can't undo a checkmate or stalemate
 
@@ -104,12 +105,30 @@ def clear_screen():
 #                 'f5g4', 'd4e5', 'g4f3', 'e5f5', 'f3d3', 'f5f3', 'd3d5', 'f3f5', 'd5e5', 'f5e6', 'e5f5', 'e6e5', 'f5f6', 'c3d5', 
 #                 'g5f3', 'b5c3', 'f6f5', 'e5d4', 'f5e5', 'd4c5', 'e5d4', 'c5d6', 'd4e5', 'd6c5', 'e5h5', 'c3b5', 'h5g4', 'c5a3', 
 #                 'g4g5', 'b5c3', 'g5e5', 'c3b5', 'e5d6'] #about to be a draw by 50 moves (50 moves each side since the last time a pawn was moved or a piece was captured)
-
-moves_string = ['e2e4', 'd7d5', 'd1h5', 'd8d6', 'h5d5', 'd6e5', 'd5f7', 'e8d8', 'f7g8', 'e5b2', 'g8h8', 'b2a1', 'h8h7', 'a1a2', 'h7g7', 
-                'a2b1', 'g7f8', 'd8d7', 'f8c8', 'd7c6', 'c8b8', 'b1c1', 'e1e2', 'c1c2', 'b8a8', 'c2d2', 'e2f3', 'd2f2', 'f3g4', 'f2g1', 
-                'a8a7', 'g1g2', 'g4f5', 'g2h1', 'a7b7', 'c6c5', 'b7c7', 'c5d4', 'c7e7', 'h1h2', 'e7h4', 'h2f4', 'f5f4', 'd4c5', 'f4f3', 
-                'c5d6', 'f3g2', 'd6e5', 'h4f4', 'e5d4', 'f4h6', 'd4e4', 'f1d3', 'e4d3', 'h6e3'] #about to be draw by insufficient material (king vs king)
-# moves_string = [] #empty new game
+# moves_string = ['e2e4', 'd7d5', 'd1h5', 'd8d6', 'h5d5', 'd6e5', 'd5f7', 'e8d8', 'f7g8', 'e5b2', 'g8h8', 'b2a1', 'h8h7', 'a1a2', 'h7g7', 
+#                 'a2b1', 'g7f8', 'd8d7', 'f8c8', 'd7c6', 'c8b8', 'b1c1', 'e1e2', 'c1c2', 'b8a8', 'c2d2', 'e2f3', 'd2f2', 'f3g4', 'f2g1', 
+#                 'a8a7', 'g1g2', 'g4f5', 'g2h1', 'a7b7', 'c6c5', 'b7c7', 'c5d4', 'c7e7', 'h1h2', 'e7h4', 'h2f4', 'f5f4', 'd4c5', 'f4f3', 
+#                 'c5d6', 'f3g2', 'd6e5', 'h4f4', 'e5d4', 'f4h6', 'd4e4', 'f1d3', 'e4d3', 'h6e3'] #about to be draw by insufficient material (king vs king)
+# moves_string = ['e2e4', 'd7d5', 'e4d5', 'd8d5', 'c2c4', 'd5c4', 'd2d3', 'c4c3', 'e1e2', 'c3b2', 'e2e1', 'b2a2', 'd1a4', 'c7c6', 'a4a7', 'a2a1', 
+#                 'a7a8', 'a1b1', 'a8b8', 'b1d3', 'b8b7', 'd3f1', 'e1d2', 'f1g1', 'b7c6', 'e8d8', 'c6h6', 'g1h1', 'h6h7', 'h1h2', 'h7h8', 'h2g2', 
+#                 'h8g8', 'g2f2', 'd2d1', 'f2g3', 'g8g7', 'g3g2', 'g7f7', 'g2g3', 'f7e7', 'f8e7', 'd1e2', 'g3e3', 'e2e3', 'e7g5', 'e3f3', 'g5f4', 'f3f4', 'c8g4'] #about to be draw by insufficient material (black king vs white bishop and white king)
+# moves_string = ['e2e4', 'd7d5', 'e4d5', 'd8d5', 'c2c4', 'd5c4', 'd2d3', 'c4c3', 'e1e2', 'c3b2', 'e2e1', 'b2a2', 'd1a4', 'c7c6', 'a4a7', 'a2a1', 
+#                 'a7a8', 'a1b1', 'a8b8', 'b1d3', 'b8b7', 'd3f1', 'e1d2', 'f1g1', 'b7c6', 'e8d8', 'c6h6', 'g1h1', 'h6h7', 'h1h2', 'h7h8', 'h2g2', 
+#                 'h8g8', 'g2f2', 'd2d1', 'f2g3', 'g8g7', 'g3g2', 'g7f7', 'g2g3', 'f7e7', 'f8e7', 'd1e2', 'g3e3', 'e2e3', 'e7g5', 'e3f3', 'g5f4', 
+#                 'f3f4', 'c8g4', 'f4g3', 'g4f3', 'c1a3', 'd8d7', 'a3e7'] #about to be draw by insufficient material (white king vs black bishop and black king)
+# moves_string = ['e2e4', 'd7d5', 'e4d5', 'd8d5', 'c2c4', 'd5c4', 'd2d3', 'c4c3', 'e1e2', 'c3b2', 'e2e1', 'b2a2', 'd1a4', 'c7c6', 'a4a7', 'a2a1', 
+#                 'a7a8', 'a1b1', 'a8b8', 'b1d3', 'b8b7', 'd3f1', 'e1d2', 'f1g1', 'b7c6', 'e8d8', 'c6h6', 'g1h1', 'h6h7', 'h1h2', 'h7h8', 'h2g2', 
+#                 'h8g8', 'g2f2', 'd2d1', 'f2g3', 'g8g7', 'g3g2', 'g7f7', 'g2g3', 'f7e7', 'f8e7', 'd1e2', 'g3e3', 'e2e3', 'e7g5', 'e3f3'] #about to be draw by insufficient material (white king and white bishop vs black bishop and black king, bishops are of the same color - dark squares)
+# moves_string = ['e2e4', 'd7d5', 'e4d5', 'd8d5', 'd1h5', 'd5g2', 'h5h7', 'g2h1', 'h7h8', 'h1h2', 'h8g7', 'h2f2', 'e1d1', 'e8d8', 'b1c3', 'b8c6', 
+#                 'c3e4', 'c6e5', 'g1f3', 'g8f6', 'f3d4', 'f6d5', 'd2d3', 'e7e6', 'c1f4', 'f8c5', 'g7f7', 'f2c2', 'd1e1', 'c2b2', 'f7c7', 'd8e8', 
+#                 'c7b7', 'b2a2', 'b7a8', 'a2a1', 'e1f2', 'a1d1', 'a8a7', 'd1d3', 'a7a6', 'c8b7', 'a6e6', 'e8f8', 'e6e5', 'd3d4', 'f2e1', 'd4e4', 
+#                 'e1d1', 'e4f4', 'e5d5', 'b7a6', 'd5c5', 'f8f7', 'c5f8', 'f7f8', 'd1e1', 'f4d2'] #about to be draw by insufficient material (white king and white bishop vs black bishop and black king, bishops are of the same color - light squares)
+# moves_string = ['e2e4', 'd7d5', 'e4d5', 'd8d5', 'd1h5', 'd5g2', 'h5h7', 'g2h1', 'h7h8', 'h1h2', 'h8g7', 'h2f2', 'e1d1', 'e8d8', 'b1c3', 'b8c6', 
+#                 'c3e4', 'c6e5', 'g1f3', 'g8f6', 'f3d4', 'f6d5', 'd2d3', 'e7e6', 'c1f4', 'f8c5', 'g7f7', 'f2c2', 'd1e1', 'c2b2', 'f7c7', 'd8e8', 
+#                 'c7b7', 'b2a2', 'b7a8', 'a2a1', 'e1f2', 'a1d1', 'a8a7', 'd1d3', 'a7a6', 'c8b7', 'a6e6', 'e8f8', 'e6d6', 'f8f7', 'd6c5', 'b7c6', 
+#                 'c5c6', 'd3f3', 'f2g1', 'f3f4', 'g1g2', 'f4f1', 'g2f1', 'f7e7', 'c6e6', 'e7d8', 'e6e8', 'd8e8', 'e4f6', 'e8f7', 'f1e2', 'f7f6', 
+#                 'e2d2', 'e5d3', 'd2d3'] #about to be draw by insufficient material (king vs knight and king, black or white)
+moves_string = [] #empty new game
 
 #used to update the current list of moves made, and transitively the current position. Can be used in tandem with above set position to set a position before playing 
 all_moves = moves_string
@@ -762,18 +781,18 @@ def check_for_insufficient_material_draw():
     if all(x == 0 for x in [black_bishop_count_total, white_bishop_count_total, black_knight_count, white_knight_count]): return True
 
     # king and bishop vs king
-    if black_bishop_count_total + white_bishop_count_total == 1: return True
+    elif black_bishop_count_total + white_bishop_count_total == 1: return True
     
     # king and knight vs king
-    if black_knight_count + white_knight_count == 1: return True
+    elif black_knight_count + white_knight_count == 1: return True
     
     # king and bishop vs king and bishop (same-colored bishops)
-    if ((black_dark_bishop_count == 1 and white_dark_bishop_count == 1 and black_light_bishop_count == 0 and white_light_bishop_count == 0) or 
+    #One black dark bishop and one white dark bishop, and no light bishops
+    elif ((black_dark_bishop_count == 1 and white_dark_bishop_count == 1 and black_light_bishop_count == 0 and white_light_bishop_count == 0) or 
+    # or One black light bishop and one white light bishop, and no dark bishops
     (black_light_bishop_count == 1 and white_light_bishop_count == 1 and black_dark_bishop_count == 0 and white_dark_bishop_count == 0)) and \
-    (black_bishop_count_total + white_bishop_count_total == 2): return True
-
-    input("you were not supposed to get here. line 775. press enter.")
-    return False
+    (black_bishop_count_total + white_bishop_count_total == 2): return True #And no other bishops
+    else: return False #example: two black bishops and one white bishops left
 
 #used by check for insufficient material to see if a bishop is on a dark or light
 def is_dark_square(square):
