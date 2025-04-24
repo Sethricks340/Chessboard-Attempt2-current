@@ -1,3 +1,5 @@
+#testing if this works on mac
+
 #errors to fix:
     #FIXED: If white pawn taken, position_dict not updated for removal. Causes problems when another piece wants to move to that position.
     #FIXED: Castling, position_dict not updated for moving the rook. Causes problems with the rook moving the rook. 
@@ -9,7 +11,7 @@
     #FIXED: do_temp_capture trying to fix pinned queens scenario
     #FIXED: get_legal_capture_moves_pawns, not working for some reason
     #FIXED: pinned queens moves_string, doing queen to e5 says it puts black king in check
-    #FIXED: Notify when the king is in check
+    #FIXED: Notify when the king is in check 
     #FIXED: if king is in check by pawn promotion, not shown as check.
     #FIXED: Promoted pawns in legal moves
     #FIXED: Print the board, without stockfish!
