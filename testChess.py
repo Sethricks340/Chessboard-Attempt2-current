@@ -61,9 +61,9 @@ def clear_screen():
 # moves_string = ['g1f3', 'b8c6', 'b1a3', 'g8h6', 'a3c4', 'h6f5', 'f3e5', 'c6d4', 'c4e3', 'd4e2', 'e1e2', 'e7e6', 'e2e1', 
 #                 'h7h6', 'f1c4', 'h6h5', 'c4e6', 'd8e7', 'e6b3', 'a7a6', 'e5c4', 'e7e6', 
 #                 'c4d6', 'e8e7', 'd6b5', 'e7e8', 'b5c3', 'e6e7'] #two knights can move two same square, but one is pinned
-# moves_string = ['g1f3', 'b8c6', 'b1a3', 'g8h6', 'a3c4', 'h6f5', 'f3e5', 'c6d4', 'c4e3', 'd4e2', 'e1e2', 'e7e6', 'e2e1',
-#                  'h7h6', 'f1c4', 'h6h5', 'c4e6', 'd8e7', 'e6b3', 'a7a6', 'e5c4', 'e7e6', 
-#                  'c4d6', 'e8e7', 'd6b5', 'e7e8', 'b5c3', 'e6e7', 'd2d3', 'e7e6', 'h2h3', 'f8b4'] #two knights can move to same spot, but both are pinned from different directions
+moves_string = ['g1f3', 'b8c6', 'b1a3', 'g8h6', 'a3c4', 'h6f5', 'f3e5', 'c6d4', 'c4e3', 'd4e2', 'e1e2', 'e7e6', 'e2e1',
+                 'h7h6', 'f1c4', 'h6h5', 'c4e6', 'd8e7', 'e6b3', 'a7a6', 'e5c4', 'e7e6', 
+                 'c4d6', 'e8e7', 'd6b5', 'e7e8', 'b5c3', 'e6e7', 'd2d3', 'e7e6', 'h2h3', 'f8b4'] #two knights can move to same spot, but both are pinned from different directions
 # moves_string = ['g1f3', 'b8c6', 'b1a3', 'g8h6', 'a3c4', 'h6f5', 'f3e5', 'c6d4', 'c4e3', 'd4e2', 'e1e2', 
 #                 'e7e6', 'e2e1', 'h7h6', 'f1c4', 'h6h5', 'c4e6', 'd8e7', 'e6b3', 'a7a6', 'e5c4', 'e7e6', 
 #                 'c4d6', 'e8e7', 'd6b5', 'e7e8', 'b5c3', 'e6e7', 'd2d3', 'e7e6', 'h2h3', 'f8b4', 
@@ -124,21 +124,11 @@ def clear_screen():
 #                 'c7b7', 'b2a2', 'b7a8', 'a2a1', 'e1f2', 'a1d1', 'a8a7', 'd1d3', 'a7a6', 'c8b7', 'a6e6', 'e8f8', 'e6d6', 'f8f7', 'd6c5', 'b7c6', 
 #                 'c5c6', 'd3f3', 'f2g1', 'f3f4', 'g1g2', 'f4f1', 'g2f1', 'f7e7', 'c6e6', 'e7d8', 'e6e8', 'd8e8', 'e4f6', 'e8f7', 'f1e2', 'f7f6', 
 #                 'e2d2', 'e5d3', 'd2d3'] #about to be draw by insufficient material (king vs knight and king, black or white)
-moves_string = [] #empty new game
+# moves_string = [] #empty new game
 
 #used to update the current list of moves made, and transitively the current position. Can be used in tandem with above set position to set a position before playing 
 all_moves = moves_string
 board_positions_list = []
-
-#the abbreviations that are used in pawn promotions
-# abbreviation_dict = {
-#     "n": "knight",
-#     "r": "rook",
-#     "q": "queen",
-#     "p": "pawn",
-#     "b": "bishop",
-#     "k": "king"
-# }
 
 #dictionary used to track all the piece positions. Keeps track of specific pieces of same type
 position_dict = {

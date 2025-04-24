@@ -22,10 +22,21 @@ class Phoenix:
     "k": "king"
     }
 
+    def test_make_move_tree(self): pass
+
     #example function, while I am learning python syntax for classes
     def rev(self):
         print(f"'Vroom Vroom! I'm an engine!'")
         print(f"print {PST_reversed}")
+
+    #implement the command with the capture, and updating the piece positions before printing them again
+    def phoenix_implement_command(command, piece, update=True, loaded_last_move=""): 
+        pass
+        #handle_capture
+        #update_promoted_pawn_position
+        #update_piece_position
+        #toggle_turn_color
+        #check_for_50_move_draw
 
     def get_legal_piece_moves(self, color, position_dict, all_moves):
         opposite_color = "black" if color.lower() == "white" else "white"
