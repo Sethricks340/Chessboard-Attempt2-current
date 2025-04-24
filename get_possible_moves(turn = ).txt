@@ -7,6 +7,10 @@ get_possible_moves(turn = "")
 				----> get_what_is_on_square_specific(potential_position)
 					----> position_dict
         		----> get_legal_rook_moves(color)
+					----> piece_type_spaces(piece_type, color)
+						----> position_dict
+				----> get_what_is_on_square_specific(potential_position)
+					----> position_dict
 				----> piece_type_spaces(piece_type, color)
 					----> position_dict
 				----> get_what_is_on_square_specific(potential_position)
