@@ -1,4 +1,3 @@
-#testing if this works on mac 
 #errors to fix:
     #FIXED: If white pawn taken, position_dict not updated for removal. Causes problems when another piece wants to move to that position.
     #FIXED: Castling, position_dict not updated for moving the rook. Causes problems with the rook moving the rook. 
