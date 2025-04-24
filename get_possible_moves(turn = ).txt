@@ -1,0 +1,75 @@
+get_possible_moves(turn = "")
+	----> get_legal_piece_moves(color)
+		----> get_legal_king_threaten_moves(color)
+			----> get_legal_capture_moves_pawns(color)
+				----> piece_type_spaces(piece_type, color)
+					----> position_dict
+				----> get_what_is_on_square_specific(potential_position)
+					----> position_dict
+        		----> get_legal_rook_moves(color)
+				----> piece_type_spaces(piece_type, color)
+					----> position_dict
+				----> get_what_is_on_square_specific(potential_position)
+					----> position_dict
+        		----> get_legal_knight_moves(color)
+				----> piece_type_spaces(piece_type, color)
+					----> position_dict
+				----> get_what_is_on_square_specific(potential_position)
+					----> position_dict
+        		----> get_legal_bishop_moves(color)
+				----> piece_type_spaces(piece_type, color)
+					----> position_dict
+				----> get_what_is_on_square_specific(potential_position)
+					----> position_dict
+        		----> get_legal_queen_moves(color)
+				----> piece_type_spaces(piece_type, color)
+					----> position_dict
+				----> get_what_is_on_square_specific(potential_position)
+					----> position_dict
+        		----> get_legal_king_moves(color)
+				----> piece_type_spaces(piece_type, color)
+					----> position_dict
+				----> get_what_is_on_square_specific(potential_position)
+					----> position_dict
+        		----> get_legal_pawn_promotion_capture_moves(color)
+				----> get_legal_promoted_pawn_moves(color)
+					----> piece_type_spaces(piece_type, color)
+						----> position_dict
+					----> get_what_is_on_square_specific(potential_position)
+						----> position_dict
+		----> get_legal_castle_moves(color, legal_king_threaten_moves_opposite)
+			----> piece_type_spaces(piece_type, color)
+				----> position_dict
+			----> get_what_is_on_square_specific(potential_position)
+				----> position_dict
+		----> get_legal_pawn_normal_moves(color)
+			----> piece_type_spaces(piece_type, color)
+				----> position_dict
+			----> get_what_is_on_square_specific(potential_position)
+				----> position_dict
+		----> get_legal_en_passant_moves(color)
+			----> piece_type_spaces(piece_type, color)
+				----> position_dict			
+			----> all_moves
+		----> get_legal_promoted_pawn_moves(color)
+			----> piece_type_spaces(piece_type, color)
+				----> position_dict
+			----> get_what_is_on_square_specific(potential_position)
+				----> position_dict
+	----> is_king_in_check
+		----> is_en_passant_move(test_move)
+			----> all_moves
+			----> get_what_is_on_square_specific(potential_position)
+				----> position_dict
+		----> get_what_is_on_square_specific(potential_position)
+			----> position_dict
+		----> do_temp_capture(removed_piece)
+			----> position_dict
+		----> get_legal_king_threaten_moves(opposite_color)
+			---->see aforementioned
+		----> update_piece_position_no_castles(test_move[:2], test_move[-2:])
+			----> position_dict
+		----> piece_type_spaces(piece_type, color)
+			----> position_dict
+		---->  undo_temp_capture(removed_piece, test_move[-2:], en_passant_removed_square)
+			----> position_dict
