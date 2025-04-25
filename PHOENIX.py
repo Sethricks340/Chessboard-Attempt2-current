@@ -6,7 +6,12 @@
 #depth: how deep down the tree we want the engine to look. might not use this if the tree is generated before passing it to PHOENIX
 #color: turn color, although I might not use this either
 
+import re
+import os
+from collections import Counter
+
 class Phoenix:
+
     def __init__(self, ordered_position_dict, possible_moves, depth, color):
         self.ordered_position_dict = ordered_position_dict
         self.depth = depth
@@ -22,39 +27,10 @@ class Phoenix:
     "k": "king"
     }
 
-    def test_make_move_tree(self): pass
-
     #example function, while I am learning python syntax for classes
     def rev(self):
         print(f"'Vroom Vroom! I'm an engine!'")
         print(f"print {PST_reversed}")
-
-    def get_best_move(self, position_dict, all_moves, depth, highest_move=("", 0)): 
-        pass
-
-        #base case
-        #if depth <= 0: return highest_move
-        #else depth -= 1
-
-        #moves = self.get_possible_moves()
-
-        #go through each move
-        #for move in moves:
-            # move_score = evaluate(move)
-            # if move_score > highest_move[1]: highest_move = (move, move_score)
-            # implement_move(move) somehow, making sure to update the position_dict and all_moves
-            # highest_move = get_best_move(##new position, ##new all moves, ##depth which is one less now, ##highest_move which either was updated or was passed from last iteration)
-            
-        #return highest_move
-
-    #implement the command with the capture, and updating the piece positions before printing them again
-    def phoenix_implement_command(command, piece, update=True, loaded_last_move=""): 
-        pass
-        #handle_capture
-        #update_promoted_pawn_position
-        #update_piece_position
-        #toggle_turn_color
-        #check_for_50_move_draw
 
     def get_legal_piece_moves(self, color, position_dict, all_moves):
         opposite_color = "black" if color.lower() == "white" else "white"
@@ -496,6 +472,98 @@ class Phoenix:
             if ((wanted_piece.lower() in piece.lower()) and (color.lower() in piece.lower())):
                 piece_positions.append(position_dict[piece])
         return piece_positions
+
+    #implement the command with the capture, and updating the piece positions before printing them again
+    def implement_command(self, command, piece, position_dict, all_moves, board_positions_list, update=True, loaded_last_move=""):
+        if update: position_dict = self.handle_capture(command, position_dict=position_dict, all_moves=all_moves)
+        else: position_dict = self.handle_capture(command, loading=True, loaded_last_move=loaded_last_move, position_dict=position_dict, all_moves=all_moves)
+
+        if len(command) == 5: #if it is a pawn promotion
+            position_dict = self.update_promoted_pawn_position(command, piece, position_dict=position_dict, all_moves=all_moves)
+        else: 
+            position_dict = self.update_piece_position(command[:2], command[-2:], piece, position_dict=position_dict, all_moves=all_moves) #piece is actually a command for castling. fix lingo later
+        if update: all_moves = self.update_position(command, all_moves) #Update all moves
+        # toggle_turn_color()
+        turn_color = self.phoenix_get_turn_from_moves(all_moves)
+        opponent_color = "black" if turn_color == "white" else "white"
+        board_positions_list.append(
+            self.get_possible_moves(turn=turn_color, position_dict=position_dict, all_moves=all_moves) +
+            self.get_possible_moves(turn=opponent_color, position_dict=position_dict, all_moves=all_moves) +
+            [self.phoenix_get_turn_from_moves(all_moves)]
+        )
+
+        # check_for_50_move_draw(command)     ##### put this back in testChess
+
+        return position_dict, all_moves, turn_color, board_positions_list
+
+    #updates all moves with the current moves that have been made
+    #only called if not loading a game in implement_command 
+    def update_position(self, current_move, all_moves):
+        all_moves.append(current_move)
+        return all_moves
+
+    #update the position of a piece. The third parameter, command, is a bit confusing right now. it is only used for castling. also reffered to as piece in main
+    def update_piece_position(self, initial_position, new_position, command, position_dict, all_moves):
+        turn = self.phoenix_get_turn_from_moves(all_moves)
+        rook_moves = {
+            ("white", "Castle Kingside"): "h1f1",
+            ("black", "Castle Kingside"): "h8f8",
+            ("white", "Castle Queenside"): "a1d1",
+            ("black", "Castle Queenside"): "a8d8",
+        }
+
+        for key, val in position_dict.items():
+            if val == initial_position:
+                position_dict[key] = new_position
+                # print(f"{key} is now on {new_position}")
+
+        if (turn, command) in rook_moves:
+            position_dict = self.update_piece_position(rook_moves[turn, command][:2], rook_moves[turn, command][-2:], "Rook move", position_dict=position_dict, all_moves=all_moves) #move the rook
+        return position_dict
+
+    def update_promoted_pawn_position(self, current_move, piece, position_dict, all_moves): 
+        promoted_pawn = self.get_promoted_pawn(current_move, position_dict=position_dict, all_moves=all_moves)
+        position_dict[self.get_promoted_pawn(current_move, position_dict=position_dict, all_moves=all_moves)] = current_move[2:4]
+        self.change_promoted_pawn(promoted_pawn, current_move, position_dict=position_dict, all_moves=all_moves)
+        self.update_piece_position(current_move[:2], "xx", piece, position_dict=position_dict, all_moves=all_moves)
+
+    def change_promoted_pawn(self, promoted_pawn, current_move, position_dict, all_moves):
+        position_dict[self.replace_text(promoted_pawn, "PAWN", self.abbreviation_dict[current_move[-1]].upper())] = position_dict.pop(promoted_pawn)
+
+    #get the name of the promoted pawn, given the regular pawn to be promoted 
+    def get_promoted_pawn(self, current_move, position_dict, all_moves):
+        return "Piece.PROMOTED_" + self.phoenix_get_turn_from_moves(all_moves).upper() + "_PAWN" + self.get_what_is_on_square_specific(current_move[:2], position_dict=position_dict)[-1]
+
+    #the position of pieces that are captured are "xx"
+    #works with normal captures and en passants
+    def handle_capture(self, move, position_dict, all_moves, loading=False, loaded_last_move=""):
+        if self.is_en_passant_move(given_move=move, turn_color=self.phoenix_get_turn_from_moves(all_moves), position_dict=position_dict, all_moves=all_moves, loading=loading, loaded_last_move=loaded_last_move): self.update_piece_position((self.decrement_string if self.phoenix_get_turn_from_moves(all_moves) == "white" else self.increment_string)(move[-2:]), "xx", "capture")
+        else: 
+            for key, val in position_dict.items():
+                if len(move) == 5: 
+                    if move[2:4] == val: position_dict = self.update_piece_position(move[2:4], "xx", "capture", position_dict=position_dict, all_moves=all_moves)
+                else:
+                    if move[-2:] == val: position_dict = self.update_piece_position(move[-2:], "xx", "capture", position_dict=position_dict, all_moves=all_moves)
+        return position_dict
+        
+    #used to replace text in a string. Currently used for converting promoted pawns to their new piece type
+    def replace_text(self, text, word, replace):
+        new_text = text.replace(word, replace)
+        return new_text
+
+    # It is white's turn if there have been no moves or an even number of moves,
+    # otherwise it's black's turn.
+    def phoenix_get_turn_from_moves(self, moves):
+        return "black" if len(moves) % 2 == 1 else "white"
+
+    #used by handle_capture for en passant pawn capture positions
+    def increment_string(s):
+        return re.sub(r'(\d+)$', lambda x: str(int(x.group(1)) + 1), s)
+
+    #used by handle_capture for en passant pawn capture positions
+    def decrement_string(s):
+        return re.sub(r'(\d+)$', lambda x: str(int(x.group(1)) - 1), s)
+
 
 # region piece points/ checkmate & stalemate
 #piece points: 

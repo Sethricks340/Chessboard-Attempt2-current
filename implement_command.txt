@@ -1,0 +1,9 @@
+implement_command(command, piece, update=True, loaded_last_move="")
+    ----> handle_capture(move, loading=False, loaded_last_move="")
+        ----> is_en_passant_move-->(pheonix)
+        ----> update_piece_position 
+    ----> update_promoted_pawn_position
+        ----> get_promoted_pawn
+        ----> change_promoted_pawn
+        ----> update_piece_position
+    ----> update_piece_position
