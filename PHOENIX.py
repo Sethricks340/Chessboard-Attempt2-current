@@ -29,6 +29,24 @@ class Phoenix:
         print(f"'Vroom Vroom! I'm an engine!'")
         print(f"print {PST_reversed}")
 
+    def get_best_move(self, position_dict, all_moves, depth, highest_move=("", 0)): 
+        pass
+
+        #base case
+        #if depth <= 0: return highest_move
+        #else depth -= 1
+
+        #moves = self.get_possible_moves()
+
+        #go through each move
+        #for move in moves:
+            # move_score = evaluate(move)
+            # if move_score > highest_move[1]: highest_move = (move, move_score)
+            # implement_move(move) somehow, making sure to update the position_dict and all_moves
+            # highest_move = get_best_move(##new position, ##new all moves, ##depth which is one less now, ##highest_move which either was updated or was passed from last iteration)
+            
+        #return highest_move
+
     #implement the command with the capture, and updating the piece positions before printing them again
     def phoenix_implement_command(command, piece, update=True, loaded_last_move=""): 
         pass
