@@ -465,12 +465,6 @@ def print_all_moves():
     global moves_string, all_moves, abbreviation_dict, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time
     print(f"all_moves: {all_moves}")
 
-# #used to replace text in a string. Currently used for converting promoted pawns to their new piece type
-# def replace_text(text, word, replace):
-#     global moves_string, all_moves, abbreviation_dict, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time
-#     new_text = text.replace(word, replace)
-#     return new_text
-
 #main
 def main():
     set_initials()
@@ -625,10 +619,6 @@ def locate_pieces_initial():
     position_dict_temp = get_pieces_initial()
     for temp, position in position_dict_temp.items():
         position_dict[temp] = position
-
-# def change_promoted_pawn(promoted_pawn, current_move):
-#     global moves_string, all_moves, abbreviation_dict, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time
-#     position_dict[replace_text(promoted_pawn, "PAWN", phoenix.abbreviation_dict[current_move[-1]].upper())] = position_dict.pop(promoted_pawn)
 
 #pring position dict for debugging
 def print_position_dict_debugging():
@@ -915,27 +905,6 @@ def parse_word_command(piece, wanted_position, command):
             else:
                 return f"{get_turn_color()} king would be in check after this move, please try again.", False
     else: return "Move not found, please try again.", False
-
-# #implement the command with the capture, and updating the piece positions before printing them again
-# def implement_command(command, piece, update=True, loaded_last_move=""):
-#     global moves_string, all_moves, abbreviation_dict, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time, fifty_move_rule_bool, fifty_move_rule_count
-#     if update: handle_capture(command)
-#     else: handle_capture(command, loading=True, loaded_last_move=loaded_last_move)
-
-#     if len(command) == 5: #if it is a pawn promotion
-#         update_promoted_pawn_position(command, piece)
-#     else: 
-#         update_piece_position(command[:2], command[-2:], piece) #piece is actually a command for castling. fix lingo later
-#     if update: update_position(command) #Update all moves
-#     toggle_turn_color()
-#     turn_color = get_turn_color()
-#     opponent_color = "black" if turn_color == "white" else "white"
-#     board_positions_list.append(
-#         phoenix.get_possible_moves(turn=turn_color, position_dict=position_dict, all_moves=all_moves) +
-#         phoenix.get_possible_moves(turn=opponent_color, position_dict=position_dict, all_moves=all_moves) +
-#         [get_turn_color()]
-#     )
-#     check_for_50_move_draw(command)
 
 #used when more than one piece of the same type can move to the same square, to clarify which one to move
 def clarify_which_piece(wanted_position):
@@ -1252,36 +1221,6 @@ def check_squares_together(words):
     else:
         return False
 
-# #get the name of the promoted pawn, given the regular pawn to be promoted 
-# def get_promoted_pawn(current_move):
-#     return "Piece.PROMOTED_" + get_turn_color().upper() + "_PAWN" + phoenix.get_what_is_on_square_specific(current_move[:2], position_dict=position_dict)[-1]
-
-# #update the position of a piece. The third parameter, command, is a bit confusing right now. it is only used for castling. also reffered to as piece in main
-# def update_piece_position(initial_position, new_position, command):
-#     global moves_string, all_moves, abbreviation_dict, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time
-#     turn = get_turn_color()
-#     rook_moves = {
-#         ("white", "Castle Kingside"): "h1f1",
-#         ("black", "Castle Kingside"): "h8f8",
-#         ("white", "Castle Queenside"): "a1d1",
-#         ("black", "Castle Queenside"): "a8d8",
-#     }
-
-#     for key, val in position_dict.items():
-#         if val == initial_position:
-#             position_dict[key] = new_position
-#             # print(f"{key} is now on {new_position}")
-
-#     if (turn, command) in rook_moves:
-#         update_piece_position(rook_moves[turn, command][:2], rook_moves[turn, command][-2:], "Rook move") #move the rook
-
-# def update_promoted_pawn_position(current_move, piece): 
-#     global moves_string, all_moves, abbreviation_dict, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time
-#     promoted_pawn = get_promoted_pawn(current_move)
-#     position_dict[get_promoted_pawn(current_move)] = current_move[2:4]
-#     change_promoted_pawn(promoted_pawn, current_move)
-#     update_piece_position(current_move[:2], "xx", piece)
-
 #used by parse_word_command
 def parse_castle_command(move):
     global all_moves, position_dict
@@ -1300,37 +1239,11 @@ def parse_castle_command(move):
         else: 
             return "Castle move not legal, please try again", False
 
-# #updates all moves with the current moves that have been made
-# #only called if not loading a game in implement_command 
-# def update_position(current_move):
-#     global moves_string, all_moves, abbreviation_dict, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time
-#     all_moves.append(current_move)
-
 #returns "white" or "black"
 #used to know which piece type positions to scan
 def get_turn_color():
     global global_turn
     return global_turn
-
-# #the position of pieces that are captured are "xx"
-# #works with normal captures and en passants
-# def handle_capture(move, loading=False, loaded_last_move=""):
-#     global moves_string, all_moves, abbreviation_dict, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time
-#     if phoenix.is_en_passant_move(given_move=move, turn_color=get_turn_color(), position_dict=position_dict, all_moves=all_moves, loading=loading, loaded_last_move=loaded_last_move): update_piece_position((decrement_string if get_turn_color() == "white" else increment_string)(move[-2:]), "xx", "capture")
-#     else: 
-#         for key, val in position_dict.items():
-#             if len(move) == 5: 
-#                 if move[2:4] == val: update_piece_position(move[2:4], "xx", "capture")
-#             else:
-#                 if move[-2:] == val: update_piece_position(move[-2:], "xx", "capture")
-    
-# #used by handle_capture for en passant pawn capture positions
-# def increment_string(s):
-#     return re.sub(r'(\d+)$', lambda x: str(int(x.group(1)) + 1), s)
-
-# #used by handle_capture for en passant pawn capture positions
-# def decrement_string(s):
-#     return re.sub(r'(\d+)$', lambda x: str(int(x.group(1)) - 1), s)
 
 #gets game messages based on the given intention. Not currently used.         
 def get_game_message(intention_found):

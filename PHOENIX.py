@@ -34,6 +34,7 @@ class Phoenix:
 
     def get_legal_piece_moves(self, color, position_dict, all_moves):
         opposite_color = "black" if color.lower() == "white" else "white"
+        # if position_dict is None: raise ValueError("position_dict is None in get_legal_piece_moves")
         legal_king_threaten_moves_test = self.get_legal_king_threaten_moves(color, position_dict=position_dict, all_moves=all_moves)
         legal_king_threaten_moves_opposite = self.get_legal_king_threaten_moves(opposite_color, position_dict=position_dict, all_moves=all_moves)
         legal_moves = sum([
@@ -46,6 +47,7 @@ class Phoenix:
         return legal_moves
     
     def get_possible_moves(self, turn, position_dict, all_moves):
+        # if position_dict is None: raise ValueError("position_dict is None in get_possible_moves")
         legal_piece_moves = self.get_legal_piece_moves(turn, position_dict=position_dict, all_moves=all_moves)
         legal_piece_moves = [
             move for move in self.get_legal_piece_moves(turn, position_dict=position_dict, all_moves=all_moves)
@@ -54,6 +56,7 @@ class Phoenix:
         return legal_piece_moves
     
     def get_legal_king_threaten_moves(self, color, position_dict, all_moves):
+        # if position_dict is None: raise ValueError("position_dict is None in get_legal_king_threaten_moves")
         legal_king_threaten_moves_test = sum([
             self.get_legal_capture_moves_pawns(color, position_dict=position_dict, all_moves=all_moves),
             self.get_legal_rook_moves(color, position_dict=position_dict, all_moves=all_moves),
@@ -82,7 +85,7 @@ class Phoenix:
                 self.do_temp_capture(removed_piece, position_dict, all_moves)
             self.update_piece_position_no_castles(initial_position=test_move[:2], new_position=test_move[-2:], position_dict=position_dict)
         opposite_color = "black" if color.lower() == "white" else "white"
-        king_positions = [king for king in self.piece_type_spaces("king", color, position_dict, all_moves) if (king and (king != "xx"))]  # Remove empty strings and xxs
+        king_positions = [king for king in self.piece_type_spaces("king", color, position_dict=position_dict, all_moves=all_moves) if (king and (king != "xx"))]  # Remove empty strings and xxs
         if not legal_king_threaten_moves_test_opposite: legal_king_threaten_moves_test_opposite = self.get_legal_king_threaten_moves(opposite_color, position_dict=position_dict, all_moves=all_moves)
         for move in legal_king_threaten_moves_test_opposite:
             for king in king_positions:
@@ -101,6 +104,7 @@ class Phoenix:
     # #Pawns moving diagonal
     def get_legal_capture_moves_pawns(self, color, position_dict, all_moves):
         legal_pawn_capture_moves = []
+        # if position_dict is None: raise ValueError("position_dict is None in get_legal_capture_moves_pawns")
         pawn_positions = [pawn for pawn in self.piece_type_spaces("pawn", color, position_dict=position_dict, all_moves=all_moves) if pawn and pawn != "xx" and not pawn[-1].isalpha()]
         direction = 1 if color.lower() == "white" else -1
         for pawn in pawn_positions:
@@ -468,6 +472,7 @@ class Phoenix:
     #example: returns all the positions of the black pawns
     def piece_type_spaces(self, wanted_piece, color, position_dict, all_moves):
         piece_positions = []
+        # if position_dict is None: raise ValueError("position_dict is None in piece_type_spaces")
         for piece in position_dict:
             if ((wanted_piece.lower() in piece.lower()) and (color.lower() in piece.lower())):
                 piece_positions.append(position_dict[piece])
@@ -475,6 +480,8 @@ class Phoenix:
 
     #implement the command with the capture, and updating the piece positions before printing them again
     def implement_command(self, command, piece, position_dict, all_moves, board_positions_list, update=True, loaded_last_move=""):
+        # if position_dict is None: raise ValueError("position_dict is None in implement_command")
+
         if update: position_dict = self.handle_capture(command, position_dict=position_dict, all_moves=all_moves)
         else: position_dict = self.handle_capture(command, loading=True, loaded_last_move=loaded_last_move, position_dict=position_dict, all_moves=all_moves)
 
@@ -526,6 +533,7 @@ class Phoenix:
         position_dict[self.get_promoted_pawn(current_move, position_dict=position_dict, all_moves=all_moves)] = current_move[2:4]
         self.change_promoted_pawn(promoted_pawn, current_move, position_dict=position_dict, all_moves=all_moves)
         self.update_piece_position(current_move[:2], "xx", piece, position_dict=position_dict, all_moves=all_moves)
+        return position_dict
 
     def change_promoted_pawn(self, promoted_pawn, current_move, position_dict, all_moves):
         position_dict[self.replace_text(promoted_pawn, "PAWN", self.abbreviation_dict[current_move[-1]].upper())] = position_dict.pop(promoted_pawn)
@@ -537,7 +545,7 @@ class Phoenix:
     #the position of pieces that are captured are "xx"
     #works with normal captures and en passants
     def handle_capture(self, move, position_dict, all_moves, loading=False, loaded_last_move=""):
-        if self.is_en_passant_move(given_move=move, turn_color=self.phoenix_get_turn_from_moves(all_moves), position_dict=position_dict, all_moves=all_moves, loading=loading, loaded_last_move=loaded_last_move): self.update_piece_position((self.decrement_string if self.phoenix_get_turn_from_moves(all_moves) == "white" else self.increment_string)(move[-2:]), "xx", "capture")
+        if self.is_en_passant_move(given_move=move, turn_color=self.phoenix_get_turn_from_moves(all_moves), position_dict=position_dict, all_moves=all_moves, loading=loading, loaded_last_move=loaded_last_move): self.update_piece_position((self.decrement_string if self.phoenix_get_turn_from_moves(all_moves) == "white" else self.increment_string)(move[-2:]), "xx", "capture", position_dict=position_dict, all_moves=all_moves)
         else: 
             for key, val in position_dict.items():
                 if len(move) == 5: 
@@ -557,11 +565,11 @@ class Phoenix:
         return "black" if len(moves) % 2 == 1 else "white"
 
     #used by handle_capture for en passant pawn capture positions
-    def increment_string(s):
+    def increment_string(self, s):
         return re.sub(r'(\d+)$', lambda x: str(int(x.group(1)) + 1), s)
 
     #used by handle_capture for en passant pawn capture positions
-    def decrement_string(s):
+    def decrement_string(self, s):
         return re.sub(r'(\d+)$', lambda x: str(int(x.group(1)) - 1), s)
 
 
