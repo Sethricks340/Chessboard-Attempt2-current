@@ -210,8 +210,8 @@ def clear_screen():
 #                 'e2d2', 'e5d3', 'd2d3']
 
 #40 two promoted rooks can move to the same spot. g7 works, f8 doesn't.
-moves_string = ['e2e4', 'd7d5', 'e4e5', 'd5d4', 'e5e6', 'd4d3', 'e6f7', 'e8d7', 'h2h3', 
-                'd3c2', 'f7g8r', 'c2b1q', 'h3h4', 'g7g5', 'h4g5', 'h7h5', 'g5g6', 'h8h6', 'g6g7', 'h6a6', 'g7f8r', 'a6b6', 'f8f7', 'b6c6']
+# moves_string = ['e2e4', 'd7d5', 'e4e5', 'd5d4', 'e5e6', 'd4d3', 'e6f7', 'e8d7', 'h2h3', 
+#                 'd3c2', 'f7g8r', 'c2b1q', 'h3h4', 'g7g5', 'h4g5', 'h7h5', 'g5g6', 'h8h6', 'g6g7', 'h6a6', 'g7f8r', 'a6b6', 'f8f7', 'b6c6']
 
 #41 two promoted knights can move to the same spot, this one works
 # moves_string = ['e2e4', 'd7d5', 'e4e5', 'd5d4', 'e5e6', 'd4d3', 'e6f7', 'e8d7', 'h2h3', 'd3c2', 'f7g8n', 'd8e8', 'f2f4', 'b8c6', 'f4f5', 'c6d4', 'f5f6', 'e7e5', 'f6f7', 'e5e4', 'f7e8n', 'e4e3']
@@ -234,9 +234,9 @@ moves_string = ['e2e4', 'd7d5', 'e4e5', 'd5d4', 'e5e6', 'd4d3', 'e6f7', 'e8d7', 
 # moves_string = ['g1f3', 'g8f6', 'b1c3', 'b8c6', 'f3e5', 'f6g4', 'c3d5', 'c6a5', 'h2h4', 'g4e3', 'h4h5', 'a5c4', 'h5h6', 'c4a3', 'h6g7', 'a3b5', 'g7h8q', 'b5c3', 'g2g3', 'e3d1']
 
 #47 about to be a stalemate by repetition, (knight to g8)
-moves_string = ['g1f3', 'g8f6', 'f3g1', 'f6g8', 'g1f3', 'g8f6', 'f3g1']
+# moves_string = ['g1f3', 'g8f6', 'f3g1', 'f6g8', 'g1f3', 'g8f6', 'f3g1']
 
-# moves_string = []
+moves_string = []
 
 #used to update the current list of moves made, and transitively the current position. Can be used in tandem with above set position to set a position before playing 
 all_moves = moves_string
@@ -675,6 +675,15 @@ def set_initials():
     get_turn_from_moves(all_moves)
     clear_screen()
     print_board_visiual()
+
+    clear_screen()
+    position_dict_copy = position_dict.copy()
+    board_positions_list_copy = board_positions_list.copy()
+    print(get_mock_moves_tree(4, phoenix.phoenix_get_turn_from_moves(all_moves), position_dict_copy, all_moves, board_positions_list_copy))
+    # print_tree(get_mock_moves_tree(3, phoenix.phoenix_get_turn_from_moves(all_moves), position_dict_copy, all_moves, board_positions_list_copy))
+    # print_tree(get_mock_moves_tree(5, phoenix.phoenix_get_turn_from_moves(all_moves), position_dict_copy, all_moves, board_positions_list_copy))
+    input()
+
 
 def reset_global_turn():
     global global_turn
@@ -1115,6 +1124,35 @@ def implement_intention(intention, computer_color=""):
     else: return
 
 def computer_takeover(color): pass
+
+def get_mock_moves_tree(depth, turn, position_dict, all_moves, board_positions_list):
+    move_dict = {}
+    leaf_list = []
+    depth -= 1
+    possible_moves = phoenix.get_possible_moves(turn=phoenix.phoenix_get_turn_from_moves(all_moves), position_dict=position_dict, all_moves=all_moves)
+    for move in possible_moves:
+        whole_piece = phoenix.get_what_is_on_square_specific(move[:2], position_dict=position_dict)
+        piece = check_for_pieces(whole_piece)
+        position_dict, all_moves, turn, board_positions_list = phoenix.implement_command(move, piece, position_dict=position_dict, all_moves=all_moves, board_positions_list=board_positions_list)
+        if depth > 0: move_dict[move] = get_mock_moves_tree(depth, turn, position_dict, all_moves, board_positions_list)
+        else: leaf_list.append(move)
+    if leaf_list: return leaf_list
+    else: return move_dict
+
+def print_tree(tree, indent=0, parent_has_more=False):
+    if isinstance(tree, dict):
+        keys = list(tree.keys())
+        for i, key in enumerate(keys):
+            is_last = (i == len(keys) - 1)
+            connector = '└─ ' if is_last else '├─ '
+            print(('│  ' if parent_has_more else '   ') * indent + connector + str(key))
+            print_tree(tree[key], indent + 1, not is_last)
+    elif isinstance(tree, list):
+        for i, item in enumerate(tree):
+            is_last = (i == len(tree) - 1)
+            connector = '└─ ' if is_last else '├─ '
+            print(('│  ' if parent_has_more else '   ') * indent + connector + str(item))
+
 
 def print_intention(intention, possible=True, computer_color=""):
     if intention == "undo":

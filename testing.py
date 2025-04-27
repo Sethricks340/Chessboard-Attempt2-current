@@ -22,13 +22,13 @@ def clear_screen():
 
 def main():
     # print_tree(get_mock_moves_tree("a", 1))
-    # print_tree(get_mock_moves_tree("a", 2))
+    print_tree(get_mock_moves_tree("a", 2))
     # print_tree(get_mock_moves_tree("a", 3))
     # print_tree(get_mock_moves_tree("a", 4))
     # print_tree(get_mock_moves_tree("a", 5))
     # print(get_mock_moves_tree("a", 5))
     # print(get_mock_moves_tree("a", 6))
-    print(get_mock_moves_tree("a", 14)) ##around 14 is where it starts to get large, 15 won't even load. Need alpha-beta pruning in the real thing!!
+    # print(get_mock_moves_tree("a", 14)) ##around 14 is where it starts to get large, 15 won't even load. Need alpha-beta pruning in the real thing!!
 
 def print_tree(tree, indent=0, parent_has_more=False):
     if isinstance(tree, dict):
