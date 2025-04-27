@@ -481,6 +481,9 @@ class Phoenix:
     #implement the command with the capture, and updating the piece positions before printing them again
     def implement_command(self, command, piece, position_dict, all_moves, board_positions_list, update=True, loaded_last_move=""):
         # if position_dict is None: raise ValueError("position_dict is None in implement_command")
+        # if command == "h5g6": 
+        #     print(update)
+        
 
         if update: position_dict = self.handle_capture(command, position_dict=position_dict, all_moves=all_moves)
         else: position_dict = self.handle_capture(command, loading=True, loaded_last_move=loaded_last_move, position_dict=position_dict, all_moves=all_moves)
@@ -545,7 +548,8 @@ class Phoenix:
     #the position of pieces that are captured are "xx"
     #works with normal captures and en passants
     def handle_capture(self, move, position_dict, all_moves, loading=False, loaded_last_move=""):
-        if self.is_en_passant_move(given_move=move, turn_color=self.phoenix_get_turn_from_moves(all_moves), position_dict=position_dict, all_moves=all_moves, loading=loading, loaded_last_move=loaded_last_move): self.update_piece_position((self.decrement_string if self.phoenix_get_turn_from_moves(all_moves) == "white" else self.increment_string)(move[-2:]), "xx", "capture", position_dict=position_dict, all_moves=all_moves)
+        if self.is_en_passant_move(given_move=move, turn_color=self.phoenix_get_turn_from_moves(all_moves), position_dict=position_dict, all_moves=all_moves, loading=loading, loaded_last_move=loaded_last_move): 
+            self.update_piece_position((self.decrement_string if self.phoenix_get_turn_from_moves(all_moves) == "white" else self.increment_string)(move[-2:]), "xx", "capture", position_dict=position_dict, all_moves=all_moves)
         else: 
             for key, val in position_dict.items():
                 if len(move) == 5: 

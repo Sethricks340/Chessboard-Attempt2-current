@@ -25,6 +25,7 @@
     #FIXED: undo or restart, doesn't update 50 move draw variables
     #FIXED: add insufficient material draw. currently working on: check_for_insufficient_material_draw()
     #FIXED: make phoenix class have the generation of possible moves logic
+    #FIXED: The problem with the en passant load and the pawn promotion load was that I was passing in all the moves at once, instead of adding them one at a time
 
     #scenario: Work with other commands, like take over, restart, undo, etc;
     #scenario: can't undo a checkmate or stalemate
@@ -48,9 +49,11 @@ def clear_screen():
 # moves_string = ['e2e4', 'e7e6', 'f2f4', 'd8e7', 'f4f5', 'e6f5', 'e4e5', 'd7d5'] #pinned en passant
 # moves_string = ['e2e4', 'f7f5', 'e4e5', 'd7d5'] #en passant legal on one side but not the other
 # moves_string = ['e2e4', 'd7d5', 'e4e5', 'd5d4', 'c2c4', 'f7f5', 'h2h3', 'a7a5', 'h3h4', 'a5a4', 'h4h5', 'g7g5'] #about to do en passants
-# moves_string = ['e2e4', 'd7d5', 'e4e5', 'd5d4', 'c2c4', 'f7f5', 'h2h3', 'a7a5', 'h3h4', 'a5a4', 'h4h5', 'g7g5', 'h5g6'] #en passant load (white did the en passant) ####error
+# moves_string = ['e2e4', 'd7d5', 'e4e5', 'd5d4', 'c2c4', 'f7f5', 'h2h3', 'a7a5', 'h3h4', 'a5a4', 'h4h5', 'g7g5', 'h5g6', 'h7h6', 'g6g7'] #en passant load, extra move(white did the en passant) 
+# moves_string = ['e2e4', 'd7d5', 'e4e5', 'd5d4', 'c2c4', 'f7f5', 'h2h3', 'a7a5', 'h3h4', 'a5a4', 'h4h5', 'g7g5', 'h5g6', 'h7h6'] #en passant load, extra move(white did the en passant) 
+# moves_string = ['e2e4', 'd7d5', 'e4e5', 'd5d4', 'c2c4', 'f7f5', 'h2h3', 'a7a5', 'h3h4', 'a5a4', 'h4h5', 'g7g5', 'h5g6'] #en passant load (white did the en passant) 
 # moves_string = ['e2e4', 'd7d5', 'e4e5', 'd5d4', 'e5e6', 'd4d3', 'e6f7', 'e8d7', 'h2h3', 'd3c2'] #pawns about to be promoted
-# moves_string = ['e2e4', 'd7d5', 'e4e5', 'd5d4', 'e5e6', 'd4d3', 'e6f7', 'e8d7', 'h2h3', 'd3c2', 'f7g8r', 'c2b1q'] #promoted pawns load ####error
+# moves_string = ['e2e4', 'd7d5', 'e4e5', 'd5d4', 'e5e6', 'd4d3', 'e6f7', 'e8d7', 'h2h3', 'd3c2', 'f7g8r', 'c2b1q'] #promoted pawns load 
 # moves_string = ['e2e4', 'd7d5', 'g2g4', 'b7b5', 'd2d3', 'c7c6', 'c1h6', 'g7h6', 'd1f3', 'd8a5', 'c2c3', 
 #                 'a5b4', 'f3f6', 'e7f6', 'g4g5', 'b4b2', 'e4e5', 'b2d2', 'e1d2', 'b5b4', 'e5e6', 'd5d4', 'g5g6', 
 #                 'c6c5', 'b1a3', 'c5c4', 'd3c4', 'b4b3', 'g6g7', 'd4d3', 'e6e7', 'b3b2', 'd2e3', 'd3d2', 'a1c1'] #multiple pawns can be promoted to same square, or multiple pawns can be promoted to different squares
@@ -444,21 +447,28 @@ def set_position(moves_string_list):
     }
     
     loaded_last_move = ""
+    # print(moves)
+    temp_all_moves = []
     for move in moves:
+        # print_board_visiual()
+        # input()
+
         #remember loading pawn promotions
         if len(move) == 5:
             piece = phoenix.abbreviation_dict[move[-1].lower()]
-            position_dict, all_moves, global_turn, board_positions_list = phoenix.implement_command(move, piece, update=False, loaded_last_move=loaded_last_move, position_dict=position_dict, all_moves=all_moves, board_positions_list=board_positions_list)
+            position_dict, all_moves, global_turn, board_positions_list = phoenix.implement_command(move, piece, update=False, loaded_last_move=loaded_last_move, position_dict=position_dict, all_moves=temp_all_moves, board_positions_list=board_positions_list)
         
         #remember loading castling
         elif move in castle_moves_list: 
-            position_dict, all_moves, global_turn, board_positions_list = phoenix.implement_command(move, castle_data[move], update=False, loaded_last_move=loaded_last_move, position_dict=position_dict, all_moves=all_moves, board_positions_list=board_positions_list)
+            position_dict, all_moves, global_turn, board_positions_list = phoenix.implement_command(move, castle_data[move], update=False, loaded_last_move=loaded_last_move, position_dict=position_dict, all_moves=temp_all_moves, board_positions_list=board_positions_list)
 
         #everthing else
         else: 
-            position_dict, all_moves, global_turn, board_positions_list = phoenix.implement_command(move, "fluff", update=False, loaded_last_move=loaded_last_move, position_dict=position_dict, all_moves=all_moves, board_positions_list=board_positions_list) #implement command ("fluff") doesn't actually use this unless it is for castling. need to fix that.
+            position_dict, all_moves, global_turn, board_positions_list = phoenix.implement_command(move, "fluff", update=False, loaded_last_move=loaded_last_move, position_dict=position_dict, all_moves=temp_all_moves, board_positions_list=board_positions_list) #implement command ("fluff") doesn't actually use this unless it is for castling. need to fix that.
+            clear_screen()
         loaded_last_move = move
         check_for_50_move_draw(move) 
+        temp_all_moves.append(move)
 
 #print all the moves that have occurred so far
 def print_all_moves():
