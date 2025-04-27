@@ -27,6 +27,8 @@
     #FIXED: make phoenix class have the generation of possible moves logic
     #FIXED: The problem with the en passant load and the pawn promotion load was that I was passing in all the moves at once, instead of adding them one at a time
 
+    #scenario: Fix errors with tests #23, 28, 33 -> happened when moved more functions over to phoenix
+    #scenario: Generate move tree
     #scenario: Work with other commands, like take over, restart, undo, etc;
     #scenario: can't undo a checkmate or stalemate
 
@@ -42,60 +44,125 @@ def clear_screen():
     else:  # macOS/Linux
         os.system('clear')
 
-# moves_string = ['e2e4'] #first move
-# moves_string = ['e2e4', 'd7d5'] #second move
-# moves_string = ['e2e4', 'd7d5', 'e4d5'] #third move
-# moves_string = ['e2e4', 'f7f5', 'd2d3', 'f5e4', 'd1e2', 'e4d3', 'c2d3', 'e7e5', 'd3d4', 'd8e7', 'e2e5'] #pinned queens
-# moves_string = ['e2e4', 'e7e6', 'f2f4', 'd8e7', 'f4f5', 'e6f5', 'e4e5', 'd7d5'] #pinned en passant
-# moves_string = ['e2e4', 'f7f5', 'e4e5', 'd7d5'] #en passant legal on one side but not the other
-# moves_string = ['e2e4', 'd7d5', 'e4e5', 'd5d4', 'c2c4', 'f7f5', 'h2h3', 'a7a5', 'h3h4', 'a5a4', 'h4h5', 'g7g5'] #about to do en passants
-# moves_string = ['e2e4', 'd7d5', 'e4e5', 'd5d4', 'c2c4', 'f7f5', 'h2h3', 'a7a5', 'h3h4', 'a5a4', 'h4h5', 'g7g5', 'h5g6', 'h7h6', 'g6g7'] #en passant load, extra move(white did the en passant) 
-# moves_string = ['e2e4', 'd7d5', 'e4e5', 'd5d4', 'c2c4', 'f7f5', 'h2h3', 'a7a5', 'h3h4', 'a5a4', 'h4h5', 'g7g5', 'h5g6', 'h7h6'] #en passant load, extra move(white did the en passant) 
-# moves_string = ['e2e4', 'd7d5', 'e4e5', 'd5d4', 'c2c4', 'f7f5', 'h2h3', 'a7a5', 'h3h4', 'a5a4', 'h4h5', 'g7g5', 'h5g6'] #en passant load (white did the en passant) 
-# moves_string = ['e2e4', 'd7d5', 'e4e5', 'd5d4', 'e5e6', 'd4d3', 'e6f7', 'e8d7', 'h2h3', 'd3c2'] #pawns about to be promoted
-# moves_string = ['e2e4', 'd7d5', 'e4e5', 'd5d4', 'e5e6', 'd4d3', 'e6f7', 'e8d7', 'h2h3', 'd3c2', 'f7g8r', 'c2b1q'] #promoted pawns load 
+#1 first move
+# moves_string = ['e2e4']
+
+#2 second move
+# moves_string = ['e2e4', 'd7d5']
+
+#3 third move
+# moves_string = ['e2e4', 'd7d5', 'e4d5']
+
+#4 pinned queens
+# moves_string = ['e2e4', 'f7f5', 'd2d3', 'f5e4', 'd1e2', 'e4d3', 'c2d3', 'e7e5', 'd3d4', 'd8e7', 'e2e5']
+
+#5 pinned en passant
+# moves_string = ['e2e4', 'e7e6', 'f2f4', 'd8e7', 'f4f5', 'e6f5', 'e4e5', 'd7d5']
+
+#6 en passant legal on one side but not the other
+# moves_string = ['e2e4', 'f7f5', 'e4e5', 'd7d5']
+
+#7 about to do en passants
+# moves_string = ['e2e4', 'd7d5', 'e4e5', 'd5d4', 'c2c4', 'f7f5', 'h2h3', 'a7a5', 'h3h4', 'a5a4', 'h4h5', 'g7g5']
+
+#8 en passant load, extra move(white did the en passant) 
+# moves_string = ['e2e4', 'd7d5', 'e4e5', 'd5d4', 'c2c4', 'f7f5', 'h2h3', 'a7a5', 'h3h4', 'a5a4', 'h4h5', 'g7g5', 'h5g6', 'h7h6', 'g6g7']
+
+#9 en passant load, extra move(white did the en passant) 
+# moves_string = ['e2e4', 'd7d5', 'e4e5', 'd5d4', 'c2c4', 'f7f5', 'h2h3', 'a7a5', 'h3h4', 'a5a4', 'h4h5', 'g7g5', 'h5g6', 'h7h6']
+
+#10 en passant load (white did the en passant)
+# moves_string = ['e2e4', 'd7d5', 'e4e5', 'd5d4', 'c2c4', 'f7f5', 'h2h3', 'a7a5', 'h3h4', 'a5a4', 'h4h5', 'g7g5', 'h5g6'] 
+
+#11 pawns about to be promoted
+# moves_string = ['e2e4', 'd7d5', 'e4e5', 'd5d4', 'e5e6', 'd4d3', 'e6f7', 'e8d7', 'h2h3', 'd3c2']
+
+#12 promoted pawns load 
+# moves_string = ['e2e4', 'd7d5', 'e4e5', 'd5d4', 'e5e6', 'd4d3', 'e6f7', 'e8d7', 'h2h3', 'd3c2', 'f7g8r', 'c2b1q']
+
+#13 multiple pawns can be promoted to same square, or multiple pawns can be promoted to different squares
 # moves_string = ['e2e4', 'd7d5', 'g2g4', 'b7b5', 'd2d3', 'c7c6', 'c1h6', 'g7h6', 'd1f3', 'd8a5', 'c2c3', 
 #                 'a5b4', 'f3f6', 'e7f6', 'g4g5', 'b4b2', 'e4e5', 'b2d2', 'e1d2', 'b5b4', 'e5e6', 'd5d4', 'g5g6', 
-#                 'c6c5', 'b1a3', 'c5c4', 'd3c4', 'b4b3', 'g6g7', 'd4d3', 'e6e7', 'b3b2', 'd2e3', 'd3d2', 'a1c1'] #multiple pawns can be promoted to same square, or multiple pawns can be promoted to different squares
+#                 'c6c5', 'b1a3', 'c5c4', 'd3c4', 'b4b3', 'g6g7', 'd4d3', 'e6e7', 'b3b2', 'd2e3', 'd3d2', 'a1c1']
+
+#14 pawn can't be promoted because it is pinned
 # moves_string = ['e2e4', 'd7d5', 'e4e5', 'd5d4', 'e5e6', 'd4d3', 'e6f7', 'e8d7', 
-#                 'c2c3', 'b7b5', 'a2a3', 'b5b4', 'a3a4', 'b4c3', 'd2c3', 'd3d2', 'e1e2'] #pawn can't be promoted because it is pinned
-# moves_string = ['g1f3', 'b8c6', 'b1a3', 'g8h6', 'a3c4', 'h6f5'] #multiple pieces to same square
-# moves_string = ['g1f3', 'b8c6', 'b1a3', 'g8h6', 'a3c4', 'h6f5', 'f3e5', 'c6d4', 'c4e3', 'd4e2', 'e1e2', 'e7e6', 'e2e1', 'h7h6', 'f1c4', 'h6h5', 'c4e6', 'd8e7', 'e6b3', 'a7a6', 'e3c4'] #two pinned knights
+#                 'c2c3', 'b7b5', 'a2a3', 'b5b4', 'a3a4', 'b4c3', 'd2c3', 'd3d2', 'e1e2']
+
+#15 multiple pieces to same square
+# moves_string = ['g1f3', 'b8c6', 'b1a3', 'g8h6', 'a3c4', 'h6f5']
+
+#16 two pinned knights
+# moves_string = ['g1f3', 'b8c6', 'b1a3', 'g8h6', 'a3c4', 'h6f5', 'f3e5', 'c6d4', 'c4e3', 'd4e2', 'e1e2', 'e7e6', 'e2e1', 'h7h6', 'f1c4', 'h6h5', 'c4e6', 'd8e7', 'e6b3', 'a7a6', 'e3c4']
+
+#17 two knights can move two same square, but one is pinned
 # moves_string = ['g1f3', 'b8c6', 'b1a3', 'g8h6', 'a3c4', 'h6f5', 'f3e5', 'c6d4', 'c4e3', 'd4e2', 'e1e2', 'e7e6', 'e2e1', 
 #                 'h7h6', 'f1c4', 'h6h5', 'c4e6', 'd8e7', 'e6b3', 'a7a6', 'e5c4', 'e7e6', 
-#                 'c4d6', 'e8e7', 'd6b5', 'e7e8', 'b5c3', 'e6e7'] #two knights can move two same square, but one is pinned
+#                 'c4d6', 'e8e7', 'd6b5', 'e7e8', 'b5c3', 'e6e7']
+
+#18 two knights can move to same spot, but both are pinned from different directions
 # moves_string = ['g1f3', 'b8c6', 'b1a3', 'g8h6', 'a3c4', 'h6f5', 'f3e5', 'c6d4', 'c4e3', 'd4e2', 'e1e2', 'e7e6', 'e2e1',
 #                  'h7h6', 'f1c4', 'h6h5', 'c4e6', 'd8e7', 'e6b3', 'a7a6', 'e5c4', 'e7e6', 
-#                  'c4d6', 'e8e7', 'd6b5', 'e7e8', 'b5c3', 'e6e7', 'd2d3', 'e7e6', 'h2h3', 'f8b4'] #two knights can move to same spot, but both are pinned from different directions
+#                  'c4d6', 'e8e7', 'd6b5', 'e7e8', 'b5c3', 'e6e7', 'd2d3', 'e7e6', 'h2h3', 'f8b4']
+
+#19 two nights are both pinned from different directions, but can't move to the same spot like the scenario above
 # moves_string = ['g1f3', 'b8c6', 'b1a3', 'g8h6', 'a3c4', 'h6f5', 'f3e5', 'c6d4', 'c4e3', 'd4e2', 'e1e2', 
 #                 'e7e6', 'e2e1', 'h7h6', 'f1c4', 'h6h5', 'c4e6', 'd8e7', 'e6b3', 'a7a6', 'e5c4', 'e7e6', 
 #                 'c4d6', 'e8e7', 'd6b5', 'e7e8', 'b5c3', 'e6e7', 'd2d3', 'e7e6', 'h2h3', 'f8b4', 
-#                 'h3h4', 'e6f6', 'e3g4', 'f6e7', 'g4e5', 'd7d6'] #two nights are both pinned from different directions, but can't move to the same spot like the scenario above
-# moves_string = ['e2e4', 'c7c6', 'e1e2', 'b8a6', 'e2f3', 'a6b8', 'f3g4', 'b8a6', 'g4h5', 'd8a5', 'e4e5', 'd7d5'] #illegal en passant (white king would be in check)
-# moves_string = ['e2e3', 'd7d6', 'b1c3', 'e8d7', 'c3b1', 'd7c6', 'b1c3', 'c6b6', 'c3b1', 'b6a5', 'e3e4', 'd6d5', 'e4d5', 'a5a4', 'g1h3', 'e7e5', 'h3g1', 'h7h6', 'd1g4', 'e5e4', 'f2f4'] #illegal en passant (black king would be in check)
-# moves_string = ['e2e3', 'd7d6', 'b1c3', 'e8d7', 'c3b1', 'd7c6', 'b1c3', 'c6b6', 'c3b1', 'b6a5', 'e3e4', 'd6d5', 'e4d5', 'a5a4', 'g1h3', 'e7e5', 'h3g1', 'h7h6', 'd1g4', 'a4a5', 'h2h4', 'e5e4', 'f2f4'] # same scenario as above, but no pinned pawns
-# moves_string = ['g1f3', 'g8f6', 'g2g4', 'g7g5', 'f1h3', 'f8h6', 'e1g1', 'e8g8'] #loaded castling ###error
-# moves_string = ['g1f3', 'g8f6', 'g2g3', 'g7g6', 'f1h3', 'f8h6', 'c2c3', 'c7c6', 'd1b3', 'd8b6', 'd2d4', 'b8a6', 'c1f4', 'd7d5', 'b1a3', 'c8f5', 'b3d5'] #testing illegal castling scenarios. (black: kingside: can queenside: can't, white: kingside: can queenside: can)
-# moves_string = ['e2e3', 'b8a6', 'd1h5', 'g8h6', 'f1c4', 'h6g4',] #about to be four move checkmate, black is about to loose
-# moves_string = ['g1h3', 'e7e6', 'b1a3', 'd8h4', 'a3b1', 'f8c5', 'h3g1'] #about to be four move checkmate, white is about to loose
-# moves_string = ['g1f3', 'g8f6', 'f3g1', 'f6g8', 'g1f3', 'g8f6', 'f3g1'] #about to be a stalemate by repetition
-# moves_string = ['g1f3', 'b8c6', 'g2g3', 'b7b6', 'f1h3', 'c8a6', 'b1c3', 'g8f6', 'f3g5', 'c6e5', 'g5f3', 'e5c6', 'f3g1', 'c6b8', 'c3b1', 'a6b7', 'b1c3', 'b7a6', 'g1f3'] #about to be a stalemate by repetition, with a bunch of moves inbetween (knight to c6) ####error
+#                 'h3h4', 'e6f6', 'e3g4', 'f6e7', 'g4e5', 'd7d6']
+
+#20 illegal en passant (white king would be in check)
+# moves_string = ['e2e4', 'c7c6', 'e1e2', 'b8a6', 'e2f3', 'a6b8', 'f3g4', 'b8a6', 'g4h5', 'd8a5', 'e4e5', 'd7d5']
+
+#21 illegal en passant (black king would be in check)
+# moves_string = ['e2e3', 'd7d6', 'b1c3', 'e8d7', 'c3b1', 'd7c6', 'b1c3', 'c6b6', 'c3b1', 'b6a5', 'e3e4', 'd6d5', 'e4d5', 'a5a4', 'g1h3', 'e7e5', 'h3g1', 'h7h6', 'd1g4', 'e5e4', 'f2f4']
+
+#22 same scenario as above, but no pinned pawns
+# moves_string = ['e2e3', 'd7d6', 'b1c3', 'e8d7', 'c3b1', 'd7c6', 'b1c3', 'c6b6', 'c3b1', 'b6a5', 'e3e4', 'd6d5', 'e4d5', 'a5a4', 'g1h3', 'e7e5', 'h3g1', 'h7h6', 'd1g4', 'a4a5', 'h2h4', 'e5e4', 'f2f4']
+
+#23 loaded castling ###error
+# moves_string = ['g1f3', 'g8f6', 'g2g4', 'g7g5', 'f1h3', 'f8h6', 'e1g1', 'e8g8']
+
+#24 testing illegal castling scenarios. (black: kingside: can queenside: can't, white: kingside: can queenside: can)
+# moves_string = ['g1f3', 'g8f6', 'g2g3', 'g7g6', 'f1h3', 'f8h6', 'c2c3', 'c7c6', 'd1b3', 'd8b6', 'd2d4', 'b8a6', 'c1f4', 'd7d5', 'b1a3', 'c8f5', 'b3d5']
+
+#25 #about to be four move checkmate, black is about to loose
+# moves_string = ['e2e3', 'b8a6', 'd1h5', 'g8h6', 'f1c4', 'h6g4',]
+
+#26 #about to be four move checkmate, white is about to loose
+# moves_string = ['g1h3', 'e7e6', 'b1a3', 'd8h4', 'a3b1', 'f8c5', 'h3g1']
+
+#27 about to be a stalemate by repetition
+# moves_string = ['g1f3', 'g8f6', 'f3g1', 'f6g8', 'g1f3', 'g8f6', 'f3g1']
+
+#28 about to be a stalemate by repetition, with a bunch of moves inbetween (knight to c6) ####error
+# moves_string = ['g1f3', 'b8c6', 'g2g3', 'b7b6', 'f1h3', 'c8a6', 'b1c3', 'g8f6', 'f3g5', 'c6e5', 'g5f3', 'e5c6', 'f3g1', 'c6b8', 'c3b1', 'a6b7', 'b1c3', 'b7a6', 'g1f3']
+
+#29 about to be stalemate, white king not in check but no white moves possible. (black pawn to e5 will cause this)
 # moves_string = ['g1f3', 'e7e6', 'f3g1', 'd8h4', 'g1f3', 'h4h2', 'f3g1', 'h2h1', 'g1h3', 'h1h3', 'g2g4', 'h3g4', 'f2f4', 'g4f4', 'd2d4', 'f4d4', 'c2c4', 'd4c4', 
 #                 'b2b4', 'c4b4', 'd1d2', 'b4b1', 'd2d1', 'b1c1', 'a2a3', 'c1a3', 'e1f2', 'a3a1', 'f2g3', 'a1d1', 'g3h4', 'd1e2', 'h4h3', 'e2f1', 
-#                 'h3h4', 'g7g6', 'h4g5', 'f1f2', 'g5g4', 'd7d5', 'g4h3', 'f2g1', 'h3h4'] #about to be stalemate, white king not in check but no white moves possible. (black pawn to e5 will cause this)
+#                 'h3h4', 'g7g6', 'h4g5', 'f1f2', 'g5g4', 'd7d5', 'g4h3', 'f2g1', 'h3h4']
+
+#30 about to be stalemate, black king not in check but no black moves possible. any move where the bishop on a7 is stil protected will be a stalemate. (queen to e5, king can take bishop. pawn to h3- stalemate.)
 # moves_string =  ['e2e3', 'b8a6', 'd1g4', 'a6b8', 'g4g7', 'b8a6', 'g7h8', 'a6b8', 'h8h7', 'b8a6', 'h7g8', 
 #                  'a6b8', 'g1f3', 'e7e6', 'f3g1', 'd8g5', 'g8g5', 'd7d5', 'g5d5', 'c7c5', 'd5c5', 'b7b6', 'c5b6', 
 #                  'b8a6', 'b6a6', 'c8b7', 'a6b7', 'a7a6', 'b7a6', 'a8a7', 'a6a7', 'f7f5', 'a7c5', 'f8d6', 'c5d6', 
 #                  'f5f4', 'd6f4', 'e6e5', 'f4e5', 'e8d8', 'f1b5', 'd8c8', 'e5d4', 'c8b8', 'b2b3', 'b8a8', 'c1a3', 
-#                  'a8b8', 'a3c5', 'b8a8', 'b5a6', 'a8b8', 'c5a7', 'b8a8'] #about to be stalemate, black king not in check but no black moves possible. any move where the bishop on a7 is stil protected will be a stalemate. (queen to e5, king can take bishop. pawn to h3- stalemate.)
+#                  'a8b8', 'a3c5', 'b8a8', 'b5a6', 'a8b8', 'c5a7', 'b8a8']
+
+#31 multiple pawns can be promoted to same square, but one of them is pinned
 # moves_string = ['e2e4', 'd7d5', 'e4e5', 'd5d4', 'e5e6', 'd4d3', 'e6f7', 'e8d7', 'c2c3', 'b7b5', 'a2a3', 'b5b4', 
 #                 'a3a4', 'b4c3', 'd2c3', 'd3d2', 'e1e2', 'h7h5', 'd1e1', 'h5h4', 'g2g4', 'h4g3', 
-#                 'h2h4', 'g3f2', 'h1h2', 'g7g6', 'e1d1', 'g6g5', 'g1f3', 'g5g4', 'f3e1'] #multiple pawns can be promoted to same square, but one of them is pinned
+#                 'h2h4', 'g3f2', 'h1h2', 'g7g6', 'e1d1', 'g6g5', 'g1f3', 'g5g4', 'f3e1']
+
+#32 multiple pawns can be promoted to same square, but both of them are pinned
 # moves_string = ['e2e4', 'd7d5', 'e4e5', 'd5d4', 'e5e6', 'd4d3', 'e6f7', 'e8d7', 'c2c3', 'b7b5', 'a2a3', 
 #                 'b5b4', 'a3a4', 'b4c3', 'd2c3', 'd3d2', 'e1e2', 'h7h5', 'd1e1', 'h5h4', 'g2g4', 'h4g3', 
 #                 'h2h4', 'g3f2', 'h1h2', 'g7g6', 'e1d1', 'g6g5', 'g1f3', 'g5g4', 'f3e1', 'd7d6', 'c3c4', 
 #                 'd6e5', 'c4c5', 'e5d4', 'b2b3', 'd4d5', 'c1b2', 'd5e4', 'b2e5', 'e4d5', 'h2h3', 'd5e4', 
-#                 'e5h2', 'e4d4', 'h2g1'] #multiple pawns can be promoted to same square, but both of them are pinned
+#                 'e5h2', 'e4d4', 'h2g1']
+
+#33 about to be a draw by 50 moves (50 moves each side since the last time a pawn was moved or a piece was captured) ####error
 # moves_string = ['e2e4', 'd7d5', 'e4d5', 'd8d5', 'd1e2', 'd5d4', 'e2e3', 'd4e4', 'b1c3', 'e4d4', 'e3f3', 'd4e4', 'f1e2', 'e4e3', 
 #                 'f3e4', 'e3f4', 'e4f5', 'f4g5', 'f5g4', 'g5h4', 'g4a4', 'b8c6', 'a4g4', 'h4g5', 'g4h5', 'g5a5', 'h5h3', 'a5b4', 
 #                 'h3g4', 'c6e5', 'g1f3', 'b4e4', 'f3g5', 'e5f3', 'e1f1', 'f3d4', 'g4f4', 'e4f5', 'f4e3', 'f5h3', 'e3e5', 'h3f5', 
@@ -103,30 +170,43 @@ def clear_screen():
 #                 'd5e5', 'd4e4', 'c3d5', 'e4d4', 'g5f3', 'g8f6', 'd5c3', 'b5d6', 'c3e4', 'f6d5', 'f3g5', 'd6b5', 'e5f5', 'd5c3', 
 #                 'f5g4', 'd4e5', 'g4f3', 'e5f5', 'f3d3', 'f5f3', 'd3d5', 'f3f5', 'd5e5', 'f5e6', 'e5f5', 'e6e5', 'f5f6', 'c3d5', 
 #                 'g5f3', 'b5c3', 'f6f5', 'e5d4', 'f5e5', 'd4c5', 'e5d4', 'c5d6', 'd4e5', 'd6c5', 'e5h5', 'c3b5', 'h5g4', 'c5a3', 
-#                 'g4g5', 'b5c3', 'g5e5', 'c3b5', 'e5d6'] #about to be a draw by 50 moves (50 moves each side since the last time a pawn was moved or a piece was captured) ####error
+#                 'g4g5', 'b5c3', 'g5e5', 'c3b5', 'e5d6']
+
+#34 about to be draw by insufficient material (king vs king)
 # moves_string = ['e2e4', 'd7d5', 'd1h5', 'd8d6', 'h5d5', 'd6e5', 'd5f7', 'e8d8', 'f7g8', 'e5b2', 'g8h8', 'b2a1', 'h8h7', 'a1a2', 'h7g7', 
 #                 'a2b1', 'g7f8', 'd8d7', 'f8c8', 'd7c6', 'c8b8', 'b1c1', 'e1e2', 'c1c2', 'b8a8', 'c2d2', 'e2f3', 'd2f2', 'f3g4', 'f2g1', 
 #                 'a8a7', 'g1g2', 'g4f5', 'g2h1', 'a7b7', 'c6c5', 'b7c7', 'c5d4', 'c7e7', 'h1h2', 'e7h4', 'h2f4', 'f5f4', 'd4c5', 'f4f3', 
-#                 'c5d6', 'f3g2', 'd6e5', 'h4f4', 'e5d4', 'f4h6', 'd4e4', 'f1d3', 'e4d3', 'h6e3'] #about to be draw by insufficient material (king vs king)
+#                 'c5d6', 'f3g2', 'd6e5', 'h4f4', 'e5d4', 'f4h6', 'd4e4', 'f1d3', 'e4d3', 'h6e3']
+
+#35 about to be draw by insufficient material (black king vs white bishop and white king)
 # moves_string = ['e2e4', 'd7d5', 'e4d5', 'd8d5', 'c2c4', 'd5c4', 'd2d3', 'c4c3', 'e1e2', 'c3b2', 'e2e1', 'b2a2', 'd1a4', 'c7c6', 'a4a7', 'a2a1', 
 #                 'a7a8', 'a1b1', 'a8b8', 'b1d3', 'b8b7', 'd3f1', 'e1d2', 'f1g1', 'b7c6', 'e8d8', 'c6h6', 'g1h1', 'h6h7', 'h1h2', 'h7h8', 'h2g2', 
-#                 'h8g8', 'g2f2', 'd2d1', 'f2g3', 'g8g7', 'g3g2', 'g7f7', 'g2g3', 'f7e7', 'f8e7', 'd1e2', 'g3e3', 'e2e3', 'e7g5', 'e3f3', 'g5f4', 'f3f4', 'c8g4'] #about to be draw by insufficient material (black king vs white bishop and white king)
+#                 'h8g8', 'g2f2', 'd2d1', 'f2g3', 'g8g7', 'g3g2', 'g7f7', 'g2g3', 'f7e7', 'f8e7', 'd1e2', 'g3e3', 'e2e3', 'e7g5', 'e3f3', 'g5f4', 'f3f4', 'c8g4']
+
+#36 about to be draw by insufficient material (white king vs black bishop and black king)
 # moves_string = ['e2e4', 'd7d5', 'e4d5', 'd8d5', 'c2c4', 'd5c4', 'd2d3', 'c4c3', 'e1e2', 'c3b2', 'e2e1', 'b2a2', 'd1a4', 'c7c6', 'a4a7', 'a2a1', 
 #                 'a7a8', 'a1b1', 'a8b8', 'b1d3', 'b8b7', 'd3f1', 'e1d2', 'f1g1', 'b7c6', 'e8d8', 'c6h6', 'g1h1', 'h6h7', 'h1h2', 'h7h8', 'h2g2', 
 #                 'h8g8', 'g2f2', 'd2d1', 'f2g3', 'g8g7', 'g3g2', 'g7f7', 'g2g3', 'f7e7', 'f8e7', 'd1e2', 'g3e3', 'e2e3', 'e7g5', 'e3f3', 'g5f4', 
-#                 'f3f4', 'c8g4', 'f4g3', 'g4f3', 'c1a3', 'd8d7', 'a3e7'] #about to be draw by insufficient material (white king vs black bishop and black king)
+#                 'f3f4', 'c8g4', 'f4g3', 'g4f3', 'c1a3', 'd8d7', 'a3e7']
+
+#37 about to be draw by insufficient material (white king and white bishop vs black bishop and black king, bishops are of the same color - dark squares)
 # moves_string = ['e2e4', 'd7d5', 'e4d5', 'd8d5', 'c2c4', 'd5c4', 'd2d3', 'c4c3', 'e1e2', 'c3b2', 'e2e1', 'b2a2', 'd1a4', 'c7c6', 'a4a7', 'a2a1', 
 #                 'a7a8', 'a1b1', 'a8b8', 'b1d3', 'b8b7', 'd3f1', 'e1d2', 'f1g1', 'b7c6', 'e8d8', 'c6h6', 'g1h1', 'h6h7', 'h1h2', 'h7h8', 'h2g2', 
-#                 'h8g8', 'g2f2', 'd2d1', 'f2g3', 'g8g7', 'g3g2', 'g7f7', 'g2g3', 'f7e7', 'f8e7', 'd1e2', 'g3e3', 'e2e3', 'e7g5', 'e3f3'] #about to be draw by insufficient material (white king and white bishop vs black bishop and black king, bishops are of the same color - dark squares)
+#                 'h8g8', 'g2f2', 'd2d1', 'f2g3', 'g8g7', 'g3g2', 'g7f7', 'g2g3', 'f7e7', 'f8e7', 'd1e2', 'g3e3', 'e2e3', 'e7g5', 'e3f3']
+
+#38 about to be draw by insufficient material (white king and white bishop vs black bishop and black king, bishops are of the same color - light squares)
 # moves_string = ['e2e4', 'd7d5', 'e4d5', 'd8d5', 'd1h5', 'd5g2', 'h5h7', 'g2h1', 'h7h8', 'h1h2', 'h8g7', 'h2f2', 'e1d1', 'e8d8', 'b1c3', 'b8c6', 
 #                 'c3e4', 'c6e5', 'g1f3', 'g8f6', 'f3d4', 'f6d5', 'd2d3', 'e7e6', 'c1f4', 'f8c5', 'g7f7', 'f2c2', 'd1e1', 'c2b2', 'f7c7', 'd8e8', 
 #                 'c7b7', 'b2a2', 'b7a8', 'a2a1', 'e1f2', 'a1d1', 'a8a7', 'd1d3', 'a7a6', 'c8b7', 'a6e6', 'e8f8', 'e6e5', 'd3d4', 'f2e1', 'd4e4', 
-#                 'e1d1', 'e4f4', 'e5d5', 'b7a6', 'd5c5', 'f8f7', 'c5f8', 'f7f8', 'd1e1', 'f4d2'] #about to be draw by insufficient material (white king and white bishop vs black bishop and black king, bishops are of the same color - light squares)
+#                 'e1d1', 'e4f4', 'e5d5', 'b7a6', 'd5c5', 'f8f7', 'c5f8', 'f7f8', 'd1e1', 'f4d2']
+
+#39 about to be draw by insufficient material (king vs knight and king, black or white)
 # moves_string = ['e2e4', 'd7d5', 'e4d5', 'd8d5', 'd1h5', 'd5g2', 'h5h7', 'g2h1', 'h7h8', 'h1h2', 'h8g7', 'h2f2', 'e1d1', 'e8d8', 'b1c3', 'b8c6', 
 #                 'c3e4', 'c6e5', 'g1f3', 'g8f6', 'f3d4', 'f6d5', 'd2d3', 'e7e6', 'c1f4', 'f8c5', 'g7f7', 'f2c2', 'd1e1', 'c2b2', 'f7c7', 'd8e8', 
 #                 'c7b7', 'b2a2', 'b7a8', 'a2a1', 'e1f2', 'a1d1', 'a8a7', 'd1d3', 'a7a6', 'c8b7', 'a6e6', 'e8f8', 'e6d6', 'f8f7', 'd6c5', 'b7c6', 
 #                 'c5c6', 'd3f3', 'f2g1', 'f3f4', 'g1g2', 'f4f1', 'g2f1', 'f7e7', 'c6e6', 'e7d8', 'e6e8', 'd8e8', 'e4f6', 'e8f7', 'f1e2', 'f7f6', 
-#                 'e2d2', 'e5d3', 'd2d3'] #about to be draw by insufficient material (king vs knight and king, black or white)
+#                 'e2d2', 'e5d3', 'd2d3']
+
 moves_string = [] #empty new game
 
 #used to update the current list of moves made, and transitively the current position. Can be used in tandem with above set position to set a position before playing 
