@@ -25,9 +25,10 @@
     #FIXED: undo or restart, doesn't update 50 move draw variables
     #FIXED: add insufficient material draw. currently working on: check_for_insufficient_material_draw()
     #FIXED: make phoenix class have the generation of possible moves logic
-    #FIXED: The problem with the en passant load and the pawn promotion load was that I was passing in all the moves at once, instead of adding them one at a time (7, 8, 9, 12)
+    #FIXED: The problem with the en passant load and the pawn promotion load was that I was passing in all the moves at once, instead of adding them one at a time (7, 8, 9, 12, 23)
+    #FIXED: 33, added 50_move_count in play loop
 
-    #scenario: Fix errors with tests #23, 28, 33 -> happened when moved more functions over to phoenix
+    #scenario: Fix errors with tests #28 -> happened when moved more functions over to phoenix
     #scenario: Pieces that can move to the same square doesn't work if it is on the last row. (40, 42, 43, 44)
     #scenario: Generate move tree
     #scenario: Work with other commands, like take over, restart, undo, etc;
@@ -121,7 +122,7 @@ def clear_screen():
 #22 same scenario as above, but no pinned pawns
 # moves_string = ['e2e3', 'd7d6', 'b1c3', 'e8d7', 'c3b1', 'd7c6', 'b1c3', 'c6b6', 'c3b1', 'b6a5', 'e3e4', 'd6d5', 'e4d5', 'a5a4', 'g1h3', 'e7e5', 'h3g1', 'h7h6', 'd1g4', 'a4a5', 'h2h4', 'e5e4', 'f2f4']
 
-#23 loaded castling ###error
+#23 loaded castling 
 # moves_string = ['g1f3', 'g8f6', 'g2g4', 'g7g5', 'f1h3', 'f8h6', 'e1g1', 'e8g8']
 
 #24 testing illegal castling scenarios. (black: kingside: can queenside: can't, white: kingside: can queenside: can)
@@ -163,15 +164,15 @@ def clear_screen():
 #                 'd6e5', 'c4c5', 'e5d4', 'b2b3', 'd4d5', 'c1b2', 'd5e4', 'b2e5', 'e4d5', 'h2h3', 'd5e4', 
 #                 'e5h2', 'e4d4', 'h2g1']
 
-#33 about to be a draw by 50 moves (50 moves each side since the last time a pawn was moved or a piece was captured) ####error
-# moves_string = ['e2e4', 'd7d5', 'e4d5', 'd8d5', 'd1e2', 'd5d4', 'e2e3', 'd4e4', 'b1c3', 'e4d4', 'e3f3', 'd4e4', 'f1e2', 'e4e3', 
-#                 'f3e4', 'e3f4', 'e4f5', 'f4g5', 'f5g4', 'g5h4', 'g4a4', 'b8c6', 'a4g4', 'h4g5', 'g4h5', 'g5a5', 'h5h3', 'a5b4', 
-#                 'h3g4', 'c6e5', 'g1f3', 'b4e4', 'f3g5', 'e5f3', 'e1f1', 'f3d4', 'g4f4', 'e4f5', 'f4e3', 'f5h3', 'e3e5', 'h3f5', 
-#                 'e5c5', 'f5d5', 'c5c4', 'd5c5', 'c4b4', 'c5c4', 'b4b3', 'c4b4', 'b3a4', 'd4b5', 'a4b3', 'b4e4', 'b3d5', 'e4d4', 
-#                 'd5e5', 'd4e4', 'c3d5', 'e4d4', 'g5f3', 'g8f6', 'd5c3', 'b5d6', 'c3e4', 'f6d5', 'f3g5', 'd6b5', 'e5f5', 'd5c3', 
-#                 'f5g4', 'd4e5', 'g4f3', 'e5f5', 'f3d3', 'f5f3', 'd3d5', 'f3f5', 'd5e5', 'f5e6', 'e5f5', 'e6e5', 'f5f6', 'c3d5', 
-#                 'g5f3', 'b5c3', 'f6f5', 'e5d4', 'f5e5', 'd4c5', 'e5d4', 'c5d6', 'd4e5', 'd6c5', 'e5h5', 'c3b5', 'h5g4', 'c5a3', 
-#                 'g4g5', 'b5c3', 'g5e5', 'c3b5', 'e5d6']
+#33 about to be a draw by 50 moves (50 moves each side since the last time a pawn was moved or a piece was captured)
+moves_string = ['e2e4', 'd7d5', 'e4d5', 'd8d5', 'd1e2', 'd5d4', 'e2e3', 'd4e4', 'b1c3', 'e4d4', 'e3f3', 'd4e4', 'f1e2', 'e4e3', 
+                'f3e4', 'e3f4', 'e4f5', 'f4g5', 'f5g4', 'g5h4', 'g4a4', 'b8c6', 'a4g4', 'h4g5', 'g4h5', 'g5a5', 'h5h3', 'a5b4', 
+                'h3g4', 'c6e5', 'g1f3', 'b4e4', 'f3g5', 'e5f3', 'e1f1', 'f3d4', 'g4f4', 'e4f5', 'f4e3', 'f5h3', 'e3e5', 'h3f5', 
+                'e5c5', 'f5d5', 'c5c4', 'd5c5', 'c4b4', 'c5c4', 'b4b3', 'c4b4', 'b3a4', 'd4b5', 'a4b3', 'b4e4', 'b3d5', 'e4d4', 
+                'd5e5', 'd4e4', 'c3d5', 'e4d4', 'g5f3', 'g8f6', 'd5c3', 'b5d6', 'c3e4', 'f6d5', 'f3g5', 'd6b5', 'e5f5', 'd5c3', 
+                'f5g4', 'd4e5', 'g4f3', 'e5f5', 'f3d3', 'f5f3', 'd3d5', 'f3f5', 'd5e5', 'f5e6', 'e5f5', 'e6e5', 'f5f6', 'c3d5', 
+                'g5f3', 'b5c3', 'f6f5', 'e5d4', 'f5e5', 'd4c5', 'e5d4', 'c5d6', 'd4e5', 'd6c5', 'e5h5', 'c3b5', 'h5g4', 'c5a3', 
+                'g4g5', 'b5c3', 'g5e5', 'c3b5', 'e5d6']
 
 #34 about to be draw by insufficient material (king vs king)
 # moves_string = ['e2e4', 'd7d5', 'd1h5', 'd8d6', 'h5d5', 'd6e5', 'd5f7', 'e8d8', 'f7g8', 'e5b2', 'g8h8', 'b2a1', 'h8h7', 'a1a2', 'h7g7', 
@@ -226,7 +227,14 @@ def clear_screen():
 #44 two normal knights can move d1, doesn't work (black). ###error
 # moves_string = ['g1f3', 'g8f6', 'b1c3', 'b8c6', 'f3e5', 'f6g4', 'c3d5', 'c6a5', 'h2h4', 'g4e3', 'h4h5', 'a5c4', 'h5h6', 'c4a3', 'h6g7', 'a3b5', 'g7h8q', 'b5c3', 'g2g3']
 
-moves_string = []
+#45 two normal knights can move d1, doesn't work (black). ###error
+# moves_string = ['g1f3', 'g8f6', 'b1c3', 'b8c6', 'f3e5', 'f6g4', 'c3d5', 'c6a5', 'h2h4', 'g4e3', 'h4h5', 'a5c4', 'h5h6', 'c4a3', 'h6g7', 'a3b5', 'g7h8q', 'b5c3', 'g2g3']
+
+
+#46 two normal knights can move d1, loading it works
+# moves_string = ['g1f3', 'g8f6', 'b1c3', 'b8c6', 'f3e5', 'f6g4', 'c3d5', 'c6a5', 'h2h4', 'g4e3', 'h4h5', 'a5c4', 'h5h6', 'c4a3', 'h6g7', 'a3b5', 'g7h8q', 'b5c3', 'g2g3', 'e3d1']
+
+# moves_string = []
 
 #used to update the current list of moves made, and transitively the current position. Can be used in tandem with above set position to set a position before playing 
 all_moves = moves_string
@@ -613,6 +621,7 @@ def play_game_loop():
 
     if possible: 
         position_dict, all_moves, global_turn, board_positions_list = phoenix.implement_command(command, piece, position_dict=position_dict, all_moves=all_moves, board_positions_list=board_positions_list)
+        check_for_50_move_draw(command) 
 
     clear_screen()
     print_board_visiual()
