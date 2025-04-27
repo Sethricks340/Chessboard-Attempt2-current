@@ -25,9 +25,10 @@
     #FIXED: undo or restart, doesn't update 50 move draw variables
     #FIXED: add insufficient material draw. currently working on: check_for_insufficient_material_draw()
     #FIXED: make phoenix class have the generation of possible moves logic
-    #FIXED: The problem with the en passant load and the pawn promotion load was that I was passing in all the moves at once, instead of adding them one at a time
+    #FIXED: The problem with the en passant load and the pawn promotion load was that I was passing in all the moves at once, instead of adding them one at a time (7, 8, 9, 12)
 
     #scenario: Fix errors with tests #23, 28, 33 -> happened when moved more functions over to phoenix
+    #scenario: Pieces that can move to the same square doesn't work if it is on the last row. (40, 42, 43, 44)
     #scenario: Generate move tree
     #scenario: Work with other commands, like take over, restart, undo, etc;
     #scenario: can't undo a checkmate or stalemate
@@ -207,7 +208,25 @@ def clear_screen():
 #                 'c5c6', 'd3f3', 'f2g1', 'f3f4', 'g1g2', 'f4f1', 'g2f1', 'f7e7', 'c6e6', 'e7d8', 'e6e8', 'd8e8', 'e4f6', 'e8f7', 'f1e2', 'f7f6', 
 #                 'e2d2', 'e5d3', 'd2d3']
 
-moves_string = [] #empty new game
+#40 two promoted rooks can move to the same spot. g7 works, f8 doesn't. ###error
+# moves_string = ['e2e4', 'd7d5', 'e4e5', 'd5d4', 'e5e6', 'd4d3', 'e6f7', 'e8d7', 'h2h3', 
+#                 'd3c2', 'f7g8r', 'c2b1q', 'h3h4', 'g7g5', 'h4g5', 'h7h5', 'g5g6', 'h8h6', 'g6g7', 'h6a6', 'g7f8r', 'a6b6', 'f8f7', 'b6c6']
+
+#41 two promoted knights can move to the same spot, this one works
+# moves_string = ['e2e4', 'd7d5', 'e4e5', 'd5d4', 'e5e6', 'd4d3', 'e6f7', 'e8d7', 'h2h3', 'd3c2', 'f7g8n', 'd8e8', 'f2f4', 'b8c6', 'f4f5', 'c6d4', 'f5f6', 'e7e5', 'f6f7', 'e5e4', 'f7e8n', 'e4e3']
+#moves_string = [] #empty new game
+
+#42 two promoted knights can move to g8, ###error
+# moves_string = ['e2e4', 'd7d5', 'e4e5', 'd5d4', 'e5e6', 'd4d3', 'e6f7', 'e8d7', 'h2h3', 'd3c2', 'f7g8n', 'd8e8', 'f2f4', 'b8c6', 
+#                 'f4f5', 'c6d4', 'f5f6', 'e7e5', 'f6f7', 'e5e4', 'f7e8n', 'e4e3', 'e8f6', 'd7d8', 'g8h6', 'a7a6']
+
+#43 two normal knights can move b8, doesn't work. ###error
+# moves_string = ['g1f3', 'h7h6', 'f3d4', 'h6h5', 'd2d3', 'h5h4', 'b1d2', 'h4h3', 'd2b3', 'g7g6', 'b3c5', 'g6g5', 'c5a6', 'g5g4', 'd4c6', 'g4g3']
+
+#44 two normal knights can move d1, doesn't work (black). ###error
+# moves_string = ['g1f3', 'g8f6', 'b1c3', 'b8c6', 'f3e5', 'f6g4', 'c3d5', 'c6a5', 'h2h4', 'g4e3', 'h4h5', 'a5c4', 'h5h6', 'c4a3', 'h6g7', 'a3b5', 'g7h8q', 'b5c3', 'g2g3']
+
+moves_string = []
 
 #used to update the current list of moves made, and transitively the current position. Can be used in tandem with above set position to set a position before playing 
 all_moves = moves_string
