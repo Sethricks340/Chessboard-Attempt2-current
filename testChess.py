@@ -27,8 +27,8 @@
     #FIXED: make phoenix class have the generation of possible moves logic
     #FIXED: The problem with the en passant load and the pawn promotion load was that I was passing in all the moves at once, instead of adding them one at a time (7, 8, 9, 12, 23)
     #FIXED: 33, added 50_move_count in play loop
+    #FIXED: 47, 28 -> I think it is working now, but I might need to check up on it more later
 
-    #scenario: Fix errors with tests #28 -> happened when moved more functions over to phoenix
     #scenario: Pieces that can move to the same square doesn't work if it is on the last row. (40, 42, 43, 44)
     #scenario: Generate move tree
     #scenario: Work with other commands, like take over, restart, undo, etc;
@@ -137,7 +137,7 @@ def clear_screen():
 #27 about to be a stalemate by repetition
 # moves_string = ['g1f3', 'g8f6', 'f3g1', 'f6g8', 'g1f3', 'g8f6', 'f3g1']
 
-#28 about to be a stalemate by repetition, with a bunch of moves inbetween (knight to c6) ####error
+#28 about to be a stalemate by repetition, with a bunch of moves inbetween (knight to c6)
 # moves_string = ['g1f3', 'b8c6', 'g2g3', 'b7b6', 'f1h3', 'c8a6', 'b1c3', 'g8f6', 'f3g5', 'c6e5', 'g5f3', 'e5c6', 'f3g1', 'c6b8', 'c3b1', 'a6b7', 'b1c3', 'b7a6', 'g1f3']
 
 #29 about to be stalemate, white king not in check but no white moves possible. (black pawn to e5 will cause this)
@@ -165,14 +165,14 @@ def clear_screen():
 #                 'e5h2', 'e4d4', 'h2g1']
 
 #33 about to be a draw by 50 moves (50 moves each side since the last time a pawn was moved or a piece was captured)
-moves_string = ['e2e4', 'd7d5', 'e4d5', 'd8d5', 'd1e2', 'd5d4', 'e2e3', 'd4e4', 'b1c3', 'e4d4', 'e3f3', 'd4e4', 'f1e2', 'e4e3', 
-                'f3e4', 'e3f4', 'e4f5', 'f4g5', 'f5g4', 'g5h4', 'g4a4', 'b8c6', 'a4g4', 'h4g5', 'g4h5', 'g5a5', 'h5h3', 'a5b4', 
-                'h3g4', 'c6e5', 'g1f3', 'b4e4', 'f3g5', 'e5f3', 'e1f1', 'f3d4', 'g4f4', 'e4f5', 'f4e3', 'f5h3', 'e3e5', 'h3f5', 
-                'e5c5', 'f5d5', 'c5c4', 'd5c5', 'c4b4', 'c5c4', 'b4b3', 'c4b4', 'b3a4', 'd4b5', 'a4b3', 'b4e4', 'b3d5', 'e4d4', 
-                'd5e5', 'd4e4', 'c3d5', 'e4d4', 'g5f3', 'g8f6', 'd5c3', 'b5d6', 'c3e4', 'f6d5', 'f3g5', 'd6b5', 'e5f5', 'd5c3', 
-                'f5g4', 'd4e5', 'g4f3', 'e5f5', 'f3d3', 'f5f3', 'd3d5', 'f3f5', 'd5e5', 'f5e6', 'e5f5', 'e6e5', 'f5f6', 'c3d5', 
-                'g5f3', 'b5c3', 'f6f5', 'e5d4', 'f5e5', 'd4c5', 'e5d4', 'c5d6', 'd4e5', 'd6c5', 'e5h5', 'c3b5', 'h5g4', 'c5a3', 
-                'g4g5', 'b5c3', 'g5e5', 'c3b5', 'e5d6']
+# moves_string = ['e2e4', 'd7d5', 'e4d5', 'd8d5', 'd1e2', 'd5d4', 'e2e3', 'd4e4', 'b1c3', 'e4d4', 'e3f3', 'd4e4', 'f1e2', 'e4e3', 
+#                 'f3e4', 'e3f4', 'e4f5', 'f4g5', 'f5g4', 'g5h4', 'g4a4', 'b8c6', 'a4g4', 'h4g5', 'g4h5', 'g5a5', 'h5h3', 'a5b4', 
+#                 'h3g4', 'c6e5', 'g1f3', 'b4e4', 'f3g5', 'e5f3', 'e1f1', 'f3d4', 'g4f4', 'e4f5', 'f4e3', 'f5h3', 'e3e5', 'h3f5', 
+#                 'e5c5', 'f5d5', 'c5c4', 'd5c5', 'c4b4', 'c5c4', 'b4b3', 'c4b4', 'b3a4', 'd4b5', 'a4b3', 'b4e4', 'b3d5', 'e4d4', 
+#                 'd5e5', 'd4e4', 'c3d5', 'e4d4', 'g5f3', 'g8f6', 'd5c3', 'b5d6', 'c3e4', 'f6d5', 'f3g5', 'd6b5', 'e5f5', 'd5c3', 
+#                 'f5g4', 'd4e5', 'g4f3', 'e5f5', 'f3d3', 'f5f3', 'd3d5', 'f3f5', 'd5e5', 'f5e6', 'e5f5', 'e6e5', 'f5f6', 'c3d5', 
+#                 'g5f3', 'b5c3', 'f6f5', 'e5d4', 'f5e5', 'd4c5', 'e5d4', 'c5d6', 'd4e5', 'd6c5', 'e5h5', 'c3b5', 'h5g4', 'c5a3', 
+#                 'g4g5', 'b5c3', 'g5e5', 'c3b5', 'e5d6']
 
 #34 about to be draw by insufficient material (king vs king)
 # moves_string = ['e2e4', 'd7d5', 'd1h5', 'd8d6', 'h5d5', 'd6e5', 'd5f7', 'e8d8', 'f7g8', 'e5b2', 'g8h8', 'b2a1', 'h8h7', 'a1a2', 'h7g7', 
@@ -209,30 +209,32 @@ moves_string = ['e2e4', 'd7d5', 'e4d5', 'd8d5', 'd1e2', 'd5d4', 'e2e3', 'd4e4', 
 #                 'c5c6', 'd3f3', 'f2g1', 'f3f4', 'g1g2', 'f4f1', 'g2f1', 'f7e7', 'c6e6', 'e7d8', 'e6e8', 'd8e8', 'e4f6', 'e8f7', 'f1e2', 'f7f6', 
 #                 'e2d2', 'e5d3', 'd2d3']
 
-#40 two promoted rooks can move to the same spot. g7 works, f8 doesn't. ###error
-# moves_string = ['e2e4', 'd7d5', 'e4e5', 'd5d4', 'e5e6', 'd4d3', 'e6f7', 'e8d7', 'h2h3', 
-#                 'd3c2', 'f7g8r', 'c2b1q', 'h3h4', 'g7g5', 'h4g5', 'h7h5', 'g5g6', 'h8h6', 'g6g7', 'h6a6', 'g7f8r', 'a6b6', 'f8f7', 'b6c6']
+#40 two promoted rooks can move to the same spot. g7 works, f8 doesn't.
+moves_string = ['e2e4', 'd7d5', 'e4e5', 'd5d4', 'e5e6', 'd4d3', 'e6f7', 'e8d7', 'h2h3', 
+                'd3c2', 'f7g8r', 'c2b1q', 'h3h4', 'g7g5', 'h4g5', 'h7h5', 'g5g6', 'h8h6', 'g6g7', 'h6a6', 'g7f8r', 'a6b6', 'f8f7', 'b6c6']
 
 #41 two promoted knights can move to the same spot, this one works
 # moves_string = ['e2e4', 'd7d5', 'e4e5', 'd5d4', 'e5e6', 'd4d3', 'e6f7', 'e8d7', 'h2h3', 'd3c2', 'f7g8n', 'd8e8', 'f2f4', 'b8c6', 'f4f5', 'c6d4', 'f5f6', 'e7e5', 'f6f7', 'e5e4', 'f7e8n', 'e4e3']
 #moves_string = [] #empty new game
 
-#42 two promoted knights can move to g8, ###error
+#42 two promoted knights can move to g8
 # moves_string = ['e2e4', 'd7d5', 'e4e5', 'd5d4', 'e5e6', 'd4d3', 'e6f7', 'e8d7', 'h2h3', 'd3c2', 'f7g8n', 'd8e8', 'f2f4', 'b8c6', 
 #                 'f4f5', 'c6d4', 'f5f6', 'e7e5', 'f6f7', 'e5e4', 'f7e8n', 'e4e3', 'e8f6', 'd7d8', 'g8h6', 'a7a6']
 
-#43 two normal knights can move b8, doesn't work. ###error
+#43 two normal knights can move b8, doesn't work
 # moves_string = ['g1f3', 'h7h6', 'f3d4', 'h6h5', 'd2d3', 'h5h4', 'b1d2', 'h4h3', 'd2b3', 'g7g6', 'b3c5', 'g6g5', 'c5a6', 'g5g4', 'd4c6', 'g4g3']
 
-#44 two normal knights can move d1, doesn't work (black). ###error
+#44 two normal knights can move d1, doesn't work (black)
 # moves_string = ['g1f3', 'g8f6', 'b1c3', 'b8c6', 'f3e5', 'f6g4', 'c3d5', 'c6a5', 'h2h4', 'g4e3', 'h4h5', 'a5c4', 'h5h6', 'c4a3', 'h6g7', 'a3b5', 'g7h8q', 'b5c3', 'g2g3']
 
-#45 two normal knights can move d1, doesn't work (black). ###error
+#45 two normal knights can move d1, doesn't work (black)
 # moves_string = ['g1f3', 'g8f6', 'b1c3', 'b8c6', 'f3e5', 'f6g4', 'c3d5', 'c6a5', 'h2h4', 'g4e3', 'h4h5', 'a5c4', 'h5h6', 'c4a3', 'h6g7', 'a3b5', 'g7h8q', 'b5c3', 'g2g3']
-
 
 #46 two normal knights can move d1, loading it works
 # moves_string = ['g1f3', 'g8f6', 'b1c3', 'b8c6', 'f3e5', 'f6g4', 'c3d5', 'c6a5', 'h2h4', 'g4e3', 'h4h5', 'a5c4', 'h5h6', 'c4a3', 'h6g7', 'a3b5', 'g7h8q', 'b5c3', 'g2g3', 'e3d1']
+
+#47 about to be a stalemate by repetition, (knight to g8)
+moves_string = ['g1f3', 'g8f6', 'f3g1', 'f6g8', 'g1f3', 'g8f6', 'f3g1']
 
 # moves_string = []
 
@@ -1032,6 +1034,8 @@ def clarify_which_piece(wanted_position):
         if square:
             if wanted_position[-1] in ["1", "8"]:
                 if f"{square.lower()}{wanted_position.lower()}q" in phoenix.get_possible_moves(turn=get_turn_color(), position_dict=position_dict, all_moves=all_moves):
+                    return square.lower()
+                elif f"{square.lower()}{wanted_position.lower()}" in phoenix.get_possible_moves(turn=get_turn_color(), position_dict=position_dict, all_moves=all_moves):
                     return square.lower()
                 else: 
                     clarified_words = input("Sorry, I didn't get that. Please clarify which piece you would like to move: ")

@@ -480,11 +480,6 @@ class Phoenix:
 
     #implement the command with the capture, and updating the piece positions before printing them again
     def implement_command(self, command, piece, position_dict, all_moves, board_positions_list, update=True, loaded_last_move=""):
-        # if position_dict is None: raise ValueError("position_dict is None in implement_command")
-        # if command == "h5g6": 
-        #     print(update)
-        
-
         if update: position_dict = self.handle_capture(command, position_dict=position_dict, all_moves=all_moves)
         else: position_dict = self.handle_capture(command, loading=True, loaded_last_move=loaded_last_move, position_dict=position_dict, all_moves=all_moves)
 
@@ -501,9 +496,11 @@ class Phoenix:
             self.get_possible_moves(turn=opponent_color, position_dict=position_dict, all_moves=all_moves) +
             [self.phoenix_get_turn_from_moves(all_moves)]
         )
-
-        # check_for_50_move_draw(command)     ##### put this back in testChess
-
+        # board_positions_list.append(
+        #     self.get_possible_moves(turn=turn_color, position_dict=position_dict, all_moves=all_moves) +
+        #     self.get_possible_moves(turn=opponent_color, position_dict=position_dict, all_moves=all_moves) +
+        #     [self.phoenix_get_turn_from_moves(all_moves)]
+        # )
         return position_dict, all_moves, turn_color, board_positions_list
 
     #updates all moves with the current moves that have been made
