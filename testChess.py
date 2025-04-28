@@ -27,10 +27,11 @@
     #FIXED: make phoenix class have the generation of possible moves logic
     #FIXED: The problem with the en passant load and the pawn promotion load was that I was passing in all the moves at once, instead of adding them one at a time (7, 8, 9, 12, 23)
     #FIXED: 33, added 50_move_count in play loop
-    #FIXED: 47, 28 -> I think it is working now, but I might need to check up on it more later
+    #FIXED: #TODO 47, 28 -> I think it is working now, but I might need to check up on it more later
+    #FIXED: Pieces that can move to the same square doesn't work if it is on the last row. (40, 42, 43, 44)
+    #FIXED: Generate move tree
 
-    #scenario: Pieces that can move to the same square doesn't work if it is on the last row. (40, 42, 43, 44)
-    #scenario: Generate move tree
+    #scenario: evaluate each position in the tree, and apply alpha beta to go faster and deeper
     #scenario: Work with other commands, like take over, restart, undo, etc;
     #scenario: can't undo a checkmate or stalemate
 
@@ -38,7 +39,7 @@ import re
 import os
 from collections import Counter
 from PHOENIX import Phoenix
-phoenix = Phoenix(1, 2, 3, 4)
+phoenix = Phoenix()
 
 def clear_screen():
     if os.name == 'nt':  # Windows
@@ -77,7 +78,7 @@ def clear_screen():
 # moves_string = ['e2e4', 'd7d5', 'e4e5', 'd5d4', 'c2c4', 'f7f5', 'h2h3', 'a7a5', 'h3h4', 'a5a4', 'h4h5', 'g7g5', 'h5g6'] 
 
 #11 pawns about to be promoted
-# moves_string = ['e2e4', 'd7d5', 'e4e5', 'd5d4', 'e5e6', 'd4d3', 'e6f7', 'e8d7', 'h2h3', 'd3c2']
+moves_string = ['e2e4', 'd7d5', 'e4e5', 'd5d4', 'e5e6', 'd4d3', 'e6f7', 'e8d7', 'h2h3', 'd3c2']
 
 #12 promoted pawns load 
 # moves_string = ['e2e4', 'd7d5', 'e4e5', 'd5d4', 'e5e6', 'd4d3', 'e6f7', 'e8d7', 'h2h3', 'd3c2', 'f7g8r', 'c2b1q']
@@ -236,7 +237,7 @@ def clear_screen():
 #47 about to be a stalemate by repetition, (knight to g8)
 # moves_string = ['g1f3', 'g8f6', 'f3g1', 'f6g8', 'g1f3', 'g8f6', 'f3g1']
 
-moves_string = []
+# moves_string = []
 
 #used to update the current list of moves made, and transitively the current position. Can be used in tandem with above set position to set a position before playing 
 all_moves = moves_string
@@ -663,6 +664,9 @@ def play_game_loop():
 #can also be used to test things before the game starts
 def set_initials():
     global moves_string, all_moves, abbreviation_dict, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time, fifty_move_rule_bool, fifty_move_rule_count
+    global call_counter  # Access the global counter
+    
+    
     # Example of how to use a class in python
     # phoenix = Phoenix(1, 2, 3, 4)
     # phoenix.rev()
@@ -676,14 +680,10 @@ def set_initials():
     clear_screen()
     print_board_visiual()
 
-    clear_screen()
-    position_dict_copy = position_dict.copy()
-    board_positions_list_copy = board_positions_list.copy()
-    print(get_mock_moves_tree(4, phoenix.phoenix_get_turn_from_moves(all_moves), position_dict_copy, all_moves, board_positions_list_copy))
-    # print_tree(get_mock_moves_tree(3, phoenix.phoenix_get_turn_from_moves(all_moves), position_dict_copy, all_moves, board_positions_list_copy))
-    # print_tree(get_mock_moves_tree(5, phoenix.phoenix_get_turn_from_moves(all_moves), position_dict_copy, all_moves, board_positions_list_copy))
-    input()
-
+    # clear_screen()
+    # position_dict_copy = position_dict.copy()
+    # board_positions_list_copy = board_positions_list.copy()
+    # print(get_mock_moves_tree(1, phoenix.phoenix_get_turn_from_moves(all_moves), position_dict_copy, all_moves, board_positions_list_copy))
 
 def reset_global_turn():
     global global_turn
@@ -1125,19 +1125,50 @@ def implement_intention(intention, computer_color=""):
 
 def computer_takeover(color): pass
 
+import copy
+call_counter = 0
+
 def get_mock_moves_tree(depth, turn, position_dict, all_moves, board_positions_list):
+    print(f"still going {depth}.....")
     move_dict = {}
     leaf_list = []
-    depth -= 1
+    
+    # Get the possible moves for the current turn
     possible_moves = phoenix.get_possible_moves(turn=phoenix.phoenix_get_turn_from_moves(all_moves), position_dict=position_dict, all_moves=all_moves)
+
+    # If no moves are possible, return "???"
+    if not possible_moves:
+        return "???"
+    
     for move in possible_moves:
-        whole_piece = phoenix.get_what_is_on_square_specific(move[:2], position_dict=position_dict)
+        # Make deep copies to preserve original state across recursive calls
+        new_position_dict = copy.deepcopy(position_dict)
+        new_all_moves = copy.deepcopy(all_moves)
+        new_board_positions_list = copy.deepcopy(board_positions_list)
+        new_turn = turn  # If turn is a simple variable (e.g., 'w' or 'b'), no deepcopy is needed
+        
+        
+        # Get the piece on the square for the current move
+        whole_piece = phoenix.get_what_is_on_square_specific(move[:2], position_dict=new_position_dict)
+        
         piece = check_for_pieces(whole_piece)
-        position_dict, all_moves, turn, board_positions_list = phoenix.implement_command(move, piece, position_dict=position_dict, all_moves=all_moves, board_positions_list=board_positions_list)
-        if depth > 0: move_dict[move] = get_mock_moves_tree(depth, turn, position_dict, all_moves, board_positions_list)
-        else: leaf_list.append(move)
-    if leaf_list: return leaf_list
-    else: return move_dict
+        # Apply the move and update the board state
+        new_position_dict, new_all_moves, new_turn, new_board_positions_list = phoenix.implement_command(
+            move, piece, position_dict=new_position_dict, all_moves=new_all_moves, board_positions_list=new_board_positions_list
+        )
+        
+        # If there is still depth left, recurse to generate the tree further
+        if depth > 0:
+            move_dict[move] = get_mock_moves_tree(depth - 1, new_turn, new_position_dict, new_all_moves, new_board_positions_list)
+        else:
+            # If at leaf level, add the move to the leaf list
+            leaf_list.append(move)
+    
+    # If we have any leaf nodes, return them
+    if leaf_list:
+        return leaf_list
+    else:
+        return move_dict
 
 def print_tree(tree, indent=0, parent_has_more=False):
     if isinstance(tree, dict):
