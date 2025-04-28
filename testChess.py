@@ -57,7 +57,7 @@ def clear_screen():
 # moves_string = ['e2e4', 'd7d5', 'e4d5']
 
 #4 pinned queens
-# moves_string = ['e2e4', 'f7f5', 'd2d3', 'f5e4', 'd1e2', 'e4d3', 'c2d3', 'e7e5', 'd3d4', 'd8e7', 'e2e5']
+moves_string = ['e2e4', 'f7f5', 'd2d3', 'f5e4', 'd1e2', 'e4d3', 'c2d3', 'e7e5', 'd3d4', 'd8e7', 'e2e5']
 
 #5 pinned en passant
 # moves_string = ['e2e4', 'e7e6', 'f2f4', 'd8e7', 'f4f5', 'e6f5', 'e4e5', 'd7d5']
@@ -78,7 +78,7 @@ def clear_screen():
 # moves_string = ['e2e4', 'd7d5', 'e4e5', 'd5d4', 'c2c4', 'f7f5', 'h2h3', 'a7a5', 'h3h4', 'a5a4', 'h4h5', 'g7g5', 'h5g6'] 
 
 #11 pawns about to be promoted
-moves_string = ['e2e4', 'd7d5', 'e4e5', 'd5d4', 'e5e6', 'd4d3', 'e6f7', 'e8d7', 'h2h3', 'd3c2']
+# moves_string = ['e2e4', 'd7d5', 'e4e5', 'd5d4', 'e5e6', 'd4d3', 'e6f7', 'e8d7', 'h2h3', 'd3c2']
 
 #12 promoted pawns load 
 # moves_string = ['e2e4', 'd7d5', 'e4e5', 'd5d4', 'e5e6', 'd4d3', 'e6f7', 'e8d7', 'h2h3', 'd3c2', 'f7g8r', 'c2b1q']
@@ -262,14 +262,14 @@ position_dict = {
     'Piece.white_PAWN7': "",
     'Piece.white_PAWN8': "",
     
-    'Piece.PROMOTED_white_PAWN1': "",
-    'Piece.PROMOTED_white_PAWN2': "",
-    'Piece.PROMOTED_white_PAWN3': "",
-    'Piece.PROMOTED_white_PAWN4': "",
-    'Piece.PROMOTED_white_PAWN5': "",
-    'Piece.PROMOTED_white_PAWN6': "",
-    'Piece.PROMOTED_white_PAWN7': "",
-    'Piece.PROMOTED_white_PAWN8': "",
+    # 'Piece.PROMOTED_white_PAWN1': "",
+    # 'Piece.PROMOTED_white_PAWN2': "",
+    # 'Piece.PROMOTED_white_PAWN3': "",
+    # 'Piece.PROMOTED_white_PAWN4': "",
+    # 'Piece.PROMOTED_white_PAWN5': "",
+    # 'Piece.PROMOTED_white_PAWN6': "",
+    # 'Piece.PROMOTED_white_PAWN7': "",
+    # 'Piece.PROMOTED_white_PAWN8': "",
 
 
     'Piece.black_KING': "",
@@ -289,14 +289,14 @@ position_dict = {
     'Piece.black_PAWN7': "",
     'Piece.black_PAWN8': "",
     
-    'Piece.PROMOTED_black_PAWN1': "",
-    'Piece.PROMOTED_black_PAWN2': "",
-    'Piece.PROMOTED_black_PAWN3': "",
-    'Piece.PROMOTED_black_PAWN4': "",
-    'Piece.PROMOTED_black_PAWN5': "",
-    'Piece.PROMOTED_black_PAWN6': "",
-    'Piece.PROMOTED_black_PAWN7': "",
-    'Piece.PROMOTED_black_PAWN8': "",
+    # 'Piece.PROMOTED_black_PAWN1': "",
+    # 'Piece.PROMOTED_black_PAWN2': "",
+    # 'Piece.PROMOTED_black_PAWN3': "",
+    # 'Piece.PROMOTED_black_PAWN4': "",
+    # 'Piece.PROMOTED_black_PAWN5': "",
+    # 'Piece.PROMOTED_black_PAWN6': "",
+    # 'Piece.PROMOTED_black_PAWN7': "",
+    # 'Piece.PROMOTED_black_PAWN8': "",
 }
 
 captured_pieces_list = []
@@ -655,6 +655,7 @@ def play_game_loop():
     #print (or say) the command
     print(command)
     if phoenix.is_king_in_check(get_turn_color(), position_dict=position_dict, all_moves=all_moves): print(f"{get_turn_color()} king is in check")
+    print(f"current position status: {phoenix.evaluate_postion(position_dict)}")
 
     if words != "quit":
         play_game_loop()
@@ -666,13 +667,7 @@ def set_initials():
     global moves_string, all_moves, abbreviation_dict, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time, fifty_move_rule_bool, fifty_move_rule_count
     global call_counter  # Access the global counter
     
-    
-    # Example of how to use a class in python
-    # phoenix = Phoenix(1, 2, 3, 4)
-    # phoenix.rev()
-    # input()
     reset_50_move_logic()
-    # input(f"{fifty_move_rule_count}: {fifty_move_rule_bool}")
     locate_pieces_initial()
     board_positions_list.append(get_initial_board_position())
     set_position(all_moves)
@@ -680,10 +675,20 @@ def set_initials():
     clear_screen()
     print_board_visiual()
 
+    # phoenix.evaluate_piece_test("queen", position_dict["Piece.white_QUEEN"])
+    # print(f"current position status: {phoenix.evaluate_postion(position_dict)}")
+
+    # print(phoenix.square_to_index("a1"))
+    # print(phoenix.square_to_index("b7"))
+    # print(phoenix.square_to_index("h3"))
+    # print(phoenix.square_to_index("a7"))
+    # print(phoenix.square_to_index("g2"))
+    # input(phoenix.square_to_index("h8"))
+
     # clear_screen()
     # position_dict_copy = position_dict.copy()
     # board_positions_list_copy = board_positions_list.copy()
-    # print(get_mock_moves_tree(1, phoenix.phoenix_get_turn_from_moves(all_moves), position_dict_copy, all_moves, board_positions_list_copy))
+    # print(get_moves_tree(1, phoenix.phoenix_get_turn_from_moves(all_moves), position_dict_copy, all_moves, board_positions_list_copy))
 
 def reset_global_turn():
     global global_turn
@@ -1128,7 +1133,7 @@ def computer_takeover(color): pass
 import copy
 call_counter = 0
 
-def get_mock_moves_tree(depth, turn, position_dict, all_moves, board_positions_list):
+def get_moves_tree(depth, turn, position_dict, all_moves, board_positions_list):
     print(f"still going {depth}.....")
     move_dict = {}
     leaf_list = []
@@ -1159,7 +1164,7 @@ def get_mock_moves_tree(depth, turn, position_dict, all_moves, board_positions_l
         
         # If there is still depth left, recurse to generate the tree further
         if depth > 0:
-            move_dict[move] = get_mock_moves_tree(depth - 1, new_turn, new_position_dict, new_all_moves, new_board_positions_list)
+            move_dict[move] = get_moves_tree(depth - 1, new_turn, new_position_dict, new_all_moves, new_board_positions_list)
         else:
             # If at leaf level, add the move to the leaf list
             leaf_list.append(move)

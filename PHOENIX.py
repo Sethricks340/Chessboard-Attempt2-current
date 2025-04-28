@@ -17,8 +17,6 @@ class Phoenix:
             "k": "king"
         }
 
-    saved_state = {}, [], [], ""
-
     #example function, while I am learning python syntax for classes
     def rev(self):
         print(f"'Vroom Vroom! I'm an engine!'")
@@ -488,11 +486,6 @@ class Phoenix:
             self.get_possible_moves(turn=opponent_color, position_dict=position_dict, all_moves=all_moves) +
             [self.phoenix_get_turn_from_moves(all_moves)]
         )
-        # board_positions_list.append(
-        #     self.get_possible_moves(turn=turn_color, position_dict=position_dict, all_moves=all_moves) +
-        #     self.get_possible_moves(turn=opponent_color, position_dict=position_dict, all_moves=all_moves) +
-        #     [self.phoenix_get_turn_from_moves(all_moves)]
-        # )
         return position_dict, all_moves, turn_color, board_positions_list
 
     #updates all moves with the current moves that have been made
@@ -565,50 +558,82 @@ class Phoenix:
     def decrement_string(self, s):
         return re.sub(r'(\d+)$', lambda x: str(int(x.group(1)) - 1), s)
 
-    # def save_state(self, position_dict, all_moves, board_positions_list, turn): 
-    #     # self.saved_state = position_dict, all_moves, board_positions_list, turn
-    #     self.saved_state = (
-    #     position_dict.copy(), 
-    #     all_moves[:], 
-    #     board_positions_list[:], 
-    #     turn
-    #     )
+    def evaluate_postion(self, passed_position_dict):
+        position_eval = 0
+        # print(passed_position_dict)
+        for piece, position in passed_position_dict.items():
+            if position == "xx": continue
+            piece_type = next((p for p in ("king", "queen", "rook", "bishop", "knight", "pawn") if p in piece.lower()), None)
+            # print(piece_type)
+            # print(piece)
+            #evaluate with respect to white  
+            if "white" in piece.lower():
+                # print("white")
+                # print(f"{piece}: {PST_dict[piece_type][0]} + {PST_dict[piece_type][1][self.square_to_index(position)]} {self.square_to_index(position)}")
+                # print(f"{piece}: {PST_dict[piece_type][0] + PST_dict[piece_type][1][self.square_to_index(position)]}")
+                position_eval += (PST_dict[piece_type][0] + PST_dict[piece_type][1][self.square_to_index(position)])
+            
+            #evaluate with respect to black                
+            else:
+                # print(f"position: {position}")
+                # print(f"PST_reversed[position]: {PST_reversed[position]}")
+                # print(f"self.square_to_index((PST_reversed[position])): {self.square_to_index((PST_reversed[position]))}")
+                # print(f"{piece}: -{(PST_dict[piece_type][0] + PST_dict[piece_type][1][self.square_to_index(PST_reversed[position])])}")
+                # print(f"{piece}: {(PST_dict[piece_type][0] + PST_dict[piece_type][1][self.square_to_index(PST_reversed[position])])}")
+                position_eval -= (PST_dict[piece_type][0] + PST_dict[piece_type][1][self.square_to_index((PST_reversed[position]))])
+        return position_eval
 
-    # def restore_state(self):
-    #     return self.saved_state
+    def evaluate_piece_test(self, piece, position):
+        if any(p in piece for p in ("king", "queen", "rook", "bishop", "knight", "pawn")):
+            # print(piece)
+            # print(PST_dict[piece])
+            # print(PST_dict[piece][0])
+            # print(PST_dict[piece][1][self.square_to_index(position)])
+            # print(PST_dict[piece][0] + PST_dict[piece][1][self.square_to_index(position)])
+            return (PST_dict[piece][0] + PST_dict[piece][1][self.square_to_index(position)])
 
-    def save_state(self, position_dict, all_moves, board_positions_list, turn):
-        return position_dict.copy(), all_moves[:], board_positions_list[:], turn
+    def square_to_index(self, square):
+        # print(square)
+        file = square[0]
+        rank = square[1]
+        # print(f"file: {file}, rank: {rank}")
+        file_number = ord(file) - ord('a')  # 'a' -> 0, 'b' -> 1, etc.
+        rank_number = int(rank)             # '1' -> 1, '8' -> 8
 
-    def restore_state(self, saved_state):
-        return saved_state
+        return (rank_number - 1) * 8 + file_number
 
-# region piece points/ checkmate & stalemate
-#piece points: 
-#   pawn: 1
-#   knight: 3
-#   bishop: 3
-#   rook: 5
-#   queen: 9
-#   white checkmate: 1000
-#   black checkmte: -1000
-#   draw/stalemate: 0
-#endregion
+    def rotate_90_clockwise(self, square_list):
+        # Ensure the input list has exactly 64 elements
+        if len(square_list) != 64:
+            raise ValueError("The input must be a list of 64 numbers.")
+
+        # Rotate the square 90 degrees clockwise
+        rotated_list = []
+        for col in range(8):
+            for row in range(7, -1, -1):
+                rotated_list.append(square_list[row * 8 + col])
+        
+        return rotated_list
+
+    def print_as_square(self):
+        square_list = self.rotate_90_clockwise(white_king_end_PST)
+        # Print the list formatted as an 8x8 square
+        for i in range(8):
+            print(square_list[i * 8:(i + 1) * 8])
 
 #region PST_reversed
 #for black's perspective
 PST_reversed = {
-    "a1": ["h8"], "b1": ["g8"], "c1": ["f8"], "d1": ["e8"], "e1": ["d8"], "f1": ["c8"], "g1": ["b8"], "h1": ["a8"],
-    "a2": ["h7"], "b2": ["g7"], "c2": ["f7"], "d2": ["e7"], "e2": ["d7"], "f2": ["c7"], "g2": ["b7"], "h2": ["a7"],
-    "a3": ["h6"], "b3": ["g6"], "c3": ["f6"], "d3": ["e6"], "e3": ["d6"], "f3": ["c6"], "g3": ["b6"], "h3": ["a6"],
-    "a4": ["h5"], "b4": ["g5"], "c4": ["f5"], "d4": ["e5"], "e4": ["d5"], "f4": ["c5"], "g4": ["b5"], "h4": ["a5"],
-    "a5": ["h4"], "b5": ["g4"], "c5": ["f4"], "d5": ["e4"], "e5": ["d4"], "f5": ["c4"], "g5": ["b4"], "h5": ["a4"],
-    "a6": ["h3"], "b6": ["g3"], "c6": ["f3"], "d6": ["e3"], "e6": ["d3"], "f6": ["c3"], "g6": ["b3"], "h6": ["a3"],
-    "a7": ["h2"], "b7": ["g2"], "c7": ["f2"], "d7": ["e2"], "e7": ["d2"], "f7": ["c2"], "g7": ["b2"], "h7": ["a2"],
-    "a8": ["h1"], "b8": ["g1"], "c8": ["f1"], "d8": ["e1"], "e8": ["d1"], "f8": ["c1"], "g8": ["b1"], "h8": ["a1"]
+    "a1": "h8", "b1": "g8", "c1": "f8", "d1": "e8", "e1": "d8", "f1": "c8", "g1": "b8", "h1": "a8",
+    "a2": "h7", "b2": "g7", "c2": "f7", "d2": "e7", "e2": "d7", "f2": "c7", "g2": "b7", "h2": "a7",
+    "a3": "h6", "b3": "g6", "c3": "f6", "d3": "e6", "e3": "d6", "f3": "c6", "g3": "b6", "h3": "a6",
+    "a4": "h5", "b4": "g5", "c4": "f5", "d4": "e5", "e4": "d5", "f4": "c5", "g4": "b5", "h4": "a5",
+    "a5": "h4", "b5": "g4", "c5": "f4", "d5": "e4", "e5": "d4", "f5": "c4", "g5": "b4", "h5": "a4",
+    "a6": "h3", "b6": "g3", "c6": "f3", "d6": "e3", "e6": "d3", "f6": "c3", "g6": "b3", "h6": "a3",
+    "a7": "h2", "b7": "g2", "c7": "f2", "d7": "e2", "e7": "d2", "f7": "c2", "g7": "b2", "h7": "a2",
+    "a8": "h1", "b8": "g1", "c8": "f1", "d8": "e1", "e8": "d1", "f8": "c1", "g8": "b1", "h8": "a1"
 }
 #endregion
-
 #region white_pawn_PST
 #  0,  0,  0,  0,  0,  0,  0,  0,
 # 50, 50, 50, 50, 50, 50, 50, 50,
@@ -623,16 +648,19 @@ PST_reversed = {
 #ordered: a1, a2, a3, a4, a5, a6, a7, a8
         # ...
         #h1, h2, h3, h4, h5, h6, h7, h8
-white_pawn_PST = [0, 0, 0, 0, 0, 0, 0, 0, 
-                  5, 10, 10, -20, -20, 10, 10, 5, 
-                  5, -5, -10, 0, 0, -10, -5,  5, 
-                  0, 0, 0, 20, 20, 0, 0, 0, 
-                  5, 5, 10, 25, 25, 10, 5, 5, 
-                  10, 10, 20, 30, 30, 20, 10, 10, 
-                  50, 50, 50, 50, 50, 50, 50, 50, 
-                  0, 0, 0, 0, 0, 0, 0, 0]
-#endregion
+white_pawn_PST = [
+    0,  0,  0,  0,  0,  0,  0,  0,
+    5, 10, 10,-20,-20, 10, 10,  5,
+    5, -5,-10,  0,  0,-10, -5,  5,
+    0,  0,  0, 20, 20,  0,  0,  0,
+    5,  5, 10, 25, 25, 10,  5,  5,
+    10, 10, 20, 30, 30, 20, 10, 10,
+    50, 50, 50, 50, 50, 50, 50, 50,
+    0,  0,  0,  0,  0,  0,  0,  0
+]
 
+
+#endregion
 #region white_knight_PST
 # -50,-40,-30,-30,-30,-30,-40,-50,
 # -40,-20,  0,  0,  0,  0,-20,-40,
@@ -645,16 +673,18 @@ white_pawn_PST = [0, 0, 0, 0, 0, 0, 0, 0,
 # ^^a1
 
 #formatted same as white_pawn_PST
-white_knight_PST = [-50, -40, -30, -30, -30, -30, -40, -50,
-                    -40, -20, 0, 5, 5, 0, -20, -40,
-                    -30, 5, 10, 15, 15, 10, 5, -30,
-                    -30, 0, 15, 20, 20, 15, 0, -30,
-                    -30, 5, 15, 20, 20, 15, 5, -30,
-                    -30, 0, 10, 15, 15, 10, 0, -30,
-                    -40, -20, 0, 0, 0, 0, -20, -40,
-                    -50, -40, -30, -30, -30, -30, -40, -50]
-#endregion
+white_knight_PST = [
+    -50,-40,-30,-30,-30,-30,-40,-50,
+    -40,-20,  0,  5,  5,  0,-20,-40,
+    -30,  5, 10, 15, 15, 10,  5,-30,
+    -30,  0, 15, 20, 20, 15,  0,-30,
+    -30,  5, 15, 20, 20, 15,  5,-30,
+    -30,  0, 10, 15, 15, 10,  0,-30,
+    -40,-20,  0,  0,  0,  0,-20,-40,
+    -50,-40,-30,-30,-30,-30,-40,-50,
+]
 
+#endregion
 #region white_bishop_PST
 # -20,-10,-10,-10,-10,-10,-10,-20,
 # -10,  0,  0,  0,  0,  0,  0,-10,
@@ -665,18 +695,18 @@ white_knight_PST = [-50, -40, -30, -30, -30, -30, -40, -50,
 # -10,  5,  0,  0,  0,  0,  5,-10,
 # -20,-10,-10,-10,-10,-10,-10,-20,
 # ^^a1
-
 #formatted same as white_pawn_PST
-white_bishop_PST = [-20, -10, -10, -10, -10, -10, -10, -20,
-                    -10, 5, 0, 0, 0, 0, 5, -10,
-                    -10, 10, 10, 10, 10, 10, 10, -10,
-                    -10, 0, 10, 10, 10, 10, 0, -10,
-                    -10, 5, 5, 10, 10, 5, 5, -10,
-                    -10, 0, 5, 10, 10, 5, 0, -10,
-                    -10, 0, 0, 0, 0, 0, 0, -10,
-                    -20, -10, -10, -10, -10, -10, -10, -20]
+white_bishop_PST = [
+    -20,-10,-10,-10,-10,-10,-10,-20,
+    -10,  5,  0,  0,  0,  0,  5,-10,
+    -10, 10, 10, 10, 10, 10, 10,-10,
+    -10,  0, 10, 10, 10, 10,  0,-10,
+    -10,  5,  5, 10, 10,  5,  5,-10,
+    -10,  0,  5, 10, 10,  5,  0,-10,
+    -10,  0,  0,  0,  0,  0,  0,-10,
+    -20,-10,-10,-10,-10,-10,-10,-20,
+]
 #endregion
-
 #region white_rook_PST
 #   0,  0,  0,  0,  0,  0,  0,  0,
 #   5, 10, 10, 10, 10, 10, 10,  5,
@@ -689,16 +719,17 @@ white_bishop_PST = [-20, -10, -10, -10, -10, -10, -10, -20,
 # ^^a1
 
 #formatted same as white_pawn_PST
-white_rook_PST = [0, 0, 0, 5, 5, 0, 0, 0
-                  -5, 0, 0, 0, 0, 0, 0, -5,
-                  -5, 0, 0, 0, 0, 0, 0, -5,
-                  -5, 0, 0, 0, 0, 0, 0, -5,
-                  -5, 0, 0, 0, 0, 0, 0, -5,
-                  -5, 0, 0, 0, 0, 0, 0, -5,
-                  5, 10, 10, 10, 10, 10, 10, 5,
-                  0, 0, 0, 0, 0, 0, 0, 0]
+white_rook_PST = [
+    0,  0,  0,  5,  5,  0,  0,  0
+    -5,  0,  0,  0,  0,  0,  0, -5,
+    -5,  0,  0,  0,  0,  0,  0, -5,
+    -5,  0,  0,  0,  0,  0,  0, -5,
+    -5,  0,  0,  0,  0,  0,  0, -5,
+    -5,  0,  0,  0,  0,  0,  0, -5,
+    5, 10, 10, 10, 10, 10, 10,  5,
+    0,  0,  0,  0,  0,  0,  0,  0,
+]
 #endregion
-
 #region white_queen_PST
 # -20,-10,-10, -5, -5,-10,-10,-20,
 # -10,  0,  0,  0,  0,  0,  0,-10,
@@ -711,16 +742,19 @@ white_rook_PST = [0, 0, 0, 5, 5, 0, 0, 0
 # ^^a1
 
 #formatted same as white_pawn_PST
-white_queen_PST = [-20, -10, -10, -5, -5, -10, -10, -20
-                   -10, 0, 5, 0, 0, 0, 0, -10,
-                   -10, 5, 5, 5, 5, 5, 0, -10,
-                   0, 0, 5, 5, 5, 5, 0, -5,
-                   -5, 0, 5, 5, 5, 5, 0, -5,
-                   -10, 0, 5, 5, 5, 5, 0, -10,
-                   -10, 0, 0, 0, 0, 0, 0, -10,
-                   -20, -10, -10, -5, -5, -10, -10, -20]
-#endregion
+white_queen_PST = [
 
+    -20,-10,-10, -5, -5,-10,-10,-20
+    -10,  0,  5,  0,  0,  0,  0,-10,
+    -10,  5,  5,  5,  5,  5,  0,-10,
+    0,  0,  5,  5,  5,  5,  0, -5,
+    -5,  0,  5,  5,  5,  5,  0, -5,
+    -10,  0,  5,  5,  5,  5,  0,-10,
+    -10,  0,  0,  0,  0,  0,  0,-10,
+    -20,-10,-10, -5, -5,-10,-10,-20,
+]
+
+#endregion
 #region white_king_middle_PST
 # -30,-40,-40,-50,-50,-40,-40,-30,
 # -30,-40,-40,-50,-50,-40,-40,-30,
@@ -733,16 +767,17 @@ white_queen_PST = [-20, -10, -10, -5, -5, -10, -10, -20
 # ^^a1
 
 #formatted same as white_pawn_PST
-white_king_middle_PST = [20, 30, 10, 0, 0, 10, 30, 20,
-                         20, 20, 0, 0, 0, 0, 20, 20,
-                         -10, -20, -20, -20, -20, -20, -20, -10,
-                         -20, -30, -30, -40, -40, -30, -30, -20,
-                         -30, -40, -40, -50, -50, -40, -40, -30,
-                         -30, -40, -40, -50, -50, -40, -40, -30,
-                         -30, -40, -40, -50, -50, -40, -40, -30,
-                         -30, -40, -40, -50, -50, -40, -40, -30]
+white_king_middle_PST = [
+     20, 30, 10,  0,  0, 10, 30, 20,
+     20, 20,  0,  0,  0,  0, 20, 20,
+    -10,-20,-20,-20,-20,-20,-20,-10,
+    -20,-30,-30,-40,-40,-30,-30,-20,
+    -30,-40,-40,-50,-50,-40,-40,-30,
+    -30,-40,-40,-50,-50,-40,-40,-30,
+    -30,-40,-40,-50,-50,-40,-40,-30,
+    -30,-40,-40,-50,-50,-40,-40,-30
+]
 #endregion
-
 #region white_king_end_PST
 # -50, -40, -30, -20, -20, -30, -40, -50,
 # -30, -20, -10, 0, 0, -10, -20, -30,
@@ -755,13 +790,32 @@ white_king_middle_PST = [20, 30, 10, 0, 0, 10, 30, 20,
 # ^^a1
 
 #formatted same as white_pawn_PST
-white_king_end_PST = [-50, -30, -30, -30, -30, -30, -30, -50
-                      -30, -30, 0, 0, 0, 0, -30, -30,
-                      -30, -10, 20, 30, 30, 20, -10, -30,
-                      -30, -10, 30, 40, 40, 30, -10, -30,
-                      -30, -10, 30, 40, 40, 30, -10, -30,
-                      -30, -10, 20, 30, 30, 20, -10, -30,
-                      -30, -20, -10, 0, 0, -10, -20, -30,
-                      -50, -40, -30, -20, -20, -30, -40, -50]
+white_king_end_PST = [
+    -50, -30, -30, -30, -30, -30, -30, -50
+    -30, -30, 0, 0, 0, 0, -30, -30,
+    -30, -10, 20, 30, 30, 20, -10, -30,
+    -30, -10, 30, 40, 40, 30, -10, -30,
+    -30, -10, 30, 40, 40, 30, -10, -30,
+    -30, -10, 20, 30, 30, 20, -10, -30,
+    -30, -20, -10, 0, 0, -10, -20, -30,
+    -50, -40, -30, -20, -20, -30, -40, -50,
+]
+
 #endregion
 
+PST_dict = {
+    "pawn": (10, white_pawn_PST),
+
+    "knight": (30, white_knight_PST),
+
+    "bishop": (30, white_bishop_PST),
+
+    "rook": (50, white_rook_PST),
+
+    "queen": (90, white_queen_PST),
+
+    "king": (0, white_king_middle_PST)
+    # "king_middle": (0, white_king_middle_PST),
+
+    # "king_end": (0, white_king_end_PST),
+}
