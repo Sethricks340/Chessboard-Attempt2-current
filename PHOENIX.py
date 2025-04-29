@@ -200,6 +200,7 @@ class Phoenix:
         direction = [1,2] if color.lower() == "white" else [-1,-2]
         for pawn in pawn_positions:
             for offset in direction:
+                if offset in [2, -2] and pawn[1] != ("2" if color.lower() == "white" else "7"): continue
                 new_rank = int(pawn[1]) + offset
                 # if 1 <= new_rank <= 8:
                 if (color.lower() == "white" and 1 <= new_rank <= 7) or (color.lower() == "black" and 2 <= new_rank <= 8):
@@ -564,22 +565,14 @@ class Phoenix:
         for piece, position in passed_position_dict.items():
             if position == "xx": continue
             piece_type = next((p for p in ("king", "queen", "rook", "bishop", "knight", "pawn") if p in piece.lower()), None)
-            # print(piece_type)
-            # print(piece)
             #evaluate with respect to white  
             if "white" in piece.lower():
-                # print("white")
-                # print(f"{piece}: {PST_dict[piece_type][0]} + {PST_dict[piece_type][1][self.square_to_index(position)]} {self.square_to_index(position)}")
-                # print(f"{piece}: {PST_dict[piece_type][0] + PST_dict[piece_type][1][self.square_to_index(position)]}")
+                # input(f"white {piece}, {piece_type}, {position}")
                 position_eval += (PST_dict[piece_type][0] + PST_dict[piece_type][1][self.square_to_index(position)])
             
             #evaluate with respect to black                
             else:
-                # print(f"position: {position}")
-                # print(f"PST_reversed[position]: {PST_reversed[position]}")
-                # print(f"self.square_to_index((PST_reversed[position])): {self.square_to_index((PST_reversed[position]))}")
-                # print(f"{piece}: -{(PST_dict[piece_type][0] + PST_dict[piece_type][1][self.square_to_index(PST_reversed[position])])}")
-                # print(f"{piece}: {(PST_dict[piece_type][0] + PST_dict[piece_type][1][self.square_to_index(PST_reversed[position])])}")
+                # input(f"black {piece}, {piece_type}, {position}")
                 position_eval -= (PST_dict[piece_type][0] + PST_dict[piece_type][1][self.square_to_index((PST_reversed[position]))])
         return position_eval
 
@@ -588,6 +581,14 @@ class Phoenix:
             # print(piece)
             # print(PST_dict[piece])
             # print(PST_dict[piece][0])
+            # print(self.square_to_index(position))
+
+            # for i in range(0, 64):
+            #     print(f"Space {i}: ")
+            # #     print(white_queen_PST[i])
+
+            # print(white_queen_PST[63])
+
             # print(PST_dict[piece][1][self.square_to_index(position)])
             # print(PST_dict[piece][0] + PST_dict[piece][1][self.square_to_index(position)])
             return (PST_dict[piece][0] + PST_dict[piece][1][self.square_to_index(position)])
@@ -681,7 +682,7 @@ white_knight_PST = [
     -30,  5, 15, 20, 20, 15,  5,-30,
     -30,  0, 10, 15, 15, 10,  0,-30,
     -40,-20,  0,  0,  0,  0,-20,-40,
-    -50,-40,-30,-30,-30,-30,-40,-50,
+    -50,-40,-30,-30,-30,-30,-40,-50
 ]
 
 #endregion
@@ -704,7 +705,7 @@ white_bishop_PST = [
     -10,  5,  5, 10, 10,  5,  5,-10,
     -10,  0,  5, 10, 10,  5,  0,-10,
     -10,  0,  0,  0,  0,  0,  0,-10,
-    -20,-10,-10,-10,-10,-10,-10,-20,
+    -20,-10,-10,-10,-10,-10,-10,-20
 ]
 #endregion
 #region white_rook_PST
@@ -720,14 +721,14 @@ white_bishop_PST = [
 
 #formatted same as white_pawn_PST
 white_rook_PST = [
-    0,  0,  0,  5,  5,  0,  0,  0
+    0,  0,  0,  5,  5,  0,  0,  0,
     -5,  0,  0,  0,  0,  0,  0, -5,
     -5,  0,  0,  0,  0,  0,  0, -5,
     -5,  0,  0,  0,  0,  0,  0, -5,
     -5,  0,  0,  0,  0,  0,  0, -5,
     -5,  0,  0,  0,  0,  0,  0, -5,
     5, 10, 10, 10, 10, 10, 10,  5,
-    0,  0,  0,  0,  0,  0,  0,  0,
+    0,  0,  0,  0,  0,  0,  0,  0
 ]
 #endregion
 #region white_queen_PST
@@ -744,14 +745,14 @@ white_rook_PST = [
 #formatted same as white_pawn_PST
 white_queen_PST = [
 
-    -20,-10,-10, -5, -5,-10,-10,-20
+    -20,-10,-10, -5, -5,-10,-10,-20, 
     -10,  0,  5,  0,  0,  0,  0,-10,
     -10,  5,  5,  5,  5,  5,  0,-10,
     0,  0,  5,  5,  5,  5,  0, -5,
     -5,  0,  5,  5,  5,  5,  0, -5,
     -10,  0,  5,  5,  5,  5,  0,-10,
     -10,  0,  0,  0,  0,  0,  0,-10,
-    -20,-10,-10, -5, -5,-10,-10,-20,
+    -20,-10,-10, -5, -5,-10,-10,-20
 ]
 
 #endregion
@@ -791,14 +792,14 @@ white_king_middle_PST = [
 
 #formatted same as white_pawn_PST
 white_king_end_PST = [
-    -50, -30, -30, -30, -30, -30, -30, -50
+    -50, -30, -30, -30, -30, -30, -30, -50,
     -30, -30, 0, 0, 0, 0, -30, -30,
     -30, -10, 20, 30, 30, 20, -10, -30,
     -30, -10, 30, 40, 40, 30, -10, -30,
     -30, -10, 30, 40, 40, 30, -10, -30,
     -30, -10, 20, 30, 30, 20, -10, -30,
     -30, -20, -10, 0, 0, -10, -20, -30,
-    -50, -40, -30, -20, -20, -30, -40, -50,
+    -50, -40, -30, -20, -20, -30, -40, -50
 ]
 
 #endregion
