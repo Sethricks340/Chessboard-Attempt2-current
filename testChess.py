@@ -30,8 +30,8 @@
     #FIXED: #TODO 47, 28 -> I think it is working now, but I might need to check up on it more later
     #FIXED: Pieces that can move to the same square doesn't work if it is on the last row. (40, 42, 43, 44)
     #FIXED: Generate move tree
+    #FIXED: pawns that aren't allowed to move 2 forward are now allowed to
 
-    #scenario: pawns that aren't allowed to move 2 forward are now allowed to
     #scenario: evaluate each position in the tree, and apply alpha beta to go faster and deeper
     #scenario: Work with other commands, like take over, restart, undo, etc;
     #scenario: can't undo a checkmate or stalemate
@@ -220,8 +220,8 @@ def clear_screen():
 #moves_string = [] #empty new game
 
 #42 two promoted knights can move to g8
-moves_string = ['e2e4', 'd7d5', 'e4e5', 'd5d4', 'e5e6', 'd4d3', 'e6f7', 'e8d7', 'h2h3', 'd3c2', 'f7g8n', 'd8e8', 'f2f4', 'b8c6', 
-                'f4f5', 'c6d4', 'f5f6', 'e7e5', 'f6f7', 'e5e4', 'f7e8n', 'e4e3', 'e8f6', 'd7d8', 'g8h6', 'a7a6']
+# moves_string = ['e2e4', 'd7d5', 'e4e5', 'd5d4', 'e5e6', 'd4d3', 'e6f7', 'e8d7', 'h2h3', 'd3c2', 'f7g8n', 'd8e8', 'f2f4', 'b8c6', 
+#                 'f4f5', 'c6d4', 'f5f6', 'e7e5', 'f6f7', 'e5e4', 'f7e8n', 'e4e3', 'e8f6', 'd7d8', 'g8h6', 'a7a6']
 
 #43 two normal knights can move b8, doesn't work
 # moves_string = ['g1f3', 'h7h6', 'f3d4', 'h6h5', 'd2d3', 'h5h4', 'b1d2', 'h4h3', 'd2b3', 'g7g6', 'b3c5', 'g6g5', 'c5a6', 'g5g4', 'd4c6', 'g4g3']
@@ -241,7 +241,7 @@ moves_string = ['e2e4', 'd7d5', 'e4e5', 'd5d4', 'e5e6', 'd4d3', 'e6f7', 'e8d7', 
 #48 pawn promotion to corners ###error promoting rook and queen
 # moves_string = ['e2e4', 'f7f5', 'd2d3', 'f5e4', 'd1e2', 'e4d3', 'c2d3', 'e7e5', 'd3d4', 'd8e7', 'e2e5', 'e7e5', 'd4e5', 'g8f6', 'e5f6', 'h7h6', 'f6g7', 'c7c5', 'b2b4', 'c5b4', 'f2f3', 'b4b3', 'f3f4', 'b3b2']
 
-# moves_string = []
+moves_string = []
 
 #used to update the current list of moves made, and transitively the current position. Can be used in tandem with above set position to set a position before playing 
 all_moves = moves_string
@@ -602,6 +602,11 @@ def play_game_loop():
         first_time = False
     else: words = input(f"{get_turn_color().capitalize()} to move. Please state a command: ")
     
+    if phoenix.phoenix_get_turn_from_moves(all_moves).lower() == "black": 
+        print("Hmmm... let's see...")
+        position_dict, all_moves, global_turn, board_positions_list = do_computer_move()
+        play_game_loop()
+
     if words == "all moves":
         print_all_moves()
         play_game_loop()
@@ -625,6 +630,8 @@ def play_game_loop():
     #decipher the command out of the words
     #if the move isn't possible, then the command is the error message
     (command, possible), piece = decipher_command(words)
+
+    # input(piece)
 
     if possible: 
         position_dict, all_moves, global_turn, board_positions_list = phoenix.implement_command(command, piece, position_dict=position_dict, all_moves=all_moves, board_positions_list=board_positions_list)
@@ -661,8 +668,8 @@ def play_game_loop():
     if phoenix.is_king_in_check(get_turn_color(), position_dict=position_dict, all_moves=all_moves): print(f"{get_turn_color()} king is in check")
     # print(f"current position status: {phoenix.evaluate_postion(position_dict)}")
     
-    print(phoenix.get_legal_pawn_normal_moves(phoenix.phoenix_get_turn_from_moves(all_moves), position_dict, all_moves))
-    print_phoenix_best_move()
+    # print(phoenix.get_legal_pawn_normal_moves(phoenix.phoenix_get_turn_from_moves(all_moves), position_dict, all_moves))
+    # print_phoenix_best_move()
 
     if words != "quit":
         play_game_loop()
@@ -679,6 +686,34 @@ def set_initials():
     get_turn_from_moves(all_moves)
     clear_screen()
     print_board_visiual()
+
+def do_computer_move(): 
+    global moves_string, all_moves, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time, fifty_move_rule_bool, fifty_move_rule_count, board_positions_list
+    best_move = return_phoenix_best_move()
+    print(best_move)
+    print(best_move[:2])
+    piece = check_for_pieces(phoenix.get_what_is_on_square_specific(best_move[:2], position_dict=position_dict))
+    position_dict, all_moves, global_turn, board_positions_list = phoenix.implement_command(best_move, piece, position_dict=position_dict, all_moves=all_moves, board_positions_list=board_positions_list)
+    return position_dict, all_moves, global_turn, board_positions_list
+
+def return_phoenix_best_move():
+    global moves_string, all_moves, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time, fifty_move_rule_bool, fifty_move_rule_count
+
+    position_dict_copy = position_dict.copy()
+    board_positions_list_copy = board_positions_list.copy()
+
+    move, evaluation = get_best_move(
+    2,
+    phoenix.phoenix_get_turn_from_moves(all_moves),
+    position_dict_copy,
+    all_moves,
+    board_positions_list_copy,
+    alpha=float('-inf'),
+    beta=float('inf'),
+    maximizing_player=True  # or False, depending if it's white's turn or black's
+    )
+
+    return move
 
 def print_phoenix_best_move():
     global moves_string, all_moves, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time, fifty_move_rule_bool, fifty_move_rule_count
