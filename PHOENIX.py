@@ -514,7 +514,9 @@ class Phoenix:
                 # print(f"{key} is now on {new_position}")
 
         if (turn, command) in rook_moves:
+            print(f"about to update a rook in a castle command")
             position_dict = self.update_piece_position(rook_moves[turn, command][:2], rook_moves[turn, command][-2:], "Rook move", position_dict=position_dict, all_moves=all_moves) #move the rook
+        
         return position_dict
 
     def update_promoted_pawn_position(self, current_move, piece, position_dict, all_moves): 

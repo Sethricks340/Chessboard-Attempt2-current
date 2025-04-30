@@ -32,9 +32,9 @@
     #FIXED: Generate move tree
     #FIXED: pawns that aren't allowed to move 2 forward are now allowed to
     #FIXED: 586 error in PHOENIX, I think this might be it trying to castle. 
+    #FIXED: computer is having trouble with castling correctly (scenario 51, 23 and try to undo) (phoenix will try to castle on its next move, playing black)
 
     #scenario: add checkmate and stalemate to phoenix.evaluate
-    #scenario: computer is having trouble with castling correctly (scenario 51, 23 and try to undo) (phoenix will try to castle on its next move, playing black)
     #scenario: evaluate each position in the tree, and apply alpha beta to go faster and deeper
     #scenario: make the new undo function work with 50 move draw and repetition
     #scenario: Work with other commands, like take over, restart, undo, etc;
@@ -260,7 +260,7 @@ moves_string = ['g1f3', 'g8f6', 'g2g4', 'g7g5', 'f1h3', 'f8h6', 'e1g1', 'e8g8']
 #51 test scenario for best move, phoenix is about to castle on the next move
 moves_string = ['e2e4', 'b8c6', 'd2d4', 'c6d4', 'd1d4', 'c7c5', 'd4c5', 
                 'b7b6', 'c5c3', 'g8f6', 'f2f3', 'e7e5', 'c1g5', 'h7h6', 
-                'g5f6', 'd8f6', 'g1e2', 'f8d6']
+                'g5f6', 'd8f6', 'g1e2', 'f8d6', 'e2g3', 'c8b7']
 
 # moves_string = []
 
@@ -745,9 +745,20 @@ def set_initials():
 def do_computer_move(turn_color): 
     global moves_string, all_moves, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_move, fifty_move_rule_bool, fifty_move_rule_count, board_positions_list
     best_move = return_phoenix_best_move(turn_color)
-    # print(best_move)
-    # print(best_move[:2])
-    piece = check_for_pieces(phoenix.get_what_is_on_square_specific(best_move[:2], position_dict=position_dict))
+
+    castle_moves = {
+        "e1g1": ("white", "Castle Kingside"),
+        "e8g8": ("black", "Castle Kingside"),
+        "e1c1": ("white", "Castle Queenside"),
+        "e8c8": ("black", "Castle Queenside")
+    }
+
+    if best_move in castle_moves:
+        piece = castle_moves[best_move][1]
+    else: 
+        # Get the piece and apply the move
+        piece = check_for_pieces(phoenix.get_what_is_on_square_specific(best_move[:2], position_dict=position_dict))
+
     position_dict, all_moves, global_turn, board_positions_list = phoenix.implement_command(best_move, piece, position_dict=position_dict, all_moves=all_moves, board_positions_list=board_positions_list)
     return position_dict, all_moves, global_turn, board_positions_list, best_move
 
@@ -1286,7 +1297,7 @@ def get_best_move(depth, turn, temp_position_dict, temp_all_moves, maximizing_pl
     if depth == 0:
         new_moves_list = copy.deepcopy(moves_list)
         new_moves_list.append(temp_all_moves[-1])
-        print(f"{new_moves_list}: {phoenix.evaluate_postion(temp_position_dict)}")
+        # print(f"{new_moves_list}: {phoenix.evaluate_postion(temp_position_dict)}")
         return None, phoenix.evaluate_postion(temp_position_dict)
 
     possible_moves = phoenix.get_possible_moves(turn=phoenix.phoenix_get_turn_from_moves(temp_all_moves), position_dict=temp_position_dict, all_moves=all_moves)
@@ -1303,9 +1314,20 @@ def get_best_move(depth, turn, temp_position_dict, temp_all_moves, maximizing_pl
             new_moves_list = copy.deepcopy(moves_list)
             new_moves_list.append(move)
 
-            # Get the piece and apply the move
-            whole_piece = phoenix.get_what_is_on_square_specific(move[:2], position_dict=temp_position_dict)
-            piece = check_for_pieces(whole_piece)
+            castle_moves = {
+                "e1g1": ("white", "Castle Kingside"),
+                "e8g8": ("black", "Castle Kingside"),
+                "e1c1": ("white", "Castle Queenside"),
+                "e8c8": ("black", "Castle Queenside")
+            }
+
+            if move in castle_moves:
+                piece = castle_moves[move][1]
+            else: 
+                # Get the piece and apply the move
+                whole_piece = phoenix.get_what_is_on_square_specific(move[:2], position_dict=temp_position_dict)
+                piece = check_for_pieces(whole_piece)
+
             temp_position_dict, temp_all_moves, new_turn, _ = phoenix.implement_command(
                 move, piece, position_dict=temp_position_dict, all_moves=temp_all_moves, board_positions_list=[]
             )
@@ -1313,7 +1335,6 @@ def get_best_move(depth, turn, temp_position_dict, temp_all_moves, maximizing_pl
             # Recurse
             _, eval = get_best_move(depth - 1, new_turn, temp_position_dict, temp_all_moves, alpha=alpha, beta=beta, maximizing_player=False, moves_list=new_moves_list)
 
-            # print(undo_last_move(temp_position_dict))
             temp_position_dict, temp_all_moves = undo_last_move(temp_position_dict, temp_all_moves)
 
             if eval > max_eval:
@@ -1322,8 +1343,8 @@ def get_best_move(depth, turn, temp_position_dict, temp_all_moves, maximizing_pl
 
             alpha = max(alpha, eval)
             if beta <= alpha:
-                print(f"breaking on move: {move} for max player, alpha: {alpha} ({type(alpha)}), beta: {beta} ({type(beta)})")
-                print(f"breaking on move: {move} for max player, alpha: {alpha}, beta: {beta}")
+                # print(f"breaking on move: {move} for max player, alpha: {alpha} ({type(alpha)}), beta: {beta} ({type(beta)})")
+                # print(f"breaking on move: {move} for max player, alpha: {alpha}, beta: {beta}")
                 break  # Beta cutoff
 
         return best_move, max_eval
@@ -1334,10 +1355,19 @@ def get_best_move(depth, turn, temp_position_dict, temp_all_moves, maximizing_pl
             new_turn = turn
             new_moves_list = copy.deepcopy(moves_list)
             new_moves_list.append(move)
+            castle_moves = {
+                "e1g1": ("white", "Castle Kingside"),
+                "e8g8": ("black", "Castle Kingside"),
+                "e1c1": ("white", "Castle Queenside"),
+                "e8c8": ("black", "Castle Queenside")
+            }
 
-            # Get the piece and apply the move
-            whole_piece = phoenix.get_what_is_on_square_specific(move[:2], position_dict=temp_position_dict)
-            piece = check_for_pieces(whole_piece)
+            if move in castle_moves:
+                piece = castle_moves[move][1]
+            else: 
+                # Get the piece and apply the move
+                whole_piece = phoenix.get_what_is_on_square_specific(move[:2], position_dict=temp_position_dict)
+                piece = check_for_pieces(whole_piece)
             temp_position_dict, temp_all_moves, new_turn, _ = phoenix.implement_command(
                 move, piece, position_dict=temp_position_dict, all_moves=temp_all_moves, board_positions_list=[]
             )
@@ -1353,7 +1383,7 @@ def get_best_move(depth, turn, temp_position_dict, temp_all_moves, maximizing_pl
 
             beta = min(beta, eval)
             if beta <= alpha:
-                print(f"breaking on move: {move} for min player, alpha: {alpha}, beta: {beta}")
+                # print(f"breaking on move: {move} for min player, alpha: {alpha}, beta: {beta}")
                 #return here instead?
                 break  # Alpha cutoff
 
@@ -1447,20 +1477,23 @@ def undo_last_move(temp_position_dict, temp_all_moves):
 
     #'piece.white_KING': "",
     if last_move in castle_moves: 
-        print(f"{last_move} this is a castle move")
+        # print(f"{last_move} this is a castle move")
         #move the king back
         #'piece.white_KING': "",
         temp_position_dict[f"piece.{castle_moves[last_move][0]}_KING"] = last_move[:2]
-        print(f"last_move[:2]: {last_move[:2]}")
+        # print(f"last_move[:2]: {last_move[:2]}")
         
         #move the rook back
         rook_move = rook_moves[castle_moves[last_move][1], castle_moves[last_move][0]] 
-        print(f"rook_move: {rook_move}")
-        rook_piece = phoenix.get_what_is_on_square_specific(rook_move[:2], position_dict=temp_position_dict)
-        print(f"rook_piece: {rook_piece}")
+        # print(f"rook_move: {rook_move}")
+        # print(f"all moves: {temp_all_moves}")
+        # print(f"temp_position_dict: {temp_position_dict}")
+        # print(f"rook_move[-2:]: {rook_move[-2:]}")
+        rook_piece = phoenix.get_what_is_on_square_specific(rook_move[-2:], position_dict=temp_position_dict)
+        # print(f"rook_piece: {rook_piece}")
         temp_position_dict[rook_piece] = rook_move[:2]
-        print(f"temp_position_dict[rook_piece]: {temp_position_dict[rook_piece]}")
-        print(f"")
+        # print(f"temp_position_dict[rook_piece]: {temp_position_dict[rook_piece]}")
+        # input()
 
     elif len(last_move) == 5: 
 
@@ -1488,7 +1521,7 @@ def undo_last_move(temp_position_dict, temp_all_moves):
         if last_move in temp_position_dict:
             temp_position_dict[temp_position_dict[last_move][0]] = temp_position_dict[last_move][1]
             temp_position_dict.pop(last_move, None)
-    
+
     temp_all_moves.pop()
     # reset_global_turn()
     return temp_position_dict, temp_all_moves
@@ -1677,7 +1710,7 @@ def check_squares_together(words):
 #used by parse_word_command
 def parse_castle_command(move):
     global all_moves, position_dict
-    turn = get_turn_color()
+    turn = phoenix.phoenix_get_turn_from_moves(all_moves)
     castle_moves = {
         ("white", "Castle Kingside"): "e1g1",
         ("black", "Castle Kingside"): "e8g8",
@@ -1687,7 +1720,8 @@ def parse_castle_command(move):
 
     if move in ["Castle Kingside", "Castle Queenside"]:
         # if is_single_move_legal(castle_moves[(turn, move)]):
-        if castle_moves[(turn, move)].lower() in phoenix.get_possible_moves(turn=get_turn_color(), position_dict=position_dict, all_moves=all_moves):
+        input(phoenix.get_possible_moves(turn=turn, position_dict=position_dict, all_moves=all_moves))
+        if castle_moves[(turn, move)].lower() in phoenix.get_possible_moves(turn=phoenix.phoenix_get_turn_from_moves(all_moves), position_dict=position_dict, all_moves=all_moves):
             return castle_moves[(turn, move)], True
         else: 
             return "Castle move not legal, please try again", False
