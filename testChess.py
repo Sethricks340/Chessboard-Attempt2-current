@@ -43,6 +43,7 @@
 
 import re
 import os
+import time
 from collections import Counter
 import copy
 from copy import deepcopy
@@ -132,7 +133,7 @@ def clear_screen():
 # moves_string = ['e2e3', 'd7d6', 'b1c3', 'e8d7', 'c3b1', 'd7c6', 'b1c3', 'c6b6', 'c3b1', 'b6a5', 'e3e4', 'd6d5', 'e4d5', 'a5a4', 'g1h3', 'e7e5', 'h3g1', 'h7h6', 'd1g4', 'a4a5', 'h2h4', 'e5e4', 'f2f4']
 
 #23 loaded castling 
-# moves_string = ['g1f3', 'g8f6', 'g2g4', 'g7g5', 'f1h3', 'f8h6', 'e1g1', 'e8g8']
+moves_string = ['g1f3', 'g8f6', 'g2g4', 'g7g5', 'f1h3', 'f8h6', 'e1g1', 'e8g8']
 
 #24 testing illegal castling scenarios. (black: kingside: can queenside: can't, white: kingside: can queenside: can)
 # moves_string = ['g1f3', 'g8f6', 'g2g3', 'g7g6', 'f1h3', 'f8h6', 'c2c3', 'c7c6', 'd1b3', 'd8b6', 'd2d4', 'b8a6', 'c1f4', 'd7d5', 'b1a3', 'c8f5', 'b3d5']
@@ -141,7 +142,7 @@ def clear_screen():
 # moves_string = ['e2e3', 'b8a6', 'd1h5', 'g8h6', 'f1c4', 'h6g4',]
 
 #26 #about to be four move checkmate, white is about to loose
-moves_string = ['g1h3', 'e7e6', 'b1a3', 'd8h4', 'a3b1', 'f8c5', 'h3g1']
+# moves_string = ['g1h3', 'e7e6', 'b1a3', 'd8h4', 'a3b1', 'f8c5', 'h3g1']
 
 #27 about to be a stalemate by repetition
 # moves_string = ['g1f3', 'g8f6', 'f3g1', 'f6g8', 'g1f3', 'g8f6', 'f3g1']
@@ -224,7 +225,6 @@ moves_string = ['g1h3', 'e7e6', 'b1a3', 'd8h4', 'a3b1', 'f8c5', 'h3g1']
 
 #41 two promoted knights can move to the same spot, this one works
 # moves_string = ['e2e4', 'd7d5', 'e4e5', 'd5d4', 'e5e6', 'd4d3', 'e6f7', 'e8d7', 'h2h3', 'd3c2', 'f7g8n', 'd8e8', 'f2f4', 'b8c6', 'f4f5', 'c6d4', 'f5f6', 'e7e5', 'f6f7', 'e5e4', 'f7e8n', 'e4e3']
-#moves_string = [] #empty new game
 
 #42 two promoted knights can move to g8
 # moves_string = ['e2e4', 'd7d5', 'e4e5', 'd5d4', 'e5e6', 'd4d3', 'e6f7', 'e8d7', 'h2h3', 'd3c2', 'f7g8n', 'd8e8', 'f2f4', 'b8c6', 
@@ -258,9 +258,9 @@ moves_string = ['g1h3', 'e7e6', 'b1a3', 'd8h4', 'a3b1', 'f8c5', 'h3g1']
 #                 'e7f6', 'f3g5', 'f6c3', 'b2c3']
 
 #51 test scenario for best move, phoenix is about to castle on the next move
-# moves_string = ['e2e4', 'b8c6', 'd2d4', 'c6d4', 'd1d4', 'c7c5', 'd4c5', 
-#                 'b7b6', 'c5c3', 'g8f6', 'f2f3', 'e7e5', 'c1g5', 'h7h6', 
-#                 'g5f6', 'd8f6', 'g1e2', 'f8d6']
+moves_string = ['e2e4', 'b8c6', 'd2d4', 'c6d4', 'd1d4', 'c7c5', 'd4c5', 
+                'b7b6', 'c5c3', 'g8f6', 'f2f3', 'e7e5', 'c1g5', 'h7h6', 
+                'g5f6', 'd8f6', 'g1e2', 'f8d6']
 
 # moves_string = []
 
@@ -617,11 +617,17 @@ def play_game_loop():
     
     if phoenix.phoenix_get_turn_from_moves(all_moves).lower() == "black": 
         print("Hmmm... let's see...")
+        start_time = time.time()
+
+
         position_dict, all_moves, global_turn, board_positions_list, best_move = do_computer_move("black")
         # input()
         clear_screen()
         print_board_visiual()
         print(f"I'm going to do {best_move}.")
+        end_time = time.time()
+        elapsed = end_time - start_time
+        print(f"Phoenix took {elapsed:.4f} seconds with depth of 5")
         play_game_loop()
     else:
         if first_move:
@@ -645,7 +651,7 @@ def play_game_loop():
         print(position_dict)
         play_game_loop()
     elif words.lower() == "possible moves":
-        print(phoenix.get_possible_moves(turn=get_turn_color(), position_dict=position_dict, all_moves=all_moves))
+        print(phoenix.get_possible_moves(phoenix.phoenix_get_turn_from_moves(all_moves), position_dict=position_dict, all_moves=all_moves))
         play_game_loop()
     elif words.lower() == "board positions list":
         print_board_positions()
@@ -753,8 +759,9 @@ def return_phoenix_best_move(turn_color):
     position_dict_copy = position_dict.copy()
     all_moves_copy = all_moves.copy()
 
+
     move, evaluation = get_best_move(
-        5,
+        2,
         phoenix.phoenix_get_turn_from_moves(all_moves),
         position_dict_copy,
         all_moves_copy,
@@ -1069,7 +1076,7 @@ def parse_word_command(piece, wanted_position, command):
         if command == "castle":
             return parse_castle_command(piece)
 
-        piece_positions = phoenix.piece_type_spaces(piece, get_turn_color(), position_dict=position_dict, all_moves=all_moves)
+        piece_positions = phoenix.piece_type_spaces(piece, phoenix.phoenix_get_turn_from_moves(all_moves), position_dict=position_dict, all_moves=all_moves)
         for position in piece_positions:
             possible_piece_moves.append(f"{position}{wanted_position.lower()}")
             if position and piece == "pawn" and ((wanted_position[-1] == "8" and position[1] == "7") or (wanted_position[-1] == "1" and position[1] == "2")):
@@ -1081,25 +1088,25 @@ def parse_word_command(piece, wanted_position, command):
         possible_piece_moves = [
             move for move in possible_piece_moves  # loop through each move
             if not move.lower().startswith("xx")  # keep if it doesn't start with xx
-            and move.lower() in phoenix.get_legal_piece_moves(get_turn_color(), position_dict=position_dict, all_moves=all_moves)  # keep if it's legal
+            and move.lower() in phoenix.get_legal_piece_moves(phoenix.phoenix_get_turn_from_moves(all_moves), position_dict=position_dict, all_moves=all_moves)  # keep if it's legal
             and len(move) != 2  # keep if it's not just 2 characters
         ]
-        # input(f"phoenix.get_legal_piece_moves(...): {phoenix.get_legal_piece_moves(get_turn_color(), position_dict=position_dict, all_moves=all_moves)}")
+        # input(f"phoenix.get_legal_piece_moves(...): {phoenix.get_legal_piece_moves(phoenix.phoenix_get_turn_from_moves(all_moves), position_dict=position_dict, all_moves=all_moves)}")
         # input(f"possible_piece_moves: {possible_piece_moves}")
-        # input(phoenix.get_legal_en_passant_moves(color=get_turn_color(), position_dict=position_dict, all_moves=all_moves))
+        # input(phoenix.get_legal_en_passant_moves(color=phoenix.phoenix_get_turn_from_moves(all_moves), position_dict=position_dict, all_moves=all_moves))
 
         promotion_count = sum(1 for move in possible_piece_moves if len(move) == 5)
         #what if this promotion could result in check?
         if promotion_count == 4:
-            if phoenix.is_king_in_check(get_turn_color(), test_move = possible_piece_moves[0], position_dict=position_dict, all_moves=all_moves): 
-                return f"{get_turn_color()} king would be in check after {possible_piece_moves[0][:4]} promotion, please try again.", False
+            if phoenix.is_king_in_check(phoenix.phoenix_get_turn_from_moves(all_moves), test_move = possible_piece_moves[0], position_dict=position_dict, all_moves=all_moves): 
+                return f"{phoenix.phoenix_get_turn_from_moves(all_moves)} king would be in check after {possible_piece_moves[0][:4]} promotion, please try again.", False
             else:
                 return f"{possible_piece_moves[0][:4]}{ask_pawn_promotion()}", True
         elif promotion_count > 4:
             #remove moves that would result in check
             possible_piece_moves = [
                 move for move in possible_piece_moves  # loop through each move
-                if not phoenix.is_king_in_check(get_turn_color(), test_move = move, position_dict=position_dict, all_moves=all_moves)
+                if not phoenix.is_king_in_check(phoenix.phoenix_get_turn_from_moves(all_moves), test_move = move, position_dict=position_dict, all_moves=all_moves)
             ]
 
             if len(possible_piece_moves) == 4:
@@ -1109,13 +1116,13 @@ def parse_word_command(piece, wanted_position, command):
             elif len(possible_piece_moves) > 4:
                 return f"{clarify_which_piece(wanted_position)}{wanted_position.lower()}{ask_pawn_promotion()}", True
             else:
-                return f"{get_turn_color()} king would be in check after this pawn promotion, please try again.", False
+                return f"{phoenix.phoenix_get_turn_from_moves(all_moves)} king would be in check after this pawn promotion, please try again.", False
         
         if len(possible_piece_moves) == 1:
             #check if in check after
                 #if in check after, present check error message
-                if phoenix.is_king_in_check(get_turn_color(), test_move = possible_piece_moves[0], position_dict=position_dict, all_moves=all_moves): 
-                    return f"{get_turn_color()} king would be in check after {possible_piece_moves[0]}, please try again.", False
+                if phoenix.is_king_in_check(phoenix.phoenix_get_turn_from_moves(all_moves), test_move = possible_piece_moves[0], position_dict=position_dict, all_moves=all_moves): 
+                    return f"{phoenix.phoenix_get_turn_from_moves(all_moves)} king would be in check after {possible_piece_moves[0]}, please try again.", False
                 else: #else do the move
                     return f"{possible_piece_moves[0]}", True
 
@@ -1125,7 +1132,7 @@ def parse_word_command(piece, wanted_position, command):
             #more than one, sort through how many result in check
             possible_piece_moves = [
                 move for move in possible_piece_moves  # loop through each move
-                if not phoenix.is_king_in_check(get_turn_color(), test_move = move, position_dict=position_dict, all_moves=all_moves)
+                if not phoenix.is_king_in_check(phoenix.phoenix_get_turn_from_moves(all_moves), test_move = move, position_dict=position_dict, all_moves=all_moves)
             ]
 
             #if more than one legal, clarify which
@@ -1136,7 +1143,7 @@ def parse_word_command(piece, wanted_position, command):
                 return f"{possible_piece_moves[0]}", True
             #if none legal, present check error message
             else:
-                return f"{get_turn_color()} king would be in check after this move, please try again.", False
+                return f"{phoenix.phoenix_get_turn_from_moves(all_moves)} king would be in check after this move, please try again.", False
     else: return "Move not found, please try again.", False
 
 #used when more than one piece of the same type can move to the same square, to clarify which one to move
@@ -1278,8 +1285,8 @@ def get_moves_tree(depth, turn, position_dict, all_moves, board_positions_list):
 def get_best_move(depth, turn, temp_position_dict, temp_all_moves, maximizing_player, alpha=float('-inf'), beta=float('inf'), moves_list = [],):
     if depth == 0:
         new_moves_list = copy.deepcopy(moves_list)
-        # new_moves_list.append(temp_all_moves[-1])
-        # print(f"{new_moves_list}: {phoenix.evaluate_postion(temp_position_dict)}")
+        new_moves_list.append(temp_all_moves[-1])
+        print(f"{new_moves_list}: {phoenix.evaluate_postion(temp_position_dict)}")
         return None, phoenix.evaluate_postion(temp_position_dict)
 
     possible_moves = phoenix.get_possible_moves(turn=phoenix.phoenix_get_turn_from_moves(temp_all_moves), position_dict=temp_position_dict, all_moves=all_moves)
@@ -1304,7 +1311,7 @@ def get_best_move(depth, turn, temp_position_dict, temp_all_moves, maximizing_pl
             )
 
             # Recurse
-            _, eval = get_best_move(depth - 1, new_turn, temp_position_dict, temp_all_moves, alpha, beta, False, moves_list=new_moves_list)
+            _, eval = get_best_move(depth - 1, new_turn, temp_position_dict, temp_all_moves, alpha=alpha, beta=beta, maximizing_player=False, moves_list=new_moves_list)
 
             # print(undo_last_move(temp_position_dict))
             temp_position_dict, temp_all_moves = undo_last_move(temp_position_dict, temp_all_moves)
@@ -1315,7 +1322,8 @@ def get_best_move(depth, turn, temp_position_dict, temp_all_moves, maximizing_pl
 
             alpha = max(alpha, eval)
             if beta <= alpha:
-                # print(f"breaking on move: {move} for max player, alpha: {alpha}, beta: {beta}")
+                print(f"breaking on move: {move} for max player, alpha: {alpha} ({type(alpha)}), beta: {beta} ({type(beta)})")
+                print(f"breaking on move: {move} for max player, alpha: {alpha}, beta: {beta}")
                 break  # Beta cutoff
 
         return best_move, max_eval
@@ -1335,7 +1343,7 @@ def get_best_move(depth, turn, temp_position_dict, temp_all_moves, maximizing_pl
             )
 
             # Recurse
-            _, eval = get_best_move(depth - 1, new_turn, temp_position_dict, temp_all_moves, alpha, beta, True, moves_list=new_moves_list)
+            _, eval = get_best_move(depth - 1, new_turn, temp_position_dict, temp_all_moves, alpha=alpha, beta=beta, maximizing_player=True, moves_list=new_moves_list)
 
             temp_position_dict, temp_all_moves = undo_last_move(temp_position_dict, temp_all_moves)
 
@@ -1345,7 +1353,8 @@ def get_best_move(depth, turn, temp_position_dict, temp_all_moves, maximizing_pl
 
             beta = min(beta, eval)
             if beta <= alpha:
-                # print(f"breaking on move: {move} for min player, alpha: {alpha}, beta: {beta}")
+                print(f"breaking on move: {move} for min player, alpha: {alpha}, beta: {beta}")
+                #return here instead?
                 break  # Alpha cutoff
 
         return best_move, min_eval

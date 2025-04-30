@@ -583,7 +583,10 @@ class Phoenix:
             if position == "xx": continue
             if not isinstance(position, str): continue
             piece_type = next((p for p in ("king", "queen", "rook", "bishop", "knight", "pawn") if p in piece.lower()), None)
-            if piece_type == None: input(f"586 error: passed_postion_dict: {passed_position_dict}, piece, position: {piece, position}")
+            if piece_type == None: 
+                print(f"586 error: passed_postion_dict: {passed_position_dict}, piece, position: {piece, position}")
+                exit()
+                return 0 ####fix this
             #evaluate with respect to white
             if "white" in piece.lower():
                 # input(f"white {piece}, {piece_type}, {position}")
