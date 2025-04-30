@@ -805,15 +805,15 @@ white_king_end_PST = [
 #endregion
 
 PST_dict = {
-    "pawn": (10, white_pawn_PST),
+    "pawn": (100, white_pawn_PST),
 
-    "knight": (30, white_knight_PST),
+    "knight": (300, white_knight_PST),
 
-    "bishop": (30, white_bishop_PST),
+    "bishop": (300, white_bishop_PST),
 
-    "rook": (50, white_rook_PST),
+    "rook": (500, white_rook_PST),
 
-    "queen": (90, white_queen_PST),
+    "queen": (900, white_queen_PST),
 
     "king": (0, white_king_middle_PST)
     # "king_middle": (0, white_king_middle_PST),

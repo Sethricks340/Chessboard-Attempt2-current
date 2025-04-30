@@ -34,11 +34,14 @@
 
     #scenario: evaluate each position in the tree, and apply alpha beta to go faster and deeper
     #scenario: Work with other commands, like take over, restart, undo, etc;
+    #scenario: make it so a player can say "e2e4" and "pawn to e4"
     #scenario: can't undo a checkmate or stalemate
 
 import re
 import os
 from collections import Counter
+import copy
+from copy import deepcopy
 from PHOENIX import Phoenix
 phoenix = Phoenix()
 
@@ -241,7 +244,16 @@ def clear_screen():
 #48 pawn promotion to corners ###error promoting rook and queen
 # moves_string = ['e2e4', 'f7f5', 'd2d3', 'f5e4', 'd1e2', 'e4d3', 'c2d3', 'e7e5', 'd3d4', 'd8e7', 'e2e5', 'e7e5', 'd4e5', 'g8f6', 'e5f6', 'h7h6', 'f6g7', 'c7c5', 'b2b4', 'c5b4', 'f2f3', 'b4b3', 'f3f4', 'b3b2']
 
-moves_string = []
+#49 test scenario for best move
+# moves_string = ['e2e4', 'd7d5', 'd1h5', 'g7g6', 'g1f3']
+
+#50 test scenario for best move
+moves_string = ['e2e4', 'b8c6', 'd2d4', 'g8f6', 'b1c3', 'd7d6', 'g1f3', 
+                'c8e6', 'd4d5', 'f6d5', 'e4d5', 'e6d5', 'c3d5', 'e7e6', 
+                'd5c3', 'f8e7', 'f1b5', 'e8g8', 'e1g1', 'c6b4', 'c1e3', 
+                'e7f6', 'f3g5', 'f6c3', 'b2c3']
+
+# moves_string = []
 
 #used to update the current list of moves made, and transitively the current position. Can be used in tandem with above set position to set a position before playing 
 all_moves = moves_string
@@ -313,6 +325,16 @@ symbols_dict = {
     'knight': "n",
     'rook': "r",
     'pawn': "p",
+}
+
+unicode_pieces = {
+    'p': '♙', 'P': '♟',
+    'r': '♖', 'R': '♜',
+    'n': '♘', 'N': '♞',
+    'b': '♗', 'B': '♝',
+    'q': '♕', 'Q': '♛',
+    'k': '♔', 'K': '♚',
+    ' ': ' '
 }
 
 #dictionary used print the board to the screen.
@@ -543,14 +565,14 @@ squares_together = {
 #testing a global turn
 global_turn = "white"
 
-first_time = True
+first_move = True
 
 fifty_move_rule_count = 0
 fifty_move_rule_bool = False
 
 #load in data from another game
 def set_position(moves_string_list):
-    global moves_string, all_moves, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time, board_positions_list
+    global moves_string, all_moves, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_move, board_positions_list
     moves = moves_string_list.copy()  #shallow copy of the list
     castle_moves_list = ["e1g1", "e1c1", "e8g8", "e8c8"]
     castle_data = {
@@ -586,7 +608,7 @@ def set_position(moves_string_list):
 
 #print all the moves that have occurred so far
 def print_all_moves():
-    global moves_string, all_moves, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time
+    global moves_string, all_moves, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_move
     print(f"all_moves: {all_moves}")
 
 #main
@@ -596,16 +618,29 @@ def main():
 
 #the game loop
 def play_game_loop():
-    global moves_string, all_moves, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time, board_positions_list
-    if first_time:
-        words = input(f"Hello and welcome to the world of magic chess! My name is Phoenix. You can resume a recent game or start a new game. {get_turn_color().capitalize()} to move, please state a command: ")
-        first_time = False
-    else: words = input(f"{get_turn_color().capitalize()} to move. Please state a command: ")
+    global moves_string, all_moves, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_move, board_positions_list
     
-    if phoenix.phoenix_get_turn_from_moves(all_moves).lower() == "black": 
-        print("Hmmm... let's see...")
-        position_dict, all_moves, global_turn, board_positions_list = do_computer_move()
-        play_game_loop()
+    # if phoenix.phoenix_get_turn_from_moves(all_moves).lower() == "black": 
+    #     print("Hmmm... let's see...")
+    #     position_dict, all_moves, global_turn, board_positions_list, best_move = do_computer_move()
+    #     clear_screen()
+    #     print_board_visiual()
+    #     print(f"I'm going to do {best_move}.")
+    #     play_game_loop()
+    # else:
+    #     if first_move:
+    #         words = input(f"Hello and welcome to the world of magic chess! My name is Phoenix. You can resume a recent game or start a new game. {get_turn_color().capitalize()} to move, please state a command: ")
+    #         first_move = False
+    #     else: words = input(f"{get_turn_color().capitalize()} to move. Please state a command: ")
+    if first_move:
+        words = input(f"Hello and welcome to the world of magic chess! My name is Phoenix. You can resume a recent game or start a new game. {get_turn_color().capitalize()} to move, please state a command: ")
+        first_move = False
+    else: words = input(f"{get_turn_color().capitalize()} to move. Please state a command: ")
+
+    # print(get_moves_tree(2, phoenix.phoenix_get_turn_from_moves(all_moves).lower(), position_dict, all_moves, board_positions_list))
+
+    # print_phoenix_best_move()
+    # input()
 
     if words == "all moves":
         print_all_moves()
@@ -621,6 +656,18 @@ def play_game_loop():
         play_game_loop()
     elif words.lower() == "50 move logic":
         print(f"fifty_move_rule_count: {fifty_move_rule_count}\nfifty_move_rule_bool: {fifty_move_rule_bool}\ncaptured_pieces_list: {captured_pieces_list}")
+        play_game_loop()
+    elif words.lower() == "best move":
+        print_phoenix_best_move()
+        input()
+        play_game_loop()
+    elif words.lower() == "board score":
+        print(f"Board score: {phoenix.evaluate_postion(position_dict)}")
+        input()
+        play_game_loop()
+    elif words.lower() == "eval moves":
+        ###logic
+        input()
         play_game_loop()
         
     intention_check = check_intentions(words) 
@@ -678,7 +725,7 @@ def play_game_loop():
 
 #can also be used to test things before the game starts
 def set_initials():
-    global moves_string, all_moves, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time, fifty_move_rule_bool, fifty_move_rule_count
+    global moves_string, all_moves, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_move, fifty_move_rule_bool, fifty_move_rule_count
     reset_50_move_logic()
     locate_pieces_initial()
     board_positions_list.append(get_initial_board_position())
@@ -688,30 +735,26 @@ def set_initials():
     print_board_visiual()
 
 def do_computer_move(): 
-    global moves_string, all_moves, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time, fifty_move_rule_bool, fifty_move_rule_count, board_positions_list
+    global moves_string, all_moves, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_move, fifty_move_rule_bool, fifty_move_rule_count, board_positions_list
     best_move = return_phoenix_best_move()
-    print(best_move)
-    print(best_move[:2])
+    # print(best_move)
+    # print(best_move[:2])
     piece = check_for_pieces(phoenix.get_what_is_on_square_specific(best_move[:2], position_dict=position_dict))
     position_dict, all_moves, global_turn, board_positions_list = phoenix.implement_command(best_move, piece, position_dict=position_dict, all_moves=all_moves, board_positions_list=board_positions_list)
-    return position_dict, all_moves, global_turn, board_positions_list
+    return position_dict, all_moves, global_turn, board_positions_list, best_move
 
 def return_phoenix_best_move():
-    global moves_string, all_moves, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time, fifty_move_rule_bool, fifty_move_rule_count
+    global moves_string, all_moves, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_move, fifty_move_rule_bool, fifty_move_rule_count
 
     position_dict_copy = position_dict.copy()
     board_positions_list_copy = board_positions_list.copy()
 
     move, evaluation = get_best_move(
-    2,
-    phoenix.phoenix_get_turn_from_moves(all_moves),
-    position_dict_copy,
-    all_moves,
-    board_positions_list_copy,
-    alpha=float('-inf'),
-    beta=float('inf'),
-    maximizing_player=True  # or False, depending if it's white's turn or black's
-    )
+        2, 
+        phoenix.phoenix_get_turn_from_moves(all_moves), 
+        position_dict, 
+        all_moves, 
+        )
 
     return move
 
@@ -729,7 +772,7 @@ def print_phoenix_best_move():
     board_positions_list_copy,
     alpha=float('-inf'),
     beta=float('inf'),
-    maximizing_player=True  # or False, depending if it's white's turn or black's
+    maximizing_player=False  # or False, depending if it's white's turn or black's
     )
 
     print(f"Phoenix recommends move {move}")
@@ -739,20 +782,20 @@ def reset_global_turn():
     global_turn = "white"
 
 def reset_50_move_logic():
-    global moves_string, all_moves, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time, fifty_move_rule_bool, fifty_move_rule_count
+    global moves_string, all_moves, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_move, fifty_move_rule_bool, fifty_move_rule_count
     fifty_move_rule_count = 0
     fifty_move_rule_bool = False
     captured_pieces_list.clear()
 
 #it is white if there have been no moves, otherwise count the moves_string
 def get_turn_from_moves(moves):
-    global moves_string, all_moves, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time
+    global moves_string, all_moves, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_move
     if len(moves) > 0: global_turn = "black" if len(moves) % 2 == 1 else "white"
     else: global_turn = "white"
 
 #change the turn color from white to black, and from black to white
 def toggle_turn_color():
-    global moves_string, all_moves, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time
+    global moves_string, all_moves, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_move
     global_turn = "black" if global_turn == "white" else "white"
 
 def get_pieces_initial():
@@ -793,14 +836,14 @@ def get_pieces_initial():
 
 #Locates all of the initial pieces' positions, and puts them in the positions dictionary
 def locate_pieces_initial():
-    global moves_string, all_moves, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time
+    global moves_string, all_moves, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_move
     position_dict_temp = get_pieces_initial()
     for temp, position in position_dict_temp.items():
         position_dict[temp] = position
 
 #pring position dict for debugging
 def print_position_dict_debugging():
-    global moves_string, all_moves, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time
+    global moves_string, all_moves, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_move
     temp_location_list = []
     for number in ["8", "7", "6", "5", "4", "3", "2", "1"]:
         for letter in ["a", "b", "c", "d", "e", "f", "g", "h"]:
@@ -813,7 +856,7 @@ def print_position_dict_debugging():
 
 #prints the board
 def print_board_visiual():
-    global moves_string, all_moves, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time
+    global moves_string, all_moves, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_move
     #clear the board dict
     for square, piece in board_dict.items():
         board_dict[square] = ""
@@ -834,10 +877,10 @@ def print_board_visiual():
 
 #helper function for print board visual
 def get_symbol(letter, number): 
-    global moves_string, all_moves, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time
+    global moves_string, all_moves, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_move
     key = f"{letter}{number}"
     piece = check_for_pieces(board_dict[key])
-    if piece: return str(symbols_dict[piece]).upper() if "white" in board_dict[key].lower() else str(symbols_dict[piece])
+    if piece: return unicode_pieces[symbols_dict[piece].upper()] if "white" in board_dict[key].lower() else unicode_pieces[symbols_dict[piece]].lower()
     else: return " "
 
 #print line on the chess board
@@ -968,7 +1011,7 @@ def decipher_command(words):
 #decipher the command out of the given words
 #command (e2e4), piece (pawn), square (e4) = process_words(words)
 def process_words(words):
-    global moves_string, all_moves, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time
+    global moves_string, all_moves, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_move
 
     #remove everything before phoenix
     words = remove_before_word(words, "phoenix")
@@ -1006,7 +1049,7 @@ def process_words(words):
 #The it counts how many there are, and checks how many of them are legal if king is in not in check after.
 #It then continues with the command, clarifies which piece to move, or displays the appropriate error message.
 def parse_word_command(piece, wanted_position, command):
-    global moves_string, all_moves, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time
+    global moves_string, all_moves, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_move
     if piece is not None:
         possible_piece_moves = []
         found_piece = ""
@@ -1176,52 +1219,53 @@ def computer_takeover(color): pass
 
 #####this was the original function, commented for reference
 # import copy
-# def get_moves_tree(depth, turn, position_dict, all_moves, board_positions_list):
-#     print(f"still going {depth}.....")
-#     move_dict = {}
-#     leaf_list = []
+def get_moves_tree(depth, turn, position_dict, all_moves, board_positions_list):
+    print(f"still going {depth}.....")
+    move_dict = {}
+    leaf_list = []
     
-#     # Get the possible moves for the current turn
-#     possible_moves = phoenix.get_possible_moves(turn=phoenix.phoenix_get_turn_from_moves(all_moves), position_dict=position_dict, all_moves=all_moves)
+    # Get the possible moves for the current turn
+    possible_moves = phoenix.get_possible_moves(turn=phoenix.phoenix_get_turn_from_moves(all_moves), position_dict=position_dict, all_moves=all_moves)
 
-#     # If no moves are possible, return "???"
-#     if not possible_moves:
-#         return "???"
+    # If no moves are possible, return "???"
+    if not possible_moves:
+        return "???"
     
-#     for move in possible_moves:
-#         # Make deep copies to preserve original state across recursive calls
-#         new_position_dict = copy.deepcopy(position_dict)
-#         new_all_moves = copy.deepcopy(all_moves)
-#         new_board_positions_list = copy.deepcopy(board_positions_list)
-#         new_turn = turn  # If turn is a simple variable (e.g., 'w' or 'b'), no deepcopy is needed
+    for move in possible_moves:
+        # Make deep copies to preserve original state across recursive calls
+        new_position_dict = copy.deepcopy(position_dict)
+        new_all_moves = copy.deepcopy(all_moves)
+        new_board_positions_list = copy.deepcopy(board_positions_list)
+        new_turn = turn  # If turn is a simple variable (e.g., 'w' or 'b'), no deepcopy is needed
         
         
-#         # Get the piece on the square for the current move
-#         whole_piece = phoenix.get_what_is_on_square_specific(move[:2], position_dict=new_position_dict)
+        # Get the piece on the square for the current move
+        whole_piece = phoenix.get_what_is_on_square_specific(move[:2], position_dict=new_position_dict)
         
-#         piece = check_for_pieces(whole_piece)
-#         # Apply the move and update the board state
-#         new_position_dict, new_all_moves, new_turn, new_board_positions_list = phoenix.implement_command(
-#             move, piece, position_dict=new_position_dict, all_moves=new_all_moves, board_positions_list=new_board_positions_list
-#         )
+        piece = check_for_pieces(whole_piece)
+        # Apply the move and update the board state
+        new_position_dict, new_all_moves, new_turn, new_board_positions_list = phoenix.implement_command(
+            move, piece, position_dict=new_position_dict, all_moves=new_all_moves, board_positions_list=new_board_positions_list
+        )
         
-#         # If there is still depth left, recurse to generate the tree further
-#         if depth > 0:
-#             move_dict[move] = get_moves_tree(depth - 1, new_turn, new_position_dict, new_all_moves, new_board_positions_list)
-#         else:
-#             # If at leaf level, add the move to the leaf list
-#             leaf_list.append(move)
+        # If there is still depth left, recurse to generate the tree further
+        if depth > 0:
+            move_dict[move] = get_moves_tree(depth - 1, new_turn, new_position_dict, new_all_moves, new_board_positions_list)
+        else:
+            # If at leaf level, add the move to the leaf list
+            leaf_list.append(move)
     
-#     # If we have any leaf nodes, return them
-#     if leaf_list:
-#         return leaf_list
-#     else:
-#         return move_dict
+    # If we have any leaf nodes, return them
+    if leaf_list:
+        return leaf_list
+    else:
+        return move_dict
 
-import copy
-
-def get_best_move(depth, turn, position_dict, all_moves, board_positions_list, alpha, beta, maximizing_player):
+def get_best_move(depth, turn, position_dict, all_moves, board_positions_list, alpha, beta, maximizing_player, moves_list = []):
     if depth == 0:
+        new_moves_list = copy.deepcopy(moves_list)
+        # new_moves_list.append(all_moves[-1])
+        print(f"{new_moves_list}: {phoenix.evaluate_postion(position_dict)}")
         return None, phoenix.evaluate_postion(position_dict)
 
     possible_moves = phoenix.get_possible_moves(turn=phoenix.phoenix_get_turn_from_moves(all_moves), position_dict=position_dict, all_moves=all_moves)
@@ -1239,6 +1283,8 @@ def get_best_move(depth, turn, position_dict, all_moves, board_positions_list, a
             new_all_moves = copy.deepcopy(all_moves)
             new_board_positions_list = copy.deepcopy(board_positions_list)
             new_turn = turn
+            new_moves_list = copy.deepcopy(moves_list)
+            new_moves_list.append(move)
 
             # Get the piece and apply the move
             whole_piece = phoenix.get_what_is_on_square_specific(move[:2], position_dict=new_position_dict)
@@ -1248,7 +1294,7 @@ def get_best_move(depth, turn, position_dict, all_moves, board_positions_list, a
             )
 
             # Recurse
-            _, eval = get_best_move(depth - 1, new_turn, new_position_dict, new_all_moves, new_board_positions_list, alpha, beta, False)
+            _, eval = get_best_move(depth - 1, new_turn, new_position_dict, new_all_moves, new_board_positions_list, alpha, beta, False, moves_list=new_moves_list)
 
             if eval > max_eval:
                 max_eval = eval
@@ -1268,6 +1314,8 @@ def get_best_move(depth, turn, position_dict, all_moves, board_positions_list, a
             new_all_moves = copy.deepcopy(all_moves)
             new_board_positions_list = copy.deepcopy(board_positions_list)
             new_turn = turn
+            new_moves_list = copy.deepcopy(moves_list)
+            new_moves_list.append(move)
 
             # Get the piece and apply the move
             whole_piece = phoenix.get_what_is_on_square_specific(move[:2], position_dict=new_position_dict)
@@ -1277,7 +1325,7 @@ def get_best_move(depth, turn, position_dict, all_moves, board_positions_list, a
             )
 
             # Recurse
-            _, eval = get_best_move(depth - 1, new_turn, new_position_dict, new_all_moves, new_board_positions_list, alpha, beta, True)
+            _, eval = get_best_move(depth - 1, new_turn, new_position_dict, new_all_moves, new_board_positions_list, alpha, beta, True, moves_list=new_moves_list)
 
             if eval < min_eval:
                 min_eval = eval
@@ -1289,7 +1337,9 @@ def get_best_move(depth, turn, position_dict, all_moves, board_positions_list, a
 
         return best_move, min_eval
 
-
+def compare_eval(turn, max_or_min, score): 
+    if turn == "white": return max(score, max_or_min)
+    else: return min(score, max_or_min)
 
 def print_tree(tree, indent=0, parent_has_more=False):
     if isinstance(tree, dict):
@@ -1428,7 +1478,7 @@ def get_initial_board_position():
 #check for castles in a string
 #used by process words
 def check_for_castles(words):
-    global moves_string, all_moves, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time
+    global moves_string, all_moves, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_move
     count = 0 #number of castle commands found
     castle_found = "" #the key to the dictionary
 
@@ -1452,7 +1502,7 @@ def check_for_castles(words):
 #check for pieces in a string
 #used by process words
 def check_for_pieces(words):
-    global moves_string, all_moves, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time
+    global moves_string, all_moves, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_move
     count = 0
     found_piece = ""
     for piece, synonyms in pieces.items():
@@ -1469,7 +1519,7 @@ def check_for_pieces(words):
 #check for squares in a string
 #used by process words
 def check_square(words):
-    global moves_string, all_moves, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time
+    global moves_string, all_moves, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_move
     inv_letter_count, word_search, square_letter = check_square_letter(words)
 
     if inv_letter_count == 1:
@@ -1491,7 +1541,7 @@ def check_square(words):
 #check for square letters in a string
 #used by check_square
 def check_square_letter(words):
-    global moves_string, all_moves, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time
+    global moves_string, all_moves, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_move
     count = 0
     square_letter = ""
     word_search = ""
@@ -1508,7 +1558,7 @@ def check_square_letter(words):
 #check for square numbers in a string
 #used by check_square
 def check_square_number(words, square_letter):
-    global moves_string, all_moves, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time
+    global moves_string, all_moves, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_move
     next_word = find_next_word(words, square_letter)
     for number, homonym in number_squares_separate.items():
         for word in homonym:
@@ -1519,7 +1569,7 @@ def check_square_number(words, square_letter):
 #check for squares together in a string
 #used by check_square
 def check_squares_together(words):
-    global moves_string, all_moves, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time
+    global moves_string, all_moves, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_move
     count = 0
     square = ""
     for word1 in words.lower().split(): #go through each word in the input
