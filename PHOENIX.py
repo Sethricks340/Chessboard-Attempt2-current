@@ -410,8 +410,11 @@ class Phoenix:
         return legal_knight_moves  
 
     def get_what_is_on_square_specific(self, square, position_dict):
+        if not isinstance(position_dict, dict):
+            raise TypeError(f"Expected a dictionary, got {type(position_dict)}")
+
         for key, val in position_dict.items():
-            if val == square:
+            if isinstance(val, str) and val == square:
                 return key
         return "None"
     
@@ -526,21 +529,35 @@ class Phoenix:
 
     #get the name of the promoted pawn, given the regular pawn to be promoted 
     def get_promoted_pawn(self, current_move, position_dict, all_moves):
-        return "Piece.PROMOTED_" + self.phoenix_get_turn_from_moves(all_moves).upper() + "_PAWN" + self.get_what_is_on_square_specific(current_move[:2], position_dict=position_dict)[-1]
+        return "piece.PROMOTED_" + self.phoenix_get_turn_from_moves(all_moves).upper() + "_PAWN" + self.get_what_is_on_square_specific(current_move[:2], position_dict=position_dict)[-1]
 
     #the position of pieces that are captured are "xx"
     #works with normal captures and en passants
     def handle_capture(self, move, position_dict, all_moves, loading=False, loaded_last_move=""):
         if self.is_en_passant_move(given_move=move, turn_color=self.phoenix_get_turn_from_moves(all_moves), position_dict=position_dict, all_moves=all_moves, loading=loading, loaded_last_move=loaded_last_move): 
+
+            if self.phoenix_get_turn_from_moves(all_moves) == "white": position_dict = self.record_captured_info(self.get_what_is_on_square_specific(self.decrement_string(move[-2:]), position_dict=position_dict), self.decrement_string(move[-2:]), move, position_dict=position_dict)
+            else: position_dict = self.record_captured_info(self.get_what_is_on_square_specific(self.increment_string(move[-2:]), position_dict=position_dict), self.increment_string(move[-2:]), move, position_dict=position_dict)
+
             self.update_piece_position((self.decrement_string if self.phoenix_get_turn_from_moves(all_moves) == "white" else self.increment_string)(move[-2:]), "xx", "capture", position_dict=position_dict, all_moves=all_moves)
         else: 
-            for key, val in position_dict.items():
+            # for key, val in position_dict.items():
                 if len(move) == 5: 
-                    if move[2:4] == val: position_dict = self.update_piece_position(move[2:4], "xx", "capture", position_dict=position_dict, all_moves=all_moves)
+                    # if move[2:4] == val: 
+                    if self. get_what_is_on_square_specific(move[2:4], position_dict=position_dict) != "None":
+                        position_dict = self.record_captured_info(self.get_what_is_on_square_specific(move[2:4], position_dict=position_dict), move[2:4], move, position_dict=position_dict)
+                        position_dict = self.update_piece_position(move[2:4], "xx", "capture", position_dict=position_dict, all_moves=all_moves)
                 else:
-                    if move[-2:] == val: position_dict = self.update_piece_position(move[-2:], "xx", "capture", position_dict=position_dict, all_moves=all_moves)
+                    # if move[-2:] == val: 
+                    if self. get_what_is_on_square_specific(move[-2:], position_dict=position_dict) != "None":
+                        position_dict = self.record_captured_info(self.get_what_is_on_square_specific(move[-2:], position_dict=position_dict), move[-2:], move, position_dict=position_dict)
+                        position_dict = self.update_piece_position(move[-2:], "xx", "capture", position_dict=position_dict, all_moves=all_moves)
         return position_dict
         
+    def record_captured_info(self, captured_piece, captured_position, captured_move, position_dict): 
+        position_dict[captured_move] = (captured_piece, captured_position)
+        return position_dict
+
     #used to replace text in a string. Currently used for converting promoted pawns to their new piece type
     def replace_text(self, text, word, replace):
         new_text = text.replace(word, replace)
@@ -564,8 +581,10 @@ class Phoenix:
         # print(passed_position_dict)
         for piece, position in passed_position_dict.items():
             if position == "xx": continue
+            if not isinstance(position, str): continue
             piece_type = next((p for p in ("king", "queen", "rook", "bishop", "knight", "pawn") if p in piece.lower()), None)
-            #evaluate with respect to white  
+            if piece_type == None: input(f"586 error: passed_postion_dict: {passed_position_dict}, piece, position: {piece, position}")
+            #evaluate with respect to white
             if "white" in piece.lower():
                 # input(f"white {piece}, {piece_type}, {position}")
                 position_eval += (PST_dict[piece_type][0] + PST_dict[piece_type][1][self.square_to_index(position)])

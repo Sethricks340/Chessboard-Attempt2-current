@@ -31,8 +31,12 @@
     #FIXED: Pieces that can move to the same square doesn't work if it is on the last row. (40, 42, 43, 44)
     #FIXED: Generate move tree
     #FIXED: pawns that aren't allowed to move 2 forward are now allowed to
+    #FIXED: 586 error in PHOENIX, I think this might be it trying to castle. 
 
+    #scenario: add checkmate and stalemate to phoenix.evaluate
+    #scenario: computer is having trouble with castling correctly (scenario 51, 23 and try to undo) (phoenix will try to castle on its next move, playing black)
     #scenario: evaluate each position in the tree, and apply alpha beta to go faster and deeper
+    #scenario: make the new undo function work with 50 move draw and repetition
     #scenario: Work with other commands, like take over, restart, undo, etc;
     #scenario: make it so a player can say "e2e4" and "pawn to e4"
     #scenario: can't undo a checkmate or stalemate
@@ -137,7 +141,7 @@ def clear_screen():
 # moves_string = ['e2e3', 'b8a6', 'd1h5', 'g8h6', 'f1c4', 'h6g4',]
 
 #26 #about to be four move checkmate, white is about to loose
-# moves_string = ['g1h3', 'e7e6', 'b1a3', 'd8h4', 'a3b1', 'f8c5', 'h3g1']
+moves_string = ['g1h3', 'e7e6', 'b1a3', 'd8h4', 'a3b1', 'f8c5', 'h3g1']
 
 #27 about to be a stalemate by repetition
 # moves_string = ['g1f3', 'g8f6', 'f3g1', 'f6g8', 'g1f3', 'g8f6', 'f3g1']
@@ -248,10 +252,15 @@ def clear_screen():
 # moves_string = ['e2e4', 'd7d5', 'd1h5', 'g7g6', 'g1f3']
 
 #50 test scenario for best move
-moves_string = ['e2e4', 'b8c6', 'd2d4', 'g8f6', 'b1c3', 'd7d6', 'g1f3', 
-                'c8e6', 'd4d5', 'f6d5', 'e4d5', 'e6d5', 'c3d5', 'e7e6', 
-                'd5c3', 'f8e7', 'f1b5', 'e8g8', 'e1g1', 'c6b4', 'c1e3', 
-                'e7f6', 'f3g5', 'f6c3', 'b2c3']
+# moves_string = ['e2e4', 'b8c6', 'd2d4', 'g8f6', 'b1c3', 'd7d6', 'g1f3', 
+#                 'c8e6', 'd4d5', 'f6d5', 'e4d5', 'e6d5', 'c3d5', 'e7e6', 
+#                 'd5c3', 'f8e7', 'f1b5', 'e8g8', 'e1g1', 'c6b4', 'c1e3', 
+#                 'e7f6', 'f3g5', 'f6c3', 'b2c3']
+
+#51 test scenario for best move, phoenix is about to castle on the next move
+# moves_string = ['e2e4', 'b8c6', 'd2d4', 'c6d4', 'd1d4', 'c7c5', 'd4c5', 
+#                 'b7b6', 'c5c3', 'g8f6', 'f2f3', 'e7e5', 'c1g5', 'h7h6', 
+#                 'g5f6', 'd8f6', 'g1e2', 'f8d6']
 
 # moves_string = []
 
@@ -260,59 +269,45 @@ all_moves = moves_string
 board_positions_list = []
 
 #dictionary used to track all the piece positions. Keeps track of specific pieces of same type
+#testing: when a piece is captured, instead of just "xx" for the value, try recording more information so we can undo it faster
+#example:
+    # 'white_QUEEN': "xx", ## queen is still stored as captured
+    #'e2d1': ('white_QUEEN', d1) ##the move that the white queen was captured on, and its previous position
+
 position_dict = {
-    'Piece.white_KING': "",
-    'Piece.white_QUEEN': "",
-    'Piece.white_BISHOP1': "",
-    'Piece.white_BISHOP2': "",
-    'Piece.white_KNIGHT1': "",
-    'Piece.white_KNIGHT2': "",
-    'Piece.white_ROOK1': "",
-    'Piece.white_ROOK2': "",
-    'Piece.white_PAWN1': "",
-    'Piece.white_PAWN2': "",
-    'Piece.white_PAWN3': "",
-    'Piece.white_PAWN4': "",
-    'Piece.white_PAWN5': "",
-    'Piece.white_PAWN6': "",
-    'Piece.white_PAWN7': "",
-    'Piece.white_PAWN8': "",
-    
-    # 'Piece.PROMOTED_white_PAWN1': "",
-    # 'Piece.PROMOTED_white_PAWN2': "",
-    # 'Piece.PROMOTED_white_PAWN3': "",
-    # 'Piece.PROMOTED_white_PAWN4': "",
-    # 'Piece.PROMOTED_white_PAWN5': "",
-    # 'Piece.PROMOTED_white_PAWN6': "",
-    # 'Piece.PROMOTED_white_PAWN7': "",
-    # 'Piece.PROMOTED_white_PAWN8': "",
+    'piece.white_KING': "",
+    'piece.white_QUEEN': "",
+    'piece.white_BISHOP1': "",
+    'piece.white_BISHOP2': "",
+    'piece.white_KNIGHT1': "",
+    'piece.white_KNIGHT2': "",
+    'piece.white_ROOK1': "",
+    'piece.white_ROOK2': "",
+    'piece.white_PAWN1': "",
+    'piece.white_PAWN2': "",
+    'piece.white_PAWN3': "",
+    'piece.white_PAWN4': "",
+    'piece.white_PAWN5': "",
+    'piece.white_PAWN6': "",
+    'piece.white_PAWN7': "",
+    'piece.white_PAWN8': "",
 
-
-    'Piece.black_KING': "",
-    'Piece.black_QUEEN': "",
-    'Piece.black_BISHOP1': "",
-    'Piece.black_BISHOP2': "",
-    'Piece.black_KNIGHT1': "",
-    'Piece.black_KNIGHT2': "",
-    'Piece.black_ROOK1': "",
-    'Piece.black_ROOK2': "",
-    'Piece.black_PAWN1': "",
-    'Piece.black_PAWN2': "",
-    'Piece.black_PAWN3': "",
-    'Piece.black_PAWN4': "",
-    'Piece.black_PAWN5': "",
-    'Piece.black_PAWN6': "",
-    'Piece.black_PAWN7': "",
-    'Piece.black_PAWN8': "",
-    
-    # 'Piece.PROMOTED_black_PAWN1': "",
-    # 'Piece.PROMOTED_black_PAWN2': "",
-    # 'Piece.PROMOTED_black_PAWN3': "",
-    # 'Piece.PROMOTED_black_PAWN4': "",
-    # 'Piece.PROMOTED_black_PAWN5': "",
-    # 'Piece.PROMOTED_black_PAWN6': "",
-    # 'Piece.PROMOTED_black_PAWN7': "",
-    # 'Piece.PROMOTED_black_PAWN8': "",
+    'piece.black_KING': "",
+    'piece.black_QUEEN': "",
+    'piece.black_BISHOP1': "",
+    'piece.black_BISHOP2': "",
+    'piece.black_KNIGHT1': "",
+    'piece.black_KNIGHT2': "",
+    'piece.black_ROOK1': "",
+    'piece.black_ROOK2': "",
+    'piece.black_PAWN1': "",
+    'piece.black_PAWN2': "",
+    'piece.black_PAWN3': "",
+    'piece.black_PAWN4': "",
+    'piece.black_PAWN5': "",
+    'piece.black_PAWN6': "",
+    'piece.black_PAWN7': "",
+    'piece.black_PAWN8': "",
 }
 
 captured_pieces_list = []
@@ -620,22 +615,23 @@ def main():
 def play_game_loop():
     global moves_string, all_moves, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_move, board_positions_list
     
-    # if phoenix.phoenix_get_turn_from_moves(all_moves).lower() == "black": 
-    #     print("Hmmm... let's see...")
-    #     position_dict, all_moves, global_turn, board_positions_list, best_move = do_computer_move()
-    #     clear_screen()
-    #     print_board_visiual()
-    #     print(f"I'm going to do {best_move}.")
-    #     play_game_loop()
-    # else:
-    #     if first_move:
-    #         words = input(f"Hello and welcome to the world of magic chess! My name is Phoenix. You can resume a recent game or start a new game. {get_turn_color().capitalize()} to move, please state a command: ")
-    #         first_move = False
-    #     else: words = input(f"{get_turn_color().capitalize()} to move. Please state a command: ")
-    if first_move:
-        words = input(f"Hello and welcome to the world of magic chess! My name is Phoenix. You can resume a recent game or start a new game. {get_turn_color().capitalize()} to move, please state a command: ")
-        first_move = False
-    else: words = input(f"{get_turn_color().capitalize()} to move. Please state a command: ")
+    if phoenix.phoenix_get_turn_from_moves(all_moves).lower() == "black": 
+        print("Hmmm... let's see...")
+        position_dict, all_moves, global_turn, board_positions_list, best_move = do_computer_move("black")
+        # input()
+        clear_screen()
+        print_board_visiual()
+        print(f"I'm going to do {best_move}.")
+        play_game_loop()
+    else:
+        if first_move:
+            words = input(f"Hello and welcome to the world of magic chess! My name is Phoenix. You can resume a recent game or start a new game. {get_turn_color().capitalize()} to move, please state a command: ")
+            first_move = False
+        else: words = input(f"{get_turn_color().capitalize()} to move. Please state a command: ")
+    # if first_move:
+    #     words = input(f"Hello and welcome to the world of magic chess! My name is Phoenix. You can resume a recent game or start a new game. {get_turn_color().capitalize()} to move, please state a command: ")
+    #     first_move = False
+    # else: words = input(f"{phoenix.phoenix_get_turn_from_moves(all_moves).capitalize()} to move. Please state a command: ")
 
     # print(get_moves_tree(2, phoenix.phoenix_get_turn_from_moves(all_moves).lower(), position_dict, all_moves, board_positions_list))
 
@@ -658,7 +654,7 @@ def play_game_loop():
         print(f"fifty_move_rule_count: {fifty_move_rule_count}\nfifty_move_rule_bool: {fifty_move_rule_bool}\ncaptured_pieces_list: {captured_pieces_list}")
         play_game_loop()
     elif words.lower() == "best move":
-        print_phoenix_best_move()
+        print_phoenix_best_move(phoenix.phoenix_get_turn_from_moves(all_moves))
         input()
         play_game_loop()
     elif words.lower() == "board score":
@@ -670,6 +666,12 @@ def play_game_loop():
         input()
         play_game_loop()
         
+
+    # input(f"before: {position_dict}")
+    # print()
+    # input(f"after: {undo_last_move(position_dict.copy())}")
+
+
     intention_check = check_intentions(words) 
     #if there is an intention instead of a move   
     if intention_check: process_intention(intention_check)
@@ -734,48 +736,57 @@ def set_initials():
     clear_screen()
     print_board_visiual()
 
-def do_computer_move(): 
+def do_computer_move(turn_color): 
     global moves_string, all_moves, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_move, fifty_move_rule_bool, fifty_move_rule_count, board_positions_list
-    best_move = return_phoenix_best_move()
+    best_move = return_phoenix_best_move(turn_color)
     # print(best_move)
     # print(best_move[:2])
     piece = check_for_pieces(phoenix.get_what_is_on_square_specific(best_move[:2], position_dict=position_dict))
     position_dict, all_moves, global_turn, board_positions_list = phoenix.implement_command(best_move, piece, position_dict=position_dict, all_moves=all_moves, board_positions_list=board_positions_list)
     return position_dict, all_moves, global_turn, board_positions_list, best_move
 
-def return_phoenix_best_move():
+def return_phoenix_best_move(turn_color):
     global moves_string, all_moves, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_move, fifty_move_rule_bool, fifty_move_rule_count
 
+    max_player = True if turn_color == "white" else False
+
     position_dict_copy = position_dict.copy()
-    board_positions_list_copy = board_positions_list.copy()
+    all_moves_copy = all_moves.copy()
 
     move, evaluation = get_best_move(
-        2, 
-        phoenix.phoenix_get_turn_from_moves(all_moves), 
-        position_dict, 
-        all_moves, 
-        )
-
+        5,
+        phoenix.phoenix_get_turn_from_moves(all_moves),
+        position_dict_copy,
+        all_moves_copy,
+        maximizing_player=max_player  #True for white, false for black
+    )
     return move
 
-def print_phoenix_best_move():
+def print_phoenix_best_move(turn_color):
     global moves_string, all_moves, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time, fifty_move_rule_bool, fifty_move_rule_count
 
+    max_player = True if turn_color == "white" else False
+
     position_dict_copy = position_dict.copy()
-    board_positions_list_copy = board_positions_list.copy()
+    all_moves_copy = all_moves.copy()
+
+    import time
+
+    start_time = time.time()
 
     move, evaluation = get_best_move(
     2,
     phoenix.phoenix_get_turn_from_moves(all_moves),
     position_dict_copy,
-    all_moves,
-    board_positions_list_copy,
-    alpha=float('-inf'),
-    beta=float('inf'),
-    maximizing_player=False  # or False, depending if it's white's turn or black's
+    all_moves_copy,
+    maximizing_player=max_player  #True for white, false for black
     )
 
-    print(f"Phoenix recommends move {move}")
+    end_time = time.time()
+    elapsed = end_time - start_time
+    print(f"Function took {elapsed:.4f} seconds")
+
+    print(f"Phoenix recommends move {move} with evaluation: {evaluation} for {turn_color}")
 
 def reset_global_turn():
     global global_turn
@@ -800,38 +811,38 @@ def toggle_turn_color():
 
 def get_pieces_initial():
     return {
-        'Piece.white_KING': 'e1', 
-        'Piece.white_QUEEN': 'd1', 
-        'Piece.white_BISHOP1': 'c1', 
-        'Piece.white_BISHOP2': 'f1', 
-        'Piece.white_KNIGHT1': 'b1', 
-        'Piece.white_KNIGHT2': 'g1', 
-        'Piece.white_ROOK1': 'a1', 
-        'Piece.white_ROOK2': 'h1', 
-        'Piece.white_PAWN1': 'a2', 
-        'Piece.white_PAWN2': 'b2', 
-        'Piece.white_PAWN3': 'c2', 
-        'Piece.white_PAWN4': 'd2', 
-        'Piece.white_PAWN5': 'e2', 
-        'Piece.white_PAWN6': 'f2', 
-        'Piece.white_PAWN7': 'g2', 
-        'Piece.white_PAWN8': 'h2', 
-        'Piece.black_KING': 'e8', 
-        'Piece.black_QUEEN': 'd8', 
-        'Piece.black_BISHOP1': 'c8', 
-        'Piece.black_BISHOP2': 'f8', 
-        'Piece.black_KNIGHT1': 'b8', 
-        'Piece.black_KNIGHT2': 'g8', 
-        'Piece.black_ROOK1': 'a8', 
-        'Piece.black_ROOK2': 'h8', 
-        'Piece.black_PAWN1': 'a7', 
-        'Piece.black_PAWN2': 'b7', 
-        'Piece.black_PAWN3': 'c7', 
-        'Piece.black_PAWN4': 'd7', 
-        'Piece.black_PAWN5': 'e7', 
-        'Piece.black_PAWN6': 'f7', 
-        'Piece.black_PAWN7': 'g7', 
-        'Piece.black_PAWN8': 'h7'
+        'piece.white_KING': 'e1', 
+        'piece.white_QUEEN': 'd1', 
+        'piece.white_BISHOP1': 'c1', 
+        'piece.white_BISHOP2': 'f1', 
+        'piece.white_KNIGHT1': 'b1', 
+        'piece.white_KNIGHT2': 'g1', 
+        'piece.white_ROOK1': 'a1', 
+        'piece.white_ROOK2': 'h1', 
+        'piece.white_PAWN1': 'a2', 
+        'piece.white_PAWN2': 'b2', 
+        'piece.white_PAWN3': 'c2', 
+        'piece.white_PAWN4': 'd2', 
+        'piece.white_PAWN5': 'e2', 
+        'piece.white_PAWN6': 'f2', 
+        'piece.white_PAWN7': 'g2', 
+        'piece.white_PAWN8': 'h2', 
+        'piece.black_KING': 'e8', 
+        'piece.black_QUEEN': 'd8', 
+        'piece.black_BISHOP1': 'c8', 
+        'piece.black_BISHOP2': 'f8', 
+        'piece.black_KNIGHT1': 'b8', 
+        'piece.black_KNIGHT2': 'g8', 
+        'piece.black_ROOK1': 'a8', 
+        'piece.black_ROOK2': 'h8', 
+        'piece.black_PAWN1': 'a7', 
+        'piece.black_PAWN2': 'b7', 
+        'piece.black_PAWN3': 'c7', 
+        'piece.black_PAWN4': 'd7', 
+        'piece.black_PAWN5': 'e7', 
+        'piece.black_PAWN6': 'f7', 
+        'piece.black_PAWN7': 'g7', 
+        'piece.black_PAWN8': 'h7'
         }
 
 #Locates all of the initial pieces' positions, and puts them in the positions dictionary
@@ -863,7 +874,8 @@ def print_board_visiual():
     
     #assign the board dict according to the position dict
     for piece, square in position_dict.items():
-        if square and (square != "xx"): 
+        # print(piece, square)
+        if square and (square != "xx") and piece.lower().startswith("piece"): 
             board_dict[square.upper()] = piece
 
     # Go from 8 to 1, and print each line and lane (lane contains characters)
@@ -1210,7 +1222,9 @@ def check_confirmation_response(text):
     return best_match if match_counts[best_match] > 0 else False
 
 def implement_intention(intention, computer_color=""):
-    if intention == "undo": undo_last_move()
+    if intention == "undo": 
+        undo_last_move(position_dict, all_moves)
+        reset_global_turn()
     elif intention == "restart": restart_game()
     elif intention == "takeover": computer_takeover(computer_color)
     else: return
@@ -1234,7 +1248,7 @@ def get_moves_tree(depth, turn, position_dict, all_moves, board_positions_list):
     for move in possible_moves:
         # Make deep copies to preserve original state across recursive calls
         new_position_dict = copy.deepcopy(position_dict)
-        new_all_moves = copy.deepcopy(all_moves)
+        temp_all_moves = copy.deepcopy(all_moves)
         new_board_positions_list = copy.deepcopy(board_positions_list)
         new_turn = turn  # If turn is a simple variable (e.g., 'w' or 'b'), no deepcopy is needed
         
@@ -1244,13 +1258,13 @@ def get_moves_tree(depth, turn, position_dict, all_moves, board_positions_list):
         
         piece = check_for_pieces(whole_piece)
         # Apply the move and update the board state
-        new_position_dict, new_all_moves, new_turn, new_board_positions_list = phoenix.implement_command(
-            move, piece, position_dict=new_position_dict, all_moves=new_all_moves, board_positions_list=new_board_positions_list
+        new_position_dict, temp_all_moves, new_turn, new_board_positions_list = phoenix.implement_command(
+            move, piece, position_dict=new_position_dict, all_moves=temp_all_moves, board_positions_list=new_board_positions_list
         )
         
         # If there is still depth left, recurse to generate the tree further
         if depth > 0:
-            move_dict[move] = get_moves_tree(depth - 1, new_turn, new_position_dict, new_all_moves, new_board_positions_list)
+            move_dict[move] = get_moves_tree(depth - 1, new_turn, new_position_dict, temp_all_moves, new_board_positions_list)
         else:
             # If at leaf level, add the move to the leaf list
             leaf_list.append(move)
@@ -1261,40 +1275,39 @@ def get_moves_tree(depth, turn, position_dict, all_moves, board_positions_list):
     else:
         return move_dict
 
-def get_best_move(depth, turn, position_dict, all_moves, board_positions_list, alpha, beta, maximizing_player, moves_list = []):
+def get_best_move(depth, turn, temp_position_dict, temp_all_moves, maximizing_player, alpha=float('-inf'), beta=float('inf'), moves_list = [],):
     if depth == 0:
         new_moves_list = copy.deepcopy(moves_list)
-        # new_moves_list.append(all_moves[-1])
-        print(f"{new_moves_list}: {phoenix.evaluate_postion(position_dict)}")
-        return None, phoenix.evaluate_postion(position_dict)
+        # new_moves_list.append(temp_all_moves[-1])
+        # print(f"{new_moves_list}: {phoenix.evaluate_postion(temp_position_dict)}")
+        return None, phoenix.evaluate_postion(temp_position_dict)
 
-    possible_moves = phoenix.get_possible_moves(turn=phoenix.phoenix_get_turn_from_moves(all_moves), position_dict=position_dict, all_moves=all_moves)
+    possible_moves = phoenix.get_possible_moves(turn=phoenix.phoenix_get_turn_from_moves(temp_all_moves), position_dict=temp_position_dict, all_moves=all_moves)
 
     if not possible_moves:
-        return None, phoenix.evaluate_postion(position_dict)
+        return None, phoenix.evaluate_postion(temp_position_dict)
 
     best_move = None
 
     if maximizing_player:
         max_eval = float('-inf')
         for move in possible_moves:
-            # Deep copies
-            new_position_dict = copy.deepcopy(position_dict)
-            new_all_moves = copy.deepcopy(all_moves)
-            new_board_positions_list = copy.deepcopy(board_positions_list)
             new_turn = turn
             new_moves_list = copy.deepcopy(moves_list)
             new_moves_list.append(move)
 
             # Get the piece and apply the move
-            whole_piece = phoenix.get_what_is_on_square_specific(move[:2], position_dict=new_position_dict)
+            whole_piece = phoenix.get_what_is_on_square_specific(move[:2], position_dict=temp_position_dict)
             piece = check_for_pieces(whole_piece)
-            new_position_dict, new_all_moves, new_turn, new_board_positions_list = phoenix.implement_command(
-                move, piece, position_dict=new_position_dict, all_moves=new_all_moves, board_positions_list=new_board_positions_list
+            temp_position_dict, temp_all_moves, new_turn, _ = phoenix.implement_command(
+                move, piece, position_dict=temp_position_dict, all_moves=temp_all_moves, board_positions_list=[]
             )
 
             # Recurse
-            _, eval = get_best_move(depth - 1, new_turn, new_position_dict, new_all_moves, new_board_positions_list, alpha, beta, False, moves_list=new_moves_list)
+            _, eval = get_best_move(depth - 1, new_turn, temp_position_dict, temp_all_moves, alpha, beta, False, moves_list=new_moves_list)
+
+            # print(undo_last_move(temp_position_dict))
+            temp_position_dict, temp_all_moves = undo_last_move(temp_position_dict, temp_all_moves)
 
             if eval > max_eval:
                 max_eval = eval
@@ -1302,6 +1315,7 @@ def get_best_move(depth, turn, position_dict, all_moves, board_positions_list, a
 
             alpha = max(alpha, eval)
             if beta <= alpha:
+                # print(f"breaking on move: {move} for max player, alpha: {alpha}, beta: {beta}")
                 break  # Beta cutoff
 
         return best_move, max_eval
@@ -1309,23 +1323,21 @@ def get_best_move(depth, turn, position_dict, all_moves, board_positions_list, a
     else:
         min_eval = float('inf')
         for move in possible_moves:
-            # Deep copies
-            new_position_dict = copy.deepcopy(position_dict)
-            new_all_moves = copy.deepcopy(all_moves)
-            new_board_positions_list = copy.deepcopy(board_positions_list)
             new_turn = turn
             new_moves_list = copy.deepcopy(moves_list)
             new_moves_list.append(move)
 
             # Get the piece and apply the move
-            whole_piece = phoenix.get_what_is_on_square_specific(move[:2], position_dict=new_position_dict)
+            whole_piece = phoenix.get_what_is_on_square_specific(move[:2], position_dict=temp_position_dict)
             piece = check_for_pieces(whole_piece)
-            new_position_dict, new_all_moves, new_turn, new_board_positions_list = phoenix.implement_command(
-                move, piece, position_dict=new_position_dict, all_moves=new_all_moves, board_positions_list=new_board_positions_list
+            temp_position_dict, temp_all_moves, new_turn, _ = phoenix.implement_command(
+                move, piece, position_dict=temp_position_dict, all_moves=temp_all_moves, board_positions_list=[]
             )
 
             # Recurse
-            _, eval = get_best_move(depth - 1, new_turn, new_position_dict, new_all_moves, new_board_positions_list, alpha, beta, True, moves_list=new_moves_list)
+            _, eval = get_best_move(depth - 1, new_turn, temp_position_dict, temp_all_moves, alpha, beta, True, moves_list=new_moves_list)
+
+            temp_position_dict, temp_all_moves = undo_last_move(temp_position_dict, temp_all_moves)
 
             if eval < min_eval:
                 min_eval = eval
@@ -1333,6 +1345,7 @@ def get_best_move(depth, turn, position_dict, all_moves, board_positions_list, a
 
             beta = min(beta, eval)
             if beta <= alpha:
+                # print(f"breaking on move: {move} for min player, alpha: {alpha}, beta: {beta}")
                 break  # Alpha cutoff
 
         return best_move, min_eval
@@ -1387,21 +1400,89 @@ def is_intention_possible(intention):
     else: return False
  
 #logic to undo the last move in all moves. used by implement_intention
-def undo_last_move():
-    global position_dict, all_moves, board_positions_list, global_turn
-    #Can't undo a move if there aren't any to undo
-    if not all_moves: return
-    position_dict_temp = position_dict.copy()
-    for piece, position in position_dict_temp.items():
-        position_dict[piece] == ""
-        #remove promoted pieces from the dictionary
-        if "promoted" in piece.lower() and "pawn" not in piece.lower(): position_dict.pop(piece, None) 
+# def undo_last_move():
+#     global position_dict, all_moves, board_positions_list, global_turn
+#     #Can't undo a move if there aren't any to undo
+#     if not all_moves: return
+#     position_dict_temp = position_dict.copy()
+#     for piece, position in position_dict_temp.items():
+#         position_dict[piece] == ""
+#         #remove promoted pieces from the dictionary
+#         if "promoted" in piece.lower() and "pawn" not in piece.lower(): position_dict.pop(piece, None) 
 
-    #set initial board position
-    board_positions_list.clear()
-    all_moves.pop()
-    reset_global_turn()
-    set_initials()
+#     #set initial board position
+#     board_positions_list.clear()
+#     all_moves.pop()
+#     reset_global_turn()
+#     set_initials()
+
+#new undo function that doesn't restart the whole game
+#TODO does NOT work with 50 move draw, or repetition
+def undo_last_move(temp_position_dict, temp_all_moves): 
+    if not temp_all_moves: return temp_position_dict, temp_all_moves
+    castle_moves = {
+        "e1g1": ("white", "Castle Kingside"),
+        "e8g8": ("black", "Castle Kingside"),
+        "e1c1": ("white", "Castle Queenside"),
+        "e8c8": ("black", "Castle Queenside")
+    }
+
+    rook_moves = {
+        ("Castle Kingside", "white"): "h1f1",
+        ("Castle Kingside", "black"): "h8f8",
+        ("Castle Queenside", "white"): "a1d1",
+        ("Castle Queenside", "black"): "a8d8" 
+    }
+    
+    last_move = temp_all_moves[-1]
+
+    #'piece.white_KING': "",
+    if last_move in castle_moves: 
+        print(f"{last_move} this is a castle move")
+        #move the king back
+        #'piece.white_KING': "",
+        temp_position_dict[f"piece.{castle_moves[last_move][0]}_KING"] = last_move[:2]
+        print(f"last_move[:2]: {last_move[:2]}")
+        
+        #move the rook back
+        rook_move = rook_moves[castle_moves[last_move][1], castle_moves[last_move][0]] 
+        print(f"rook_move: {rook_move}")
+        rook_piece = phoenix.get_what_is_on_square_specific(rook_move[:2], position_dict=temp_position_dict)
+        print(f"rook_piece: {rook_piece}")
+        temp_position_dict[rook_piece] = rook_move[:2]
+        print(f"temp_position_dict[rook_piece]: {temp_position_dict[rook_piece]}")
+        print(f"")
+
+    elif len(last_move) == 5: 
+
+        #get the promoted piece, removed it from the dictionary
+        #ex: 'piece.PROMOTED_WHITE_QUEEN5'
+        promoted_piece = phoenix.get_what_is_on_square_specific(last_move[2:4], position_dict=temp_position_dict)
+        temp_position_dict.pop(promoted_piece, None)
+
+        #if there is one, put the removed piece back on its square
+        if last_move in temp_position_dict:
+            temp_position_dict[temp_position_dict[last_move][0]] = temp_position_dict[last_move][1]
+            temp_position_dict.pop(last_move, None)
+
+        #ex: 'piece.white_PAWN5'
+        spliced_pawn = "piece.white_PAWN" + promoted_piece[-1]
+
+        #put the pawn back on its place
+        temp_position_dict[spliced_pawn] = last_move[:2]
+    else: 
+        #undo the move
+        temp_position_dict[phoenix.get_what_is_on_square_specific(last_move[-2:], position_dict=temp_position_dict)] = last_move[:2]
+
+        #if there is one, put the removed piece back on its square
+        #example:  'd3c2': ('Piece.white_PAWN3', 'c2')}
+        if last_move in temp_position_dict:
+            temp_position_dict[temp_position_dict[last_move][0]] = temp_position_dict[last_move][1]
+            temp_position_dict.pop(last_move, None)
+    
+    temp_all_moves.pop()
+    # reset_global_turn()
+    return temp_position_dict, temp_all_moves
 
 def restart_game():
     global position_dict, all_moves, board_positions_list
@@ -1411,6 +1492,7 @@ def restart_game():
         position_dict[piece] == ""
         #remove promoted pieces from the dictionary
         if "promoted" in piece.lower() and "pawn" not in piece.lower(): position_dict.pop(piece, None) 
+        if not piece.lower().startswith("piece"): position_dict.pop(piece, None) 
     locate_pieces_initial()
     reset_50_move_logic()
     board_positions_list.clear()
