@@ -33,9 +33,10 @@
     #FIXED: pawns that aren't allowed to move 2 forward are now allowed to
     #FIXED: 586 error in PHOENIX, I think this might be it trying to castle. 
     #FIXED: computer is having trouble with castling correctly (scenario 51, 23 and try to undo) (phoenix will try to castle on its next move, playing black)
+    #FIXED: evaluate each position in the tree, and apply alpha beta to go faster and deeper
+    #FIXED: add checkmate and stalemate, and insufficient material to phoenix.evaluate
 
-    #scenario: add checkmate and stalemate to phoenix.evaluate
-    #scenario: evaluate each position in the tree, and apply alpha beta to go faster and deeper
+    #scenario: found some more 586 errors when finding the best move: 41, 42
     #scenario: make the new undo function work with 50 move draw and repetition
     #scenario: Work with other commands, like take over, restart, undo, etc;
     #scenario: make it so a player can say "e2e4" and "pawn to e4"
@@ -133,7 +134,7 @@ def clear_screen():
 # moves_string = ['e2e3', 'd7d6', 'b1c3', 'e8d7', 'c3b1', 'd7c6', 'b1c3', 'c6b6', 'c3b1', 'b6a5', 'e3e4', 'd6d5', 'e4d5', 'a5a4', 'g1h3', 'e7e5', 'h3g1', 'h7h6', 'd1g4', 'a4a5', 'h2h4', 'e5e4', 'f2f4']
 
 #23 loaded castling 
-moves_string = ['g1f3', 'g8f6', 'g2g4', 'g7g5', 'f1h3', 'f8h6', 'e1g1', 'e8g8']
+# moves_string = ['g1f3', 'g8f6', 'g2g4', 'g7g5', 'f1h3', 'f8h6', 'e1g1', 'e8g8']
 
 #24 testing illegal castling scenarios. (black: kingside: can queenside: can't, white: kingside: can queenside: can)
 # moves_string = ['g1f3', 'g8f6', 'g2g3', 'g7g6', 'f1h3', 'f8h6', 'c2c3', 'c7c6', 'd1b3', 'd8b6', 'd2d4', 'b8a6', 'c1f4', 'd7d5', 'b1a3', 'c8f5', 'b3d5']
@@ -169,20 +170,20 @@ moves_string = ['g1f3', 'g8f6', 'g2g4', 'g7g5', 'f1h3', 'f8h6', 'e1g1', 'e8g8']
 
 #32 multiple pawns can be promoted to same square, but both of them are pinned
 # moves_string = ['e2e4', 'd7d5', 'e4e5', 'd5d4', 'e5e6', 'd4d3', 'e6f7', 'e8d7', 'c2c3', 'b7b5', 'a2a3', 
-#                 'b5b4', 'a3a4', 'b4c3', 'd2c3', 'd3d2', 'e1e2', 'h7h5', 'd1e1', 'h5h4', 'g2g4', 'h4g3', 
-#                 'h2h4', 'g3f2', 'h1h2', 'g7g6', 'e1d1', 'g6g5', 'g1f3', 'g5g4', 'f3e1', 'd7d6', 'c3c4', 
-#                 'd6e5', 'c4c5', 'e5d4', 'b2b3', 'd4d5', 'c1b2', 'd5e4', 'b2e5', 'e4d5', 'h2h3', 'd5e4', 
-#                 'e5h2', 'e4d4', 'h2g1']
+                # 'b5b4', 'a3a4', 'b4c3', 'd2c3', 'd3d2', 'e1e2', 'h7h5', 'd1e1', 'h5h4', 'g2g4', 'h4g3', 
+                # 'h2h4', 'g3f2', 'h1h2', 'g7g6', 'e1d1', 'g6g5', 'g1f3', 'g5g4', 'f3e1', 'd7d6', 'c3c4', 
+                # 'd6e5', 'c4c5', 'e5d4', 'b2b3', 'd4d5', 'c1b2', 'd5e4', 'b2e5', 'e4d5', 'h2h3', 'd5e4', 
+                # 'e5h2', 'e4d4', 'h2g1']
 
 #33 about to be a draw by 50 moves (50 moves each side since the last time a pawn was moved or a piece was captured)
 # moves_string = ['e2e4', 'd7d5', 'e4d5', 'd8d5', 'd1e2', 'd5d4', 'e2e3', 'd4e4', 'b1c3', 'e4d4', 'e3f3', 'd4e4', 'f1e2', 'e4e3', 
-#                 'f3e4', 'e3f4', 'e4f5', 'f4g5', 'f5g4', 'g5h4', 'g4a4', 'b8c6', 'a4g4', 'h4g5', 'g4h5', 'g5a5', 'h5h3', 'a5b4', 
-#                 'h3g4', 'c6e5', 'g1f3', 'b4e4', 'f3g5', 'e5f3', 'e1f1', 'f3d4', 'g4f4', 'e4f5', 'f4e3', 'f5h3', 'e3e5', 'h3f5', 
-#                 'e5c5', 'f5d5', 'c5c4', 'd5c5', 'c4b4', 'c5c4', 'b4b3', 'c4b4', 'b3a4', 'd4b5', 'a4b3', 'b4e4', 'b3d5', 'e4d4', 
-#                 'd5e5', 'd4e4', 'c3d5', 'e4d4', 'g5f3', 'g8f6', 'd5c3', 'b5d6', 'c3e4', 'f6d5', 'f3g5', 'd6b5', 'e5f5', 'd5c3', 
-#                 'f5g4', 'd4e5', 'g4f3', 'e5f5', 'f3d3', 'f5f3', 'd3d5', 'f3f5', 'd5e5', 'f5e6', 'e5f5', 'e6e5', 'f5f6', 'c3d5', 
-#                 'g5f3', 'b5c3', 'f6f5', 'e5d4', 'f5e5', 'd4c5', 'e5d4', 'c5d6', 'd4e5', 'd6c5', 'e5h5', 'c3b5', 'h5g4', 'c5a3', 
-#                 'g4g5', 'b5c3', 'g5e5', 'c3b5', 'e5d6']
+                # 'f3e4', 'e3f4', 'e4f5', 'f4g5', 'f5g4', 'g5h4', 'g4a4', 'b8c6', 'a4g4', 'h4g5', 'g4h5', 'g5a5', 'h5h3', 'a5b4', 
+                # 'h3g4', 'c6e5', 'g1f3', 'b4e4', 'f3g5', 'e5f3', 'e1f1', 'f3d4', 'g4f4', 'e4f5', 'f4e3', 'f5h3', 'e3e5', 'h3f5', 
+                # 'e5c5', 'f5d5', 'c5c4', 'd5c5', 'c4b4', 'c5c4', 'b4b3', 'c4b4', 'b3a4', 'd4b5', 'a4b3', 'b4e4', 'b3d5', 'e4d4', 
+                # 'd5e5', 'd4e4', 'c3d5', 'e4d4', 'g5f3', 'g8f6', 'd5c3', 'b5d6', 'c3e4', 'f6d5', 'f3g5', 'd6b5', 'e5f5', 'd5c3', 
+                # 'f5g4', 'd4e5', 'g4f3', 'e5f5', 'f3d3', 'f5f3', 'd3d5', 'f3f5', 'd5e5', 'f5e6', 'e5f5', 'e6e5', 'f5f6', 'c3d5', 
+                # 'g5f3', 'b5c3', 'f6f5', 'e5d4', 'f5e5', 'd4c5', 'e5d4', 'c5d6', 'd4e5', 'd6c5', 'e5h5', 'c3b5', 'h5g4', 'c5a3', 
+                # 'g4g5', 'b5c3', 'g5e5', 'c3b5', 'e5d6']
 
 #34 about to be draw by insufficient material (king vs king)
 # moves_string = ['e2e4', 'd7d5', 'd1h5', 'd8d6', 'h5d5', 'd6e5', 'd5f7', 'e8d8', 'f7g8', 'e5b2', 'g8h8', 'b2a1', 'h8h7', 'a1a2', 'h7g7', 
@@ -224,9 +225,11 @@ moves_string = ['g1f3', 'g8f6', 'g2g4', 'g7g5', 'f1h3', 'f8h6', 'e1g1', 'e8g8']
 #                 'd3c2', 'f7g8r', 'c2b1q', 'h3h4', 'g7g5', 'h4g5', 'h7h5', 'g5g6', 'h8h6', 'g6g7', 'h6a6', 'g7f8r', 'a6b6', 'f8f7', 'b6c6']
 
 #41 two promoted knights can move to the same spot, this one works
+###error
 # moves_string = ['e2e4', 'd7d5', 'e4e5', 'd5d4', 'e5e6', 'd4d3', 'e6f7', 'e8d7', 'h2h3', 'd3c2', 'f7g8n', 'd8e8', 'f2f4', 'b8c6', 'f4f5', 'c6d4', 'f5f6', 'e7e5', 'f6f7', 'e5e4', 'f7e8n', 'e4e3']
 
 #42 two promoted knights can move to g8
+###error
 # moves_string = ['e2e4', 'd7d5', 'e4e5', 'd5d4', 'e5e6', 'd4d3', 'e6f7', 'e8d7', 'h2h3', 'd3c2', 'f7g8n', 'd8e8', 'f2f4', 'b8c6', 
 #                 'f4f5', 'c6d4', 'f5f6', 'e7e5', 'f6f7', 'e5e4', 'f7e8n', 'e4e3', 'e8f6', 'd7d8', 'g8h6', 'a7a6']
 
@@ -245,7 +248,7 @@ moves_string = ['g1f3', 'g8f6', 'g2g4', 'g7g5', 'f1h3', 'f8h6', 'e1g1', 'e8g8']
 #47 about to be a stalemate by repetition, (knight to g8)
 # moves_string = ['g1f3', 'g8f6', 'f3g1', 'f6g8', 'g1f3', 'g8f6', 'f3g1']
 
-#48 pawn promotion to corners ###error promoting rook and queen
+#48 pawn promotion to corners
 # moves_string = ['e2e4', 'f7f5', 'd2d3', 'f5e4', 'd1e2', 'e4d3', 'c2d3', 'e7e5', 'd3d4', 'd8e7', 'e2e5', 'e7e5', 'd4e5', 'g8f6', 'e5f6', 'h7h6', 'f6g7', 'c7c5', 'b2b4', 'c5b4', 'f2f3', 'b4b3', 'f3f4', 'b3b2']
 
 #49 test scenario for best move
@@ -253,16 +256,16 @@ moves_string = ['g1f3', 'g8f6', 'g2g4', 'g7g5', 'f1h3', 'f8h6', 'e1g1', 'e8g8']
 
 #50 test scenario for best move
 # moves_string = ['e2e4', 'b8c6', 'd2d4', 'g8f6', 'b1c3', 'd7d6', 'g1f3', 
-#                 'c8e6', 'd4d5', 'f6d5', 'e4d5', 'e6d5', 'c3d5', 'e7e6', 
-#                 'd5c3', 'f8e7', 'f1b5', 'e8g8', 'e1g1', 'c6b4', 'c1e3', 
-#                 'e7f6', 'f3g5', 'f6c3', 'b2c3']
+                # 'c8e6', 'd4d5', 'f6d5', 'e4d5', 'e6d5', 'c3d5', 'e7e6', 
+                # 'd5c3', 'f8e7', 'f1b5', 'e8g8', 'e1g1', 'c6b4', 'c1e3', 
+                # 'e7f6', 'f3g5', 'f6c3', 'b2c3']
 
 #51 test scenario for best move, phoenix is about to castle on the next move
-moves_string = ['e2e4', 'b8c6', 'd2d4', 'c6d4', 'd1d4', 'c7c5', 'd4c5', 
-                'b7b6', 'c5c3', 'g8f6', 'f2f3', 'e7e5', 'c1g5', 'h7h6', 
-                'g5f6', 'd8f6', 'g1e2', 'f8d6', 'e2g3', 'c8b7']
+# moves_string = ['e2e4', 'b8c6', 'd2d4', 'c6d4', 'd1d4', 'c7c5', 'd4c5', 
+                # 'b7b6', 'c5c3', 'g8f6', 'f2f3', 'e7e5', 'c1g5', 'h7h6', 
+                # 'g5f6', 'd8f6', 'g1e2', 'f8d6', 'e2g3', 'c8b7']
 
-# moves_string = []
+moves_string = []
 
 #used to update the current list of moves made, and transitively the current position. Can be used in tandem with above set position to set a position before playing 
 all_moves = moves_string
@@ -615,33 +618,33 @@ def main():
 def play_game_loop():
     global moves_string, all_moves, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_move, board_positions_list
     
-    if phoenix.phoenix_get_turn_from_moves(all_moves).lower() == "black": 
-        print("Hmmm... let's see...")
-        start_time = time.time()
+    # if phoenix.phoenix_get_turn_from_moves(all_moves).lower() == "black": 
+    #     print("Hmmm... let's see...")
+    #     start_time = time.time()
 
 
-        position_dict, all_moves, global_turn, board_positions_list, best_move = do_computer_move("black")
-        # input()
-        clear_screen()
-        print_board_visiual()
-        print(f"I'm going to do {best_move}.")
-        end_time = time.time()
-        elapsed = end_time - start_time
-        print(f"Phoenix took {elapsed:.4f} seconds with depth of 5")
-        play_game_loop()
-    else:
-        if first_move:
-            words = input(f"Hello and welcome to the world of magic chess! My name is Phoenix. You can resume a recent game or start a new game. {get_turn_color().capitalize()} to move, please state a command: ")
-            first_move = False
-        else: words = input(f"{get_turn_color().capitalize()} to move. Please state a command: ")
+    #     position_dict, all_moves, global_turn, board_positions_list, best_move = do_computer_move("black")
+    #     # input()
+    #     clear_screen()
+    #     print_board_visiual()
+    #     print(f"I'm going to do {best_move}.")
+    #     end_time = time.time()
+    #     elapsed = end_time - start_time
+    #     print(f"Phoenix took {elapsed:.4f} seconds with depth of 5")
+    #     play_game_loop()
+    # else:
+    #     if first_move:
+    #         words = input(f"Hello and welcome to the world of magic chess! My name is Phoenix. You can resume a recent game or start a new game. {get_turn_color().capitalize()} to move, please state a command: ")
+    #         first_move = False
+    #     else: words = input(f"{get_turn_color().capitalize()} to move. Please state a command: ")
     
     # for move in phoenix.get_possible_moves(turn=phoenix.phoenix_get_turn_from_moves(all_moves), position_dict=position_dict, all_moves=all_moves):
     #     print(f"{move}: {phoenix.rank_capture(move, rank_postion_dict=position_dict, rank_all_moves=all_moves)}")
     
-    # if first_move:
-    #     words = input(f"Hello and welcome to the world of magic chess! My name is Phoenix. You can resume a recent game or start a new game. {get_turn_color().capitalize()} to move, please state a command: ")
-    #     first_move = False
-    # else: words = input(f"{phoenix.phoenix_get_turn_from_moves(all_moves).capitalize()} to move. Please state a command: ")
+    if first_move:
+        words = input(f"Hello and welcome to the world of magic chess! My name is Phoenix. You can resume a recent game or start a new game. {get_turn_color().capitalize()} to move, please state a command: ")
+        first_move = False
+    else: words = input(f"{phoenix.phoenix_get_turn_from_moves(all_moves).capitalize()} to move. Please state a command: ")
 
     # print_phoenix_best_move()
     # input()
@@ -699,7 +702,7 @@ def play_game_loop():
     print_board_visiual()
 
     #if there are no available moves for the person that did not just make a move in this function (aka whose turn it is), then it is either a checkmate or a stalemate
-    if len(phoenix.get_possible_moves(turn = get_turn_color(), position_dict=position_dict, all_moves=all_moves)) == 0:
+    if len(phoenix.get_possible_moves(turn = phoenix.phoenix_get_turn_from_moves(all_moves), position_dict=position_dict, all_moves=all_moves)) == 0:
         if phoenix.is_king_in_check(get_turn_color(), position_dict=position_dict, all_moves=all_moves): print(f"Game over, {'black' if get_turn_color().lower() == 'white' else 'white'} wins by checkmate")
         else: print(f"Game over by stalemate. {get_turn_color().lower()} doesn't have any legal moves.")
         print("Thanks for playing, play again soon! \n-Pheonix")
@@ -716,7 +719,7 @@ def play_game_loop():
         print("Thanks for playing, play again soon! \n-Pheonix")
         exit()
 
-    if check_for_insufficient_material_draw():
+    if phoenix.check_for_insufficient_material_draw(position_dict):
         print(f"Game over - draw by insufficient material")
         print("Thanks for playing, play again soon! \n-Pheonix")
         exit()
@@ -791,12 +794,13 @@ def print_phoenix_best_move(turn_color):
     position_dict_copy = position_dict.copy()
     all_moves_copy = all_moves.copy()
 
-    import time
+    depth = 2
+    # depth = input("what depth?")
 
     start_time = time.time()
 
     move, evaluation = get_best_move(
-    3,
+    int(depth),
     phoenix.phoenix_get_turn_from_moves(all_moves),
     position_dict_copy,
     all_moves_copy,
@@ -959,68 +963,68 @@ def check_for_50_move_draw(move):
         if fifty_move_rule_count >= 100: fifty_move_rule_bool = True
         return True
 
-def check_for_insufficient_material_draw():
-    black_bishop_count_total = 0
-    black_dark_bishop_count = 0
-    black_light_bishop_count = 0
+# def check_for_insufficient_material_draw():
+#     black_bishop_count_total = 0
+#     black_dark_bishop_count = 0
+#     black_light_bishop_count = 0
 
-    white_bishop_count_total = 0
-    white_dark_bishop_count = 0
-    white_light_bishop_count = 0
+#     white_bishop_count_total = 0
+#     white_dark_bishop_count = 0
+#     white_light_bishop_count = 0
 
-    black_knight_count = 0
-    white_knight_count = 0
+#     black_knight_count = 0
+#     white_knight_count = 0
 
-    for piece, position in position_dict.items():
-        #any position that has a queen is not insufficient material
-        if "queen" in piece.lower() and position and position != "xx": return False
-        #same with rook
-        if "rook" in piece.lower() and position and position != "xx": return False
-        #same with pawn (can be promoted)
-        if "pawn" in piece.lower() and position and position != "xx": return False
-        #black bishop count
-        if "bishop" in piece.lower() and "black" in piece.lower() and position and position != "xx": 
-            black_bishop_count_total += 1
-            if is_dark_square(position): black_dark_bishop_count += 1
-            else: black_light_bishop_count += 1
-        #white bishop count
-        if "bishop" in piece.lower() and "white" in piece.lower() and position and position != "xx": 
-            white_bishop_count_total += 1
-            if is_dark_square(position): white_dark_bishop_count += 1
-            else: white_light_bishop_count += 1
-        #black bishop count
-        if "knight" in piece.lower() and "black" in piece.lower() and position and position != "xx": black_knight_count += 1
-        #white bishop count
-        if "knight" in piece.lower() and "white" in piece.lower() and position and position != "xx": white_knight_count += 1
+#     for piece, position in position_dict.items():
+#         #any position that has a queen is not insufficient material
+#         if "queen" in piece.lower() and position and position != "xx": return False
+#         #same with rook
+#         if "rook" in piece.lower() and position and position != "xx": return False
+#         #same with pawn (can be promoted)
+#         if "pawn" in piece.lower() and position and position != "xx": return False
+#         #black bishop count
+#         if "bishop" in piece.lower() and "black" in piece.lower() and position and position != "xx": 
+#             black_bishop_count_total += 1
+#             if is_dark_square(position): black_dark_bishop_count += 1
+#             else: black_light_bishop_count += 1
+#         #white bishop count
+#         if "bishop" in piece.lower() and "white" in piece.lower() and position and position != "xx": 
+#             white_bishop_count_total += 1
+#             if is_dark_square(position): white_dark_bishop_count += 1
+#             else: white_light_bishop_count += 1
+#         #black bishop count
+#         if "knight" in piece.lower() and "black" in piece.lower() and position and position != "xx": black_knight_count += 1
+#         #white bishop count
+#         if "knight" in piece.lower() and "white" in piece.lower() and position and position != "xx": white_knight_count += 1
 
-    # king vs king
+#     # king vs king
 
-    if all(x == 0 for x in [black_bishop_count_total, white_bishop_count_total, black_knight_count, white_knight_count]): return True
+#     if all(x == 0 for x in [black_bishop_count_total, white_bishop_count_total, black_knight_count, white_knight_count]): return True
 
-    # king and bishop vs king
-    elif black_bishop_count_total + white_bishop_count_total == 1: return True
+#     # king and bishop vs king
+#     elif black_bishop_count_total + white_bishop_count_total == 1: return True
     
-    # king and knight vs king
-    elif black_knight_count + white_knight_count == 1: return True
+#     # king and knight vs king
+#     elif black_knight_count + white_knight_count == 1: return True
     
-    # king and bishop vs king and bishop (same-colored bishops)
-    #One black dark bishop and one white dark bishop, and no light bishops
-    elif ((black_dark_bishop_count == 1 and white_dark_bishop_count == 1 and black_light_bishop_count == 0 and white_light_bishop_count == 0) or 
-    # or One black light bishop and one white light bishop, and no dark bishops
-    (black_light_bishop_count == 1 and white_light_bishop_count == 1 and black_dark_bishop_count == 0 and white_dark_bishop_count == 0)) and \
-    (black_bishop_count_total + white_bishop_count_total == 2): return True #And no other bishops
-    else: return False #example: two black bishops and one white bishops left
+#     # king and bishop vs king and bishop (same-colored bishops)
+#     #One black dark bishop and one white dark bishop, and no light bishops
+#     elif ((black_dark_bishop_count == 1 and white_dark_bishop_count == 1 and black_light_bishop_count == 0 and white_light_bishop_count == 0) or 
+#     # or One black light bishop and one white light bishop, and no dark bishops
+#     (black_light_bishop_count == 1 and white_light_bishop_count == 1 and black_dark_bishop_count == 0 and white_dark_bishop_count == 0)) and \
+#     (black_bishop_count_total + white_bishop_count_total == 2): return True #And no other bishops
+#     else: return False #example: two black bishops and one white bishops left
 
 #used by check for insufficient material to see if a bishop is on a dark or light
-def is_dark_square(square):
-    file = square[0].lower()  # e.g., 'e'
-    rank = int(square[1])     # e.g., 4
+# def is_dark_square(square):
+#     file = square[0].lower()  # e.g., 'e'
+#     rank = int(square[1])     # e.g., 4
 
-    # Convert file letter to a number (a=1, b=2, ..., h=8)
-    file_index = ord(file) - ord('a') + 1
+#     # Convert file letter to a number (a=1, b=2, ..., h=8)
+#     file_index = ord(file) - ord('a') + 1
 
-    # Dark if sum is even, light if odd
-    return (file_index + rank) % 2 == 0
+#     # Dark if sum is even, light if odd
+#     return (file_index + rank) % 2 == 0
 
 #used for debugging the board positions list
 def print_board_positions():
@@ -1261,7 +1265,6 @@ def get_moves_tree(depth, turn, position_dict, all_moves, board_positions_list):
     
     # Get the possible moves for the current turn
     possible_moves = phoenix.get_possible_moves(turn=phoenix.phoenix_get_turn_from_moves(all_moves), position_dict=position_dict, all_moves=all_moves)
-
     # If no moves are possible, return "???"
     if not possible_moves:
         return "???"
@@ -1298,19 +1301,21 @@ def get_moves_tree(depth, turn, position_dict, all_moves, board_positions_list):
 
 def get_best_move(depth, turn, temp_position_dict, temp_all_moves, maximizing_player, alpha=float('-inf'), beta=float('inf'), moves_list = [],):
     if depth == 0:
-        new_moves_list = copy.deepcopy(moves_list)
-        new_moves_list.append(temp_all_moves[-1])
-        # print(f"{new_moves_list}: {phoenix.evaluate_postion(temp_position_dict)}")
+        # print(f"{moves_list}: {phoenix.evaluate_postion(temp_position_dict)}")
         return None, phoenix.evaluate_postion(temp_position_dict)
 
     possible_moves = phoenix.get_possible_moves(turn=phoenix.phoenix_get_turn_from_moves(temp_all_moves), position_dict=temp_position_dict, all_moves=all_moves)
+    # input(f"before sorting: {possible_moves}")
     possible_moves.sort(
         key=lambda move: phoenix.rank_capture(move, rank_postion_dict=temp_position_dict, rank_all_moves=temp_all_moves),
         reverse=maximizing_player
     )
+    # input(f"after sorting: {possible_moves}")
     if not possible_moves:
-        return None, phoenix.evaluate_postion(temp_position_dict)
+        # print(f"{moves_list}: {phoenix.evaluate_postion(temp_position_dict)}")
+        return None, phoenix.evaluate_postion(temp_position_dict, no_moves=True, passed_all_moves=temp_all_moves)
 
+    # input(f"333 sorting: {possile_moves}")
     best_move = None
 
     if maximizing_player:
@@ -1444,23 +1449,6 @@ def is_intention_possible(intention):
     elif intention == "list": return True
     else: return False
  
-#logic to undo the last move in all moves. used by implement_intention
-# def undo_last_move():
-#     global position_dict, all_moves, board_positions_list, global_turn
-#     #Can't undo a move if there aren't any to undo
-#     if not all_moves: return
-#     position_dict_temp = position_dict.copy()
-#     for piece, position in position_dict_temp.items():
-#         position_dict[piece] == ""
-#         #remove promoted pieces from the dictionary
-#         if "promoted" in piece.lower() and "pawn" not in piece.lower(): position_dict.pop(piece, None) 
-
-#     #set initial board position
-#     board_positions_list.clear()
-#     all_moves.pop()
-#     reset_global_turn()
-#     set_initials()
-
 #new undo function that doesn't restart the whole game
 #TODO does NOT work with 50 move draw, or repetition
 def undo_last_move(temp_position_dict, temp_all_moves): 

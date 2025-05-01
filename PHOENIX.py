@@ -597,7 +597,16 @@ class Phoenix:
     def decrement_string(self, s):
         return re.sub(r'(\d+)$', lambda x: str(int(x.group(1)) - 1), s)
 
-    def evaluate_postion(self, passed_position_dict):
+    def evaluate_postion(self, passed_position_dict, no_moves=False, passed_all_moves = []):
+        if no_moves:
+            turn = self.phoenix_get_turn_from_moves(passed_all_moves)
+            if self.is_king_in_check(turn, position_dict=passed_position_dict, all_moves=passed_all_moves):
+                if turn == "white": return -100000
+                else: return 100000
+            else: return 0
+
+        if self.check_for_insufficient_material_draw(passed_position_dict): return 0
+
         position_eval = 0
         # print(passed_position_dict)
         for piece, position in passed_position_dict.items():
@@ -635,6 +644,69 @@ class Phoenix:
             # print(PST_dict[piece][1][self.square_to_index(position)])
             # print(PST_dict[piece][0] + PST_dict[piece][1][self.square_to_index(position)])
             return (PST_dict[piece][0] + PST_dict[piece][1][self.square_to_index(position)])
+
+    def check_for_insufficient_material_draw(self, passed_position_dict):
+        black_bishop_count_total = 0
+        black_dark_bishop_count = 0
+        black_light_bishop_count = 0
+
+        white_bishop_count_total = 0
+        white_dark_bishop_count = 0
+        white_light_bishop_count = 0
+
+        black_knight_count = 0
+        white_knight_count = 0
+
+        for piece, position in passed_position_dict.items():
+            #any position that has a queen is not insufficient material
+            if "queen" in piece.lower() and position and position != "xx": return False
+            #same with rook
+            if "rook" in piece.lower() and position and position != "xx": return False
+            #same with pawn (can be promoted)
+            if "pawn" in piece.lower() and position and position != "xx": return False
+            #black bishop count
+            if "bishop" in piece.lower() and "black" in piece.lower() and position and position != "xx": 
+                black_bishop_count_total += 1
+                if self.is_dark_square(position): black_dark_bishop_count += 1
+                else: black_light_bishop_count += 1
+            #white bishop count
+            if "bishop" in piece.lower() and "white" in piece.lower() and position and position != "xx": 
+                white_bishop_count_total += 1
+                if self.is_dark_square(position): white_dark_bishop_count += 1
+                else: white_light_bishop_count += 1
+            #black bishop count
+            if "knight" in piece.lower() and "black" in piece.lower() and position and position != "xx": black_knight_count += 1
+            #white bishop count
+            if "knight" in piece.lower() and "white" in piece.lower() and position and position != "xx": white_knight_count += 1
+
+        # king vs king
+
+        if all(x == 0 for x in [black_bishop_count_total, white_bishop_count_total, black_knight_count, white_knight_count]): return True
+
+        # king and bishop vs king
+        elif black_bishop_count_total + white_bishop_count_total == 1: return True
+        
+        # king and knight vs king
+        elif black_knight_count + white_knight_count == 1: return True
+        
+        # king and bishop vs king and bishop (same-colored bishops)
+        #One black dark bishop and one white dark bishop, and no light bishops
+        elif ((black_dark_bishop_count == 1 and white_dark_bishop_count == 1 and black_light_bishop_count == 0 and white_light_bishop_count == 0) or 
+        # or One black light bishop and one white light bishop, and no dark bishops
+        (black_light_bishop_count == 1 and white_light_bishop_count == 1 and black_dark_bishop_count == 0 and white_dark_bishop_count == 0)) and \
+        (black_bishop_count_total + white_bishop_count_total == 2): return True #And no other bishops
+        else: return False #example: two black bishops and one white bishops left
+
+    #used by check for insufficient material to see if a bishop is on a dark or light
+    def is_dark_square(self, square):
+        file = square[0].lower()  # e.g., 'e'
+        rank = int(square[1])     # e.g., 4
+
+        # Convert file letter to a number (a=1, b=2, ..., h=8)
+        file_index = ord(file) - ord('a') + 1
+
+        # Dark if sum is even, light if odd
+        return (file_index + rank) % 2 == 0
 
     def square_to_index(self, square):
         # print(square)
