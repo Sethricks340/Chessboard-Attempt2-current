@@ -514,7 +514,7 @@ class Phoenix:
                 # print(f"{key} is now on {new_position}")
 
         if (turn, command) in rook_moves:
-            print(f"about to update a rook in a castle command")
+            # print(f"about to update a rook in a castle command")
             position_dict = self.update_piece_position(rook_moves[turn, command][:2], rook_moves[turn, command][-2:], "Rook move", position_dict=position_dict, all_moves=all_moves) #move the rook
         
         return position_dict
@@ -533,6 +533,25 @@ class Phoenix:
     def get_promoted_pawn(self, current_move, position_dict, all_moves):
         return "piece.PROMOTED_" + self.phoenix_get_turn_from_moves(all_moves).upper() + "_PAWN" + self.get_what_is_on_square_specific(current_move[:2], position_dict=position_dict)[-1]
 
+    def rank_capture(self, move, rank_postion_dict, rank_all_moves):
+        #if it is a castle, it is still valuable but there is not capture
+        if move in ["e1g1", "e8g8", "e1c1", "e8c8"]: return 0
+        self.is_en_passant_move
+        # self.phoenix_get_turn_from_moves(all_moves)
+        if self.is_en_passant_move(move, turn_color=self.phoenix_get_turn_from_moves(rank_all_moves), position_dict=rank_postion_dict, all_moves=rank_all_moves):
+            return 100
+        else:
+            captured_potential = self.get_what_is_on_square_specific(move[-2:], position_dict=rank_postion_dict).lower()
+            if captured_potential == "none": return 0
+            else: 
+                for piece, values in PST_dict.items():
+                    if piece in captured_potential:
+                        # input(captured_potential)
+                        if "white" in captured_potential: 
+                            # input("white")
+                            return -values[0]
+                        else: return values[0]
+        
     #the position of pieces that are captured are "xx"
     #works with normal captures and en passants
     def handle_capture(self, move, position_dict, all_moves, loading=False, loaded_last_move=""):

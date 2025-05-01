@@ -634,15 +634,18 @@ def play_game_loop():
             words = input(f"Hello and welcome to the world of magic chess! My name is Phoenix. You can resume a recent game or start a new game. {get_turn_color().capitalize()} to move, please state a command: ")
             first_move = False
         else: words = input(f"{get_turn_color().capitalize()} to move. Please state a command: ")
+    
+    # for move in phoenix.get_possible_moves(turn=phoenix.phoenix_get_turn_from_moves(all_moves), position_dict=position_dict, all_moves=all_moves):
+    #     print(f"{move}: {phoenix.rank_capture(move, rank_postion_dict=position_dict, rank_all_moves=all_moves)}")
+    
     # if first_move:
     #     words = input(f"Hello and welcome to the world of magic chess! My name is Phoenix. You can resume a recent game or start a new game. {get_turn_color().capitalize()} to move, please state a command: ")
     #     first_move = False
     # else: words = input(f"{phoenix.phoenix_get_turn_from_moves(all_moves).capitalize()} to move. Please state a command: ")
 
-    # print(get_moves_tree(2, phoenix.phoenix_get_turn_from_moves(all_moves).lower(), position_dict, all_moves, board_positions_list))
-
     # print_phoenix_best_move()
     # input()
+
 
     if words == "all moves":
         print_all_moves()
@@ -772,7 +775,7 @@ def return_phoenix_best_move(turn_color):
 
 
     move, evaluation = get_best_move(
-        2,
+        3,
         phoenix.phoenix_get_turn_from_moves(all_moves),
         position_dict_copy,
         all_moves_copy,
@@ -793,7 +796,7 @@ def print_phoenix_best_move(turn_color):
     start_time = time.time()
 
     move, evaluation = get_best_move(
-    2,
+    3,
     phoenix.phoenix_get_turn_from_moves(all_moves),
     position_dict_copy,
     all_moves_copy,
@@ -1301,7 +1304,10 @@ def get_best_move(depth, turn, temp_position_dict, temp_all_moves, maximizing_pl
         return None, phoenix.evaluate_postion(temp_position_dict)
 
     possible_moves = phoenix.get_possible_moves(turn=phoenix.phoenix_get_turn_from_moves(temp_all_moves), position_dict=temp_position_dict, all_moves=all_moves)
-
+    possible_moves.sort(
+        key=lambda move: phoenix.rank_capture(move, rank_postion_dict=temp_position_dict, rank_all_moves=temp_all_moves),
+        reverse=maximizing_player
+    )
     if not possible_moves:
         return None, phoenix.evaluate_postion(temp_position_dict)
 
