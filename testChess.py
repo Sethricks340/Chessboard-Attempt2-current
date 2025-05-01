@@ -35,11 +35,11 @@
     #FIXED: computer is having trouble with castling correctly (scenario 51, 23 and try to undo) (phoenix will try to castle on its next move, playing black)
     #FIXED: evaluate each position in the tree, and apply alpha beta to go faster and deeper
     #FIXED: add checkmate and stalemate, and insufficient material to phoenix.evaluate
+    #FIXED: found some more 586 errors when finding the best move: 41, 42 --> splicing the renewed pawn was just white in undo, didn't search for color
 
-    #scenario: found some more 586 errors when finding the best move: 41, 42
+    #scenario: make it so a player can say "e2e4" and "pawn to e4"
     #scenario: make the new undo function work with 50 move draw and repetition
     #scenario: Work with other commands, like take over, restart, undo, etc;
-    #scenario: make it so a player can say "e2e4" and "pawn to e4"
     #scenario: can't undo a checkmate or stalemate
 
 import re
@@ -225,11 +225,9 @@ def clear_screen():
 #                 'd3c2', 'f7g8r', 'c2b1q', 'h3h4', 'g7g5', 'h4g5', 'h7h5', 'g5g6', 'h8h6', 'g6g7', 'h6a6', 'g7f8r', 'a6b6', 'f8f7', 'b6c6']
 
 #41 two promoted knights can move to the same spot, this one works
-###error
 # moves_string = ['e2e4', 'd7d5', 'e4e5', 'd5d4', 'e5e6', 'd4d3', 'e6f7', 'e8d7', 'h2h3', 'd3c2', 'f7g8n', 'd8e8', 'f2f4', 'b8c6', 'f4f5', 'c6d4', 'f5f6', 'e7e5', 'f6f7', 'e5e4', 'f7e8n', 'e4e3']
 
 #42 two promoted knights can move to g8
-###error
 # moves_string = ['e2e4', 'd7d5', 'e4e5', 'd5d4', 'e5e6', 'd4d3', 'e6f7', 'e8d7', 'h2h3', 'd3c2', 'f7g8n', 'd8e8', 'f2f4', 'b8c6', 
 #                 'f4f5', 'c6d4', 'f5f6', 'e7e5', 'f6f7', 'e5e4', 'f7e8n', 'e4e3', 'e8f6', 'd7d8', 'g8h6', 'a7a6']
 
@@ -1346,6 +1344,7 @@ def get_best_move(depth, turn, temp_position_dict, temp_all_moves, maximizing_pl
             # Recurse
             _, eval = get_best_move(depth - 1, new_turn, temp_position_dict, temp_all_moves, alpha=alpha, beta=beta, maximizing_player=False, moves_list=new_moves_list)
 
+            # print(f"going to undo {move}...")
             temp_position_dict, temp_all_moves = undo_last_move(temp_position_dict, temp_all_moves)
 
             if eval > max_eval:
@@ -1490,28 +1489,42 @@ def undo_last_move(temp_position_dict, temp_all_moves):
         # input()
 
     elif len(last_move) == 5: 
-
+        # print("are you sure you want to under this? (I don't care, imma gonna do it anyway, and i'' giveya alltha fancy garblegook ya wanna fancy iffa fats alrite wif ya :))")
+        # print(f"\ntemp pos dict: b4 all da stuff happenin{temp_position_dict}")
         #get the promoted piece, removed it from the dictionary
         #ex: 'piece.PROMOTED_WHITE_QUEEN5'
         promoted_piece = phoenix.get_what_is_on_square_specific(last_move[2:4], position_dict=temp_position_dict)
+        # print(f"\nheres the promoted piece love...{promoted_piece}")
+        # print(f"\nand eres ya mate in the pos dict with da key of promoted piece {temp_position_dict[promoted_piece]}")
+        # print(f"\nimma remove dat now love if dats okay with ya")
         temp_position_dict.pop(promoted_piece, None)
 
         #if there is one, put the removed piece back on its square
         if last_move in temp_position_dict:
+            # print(f"\ntemp_position_dict[temp_position_dict[last_move][0]]: {temp_position_dict[temp_position_dict[last_move][0]]}  = temp_position_dict[last_move][1]: {temp_position_dict[last_move][1]}")
             temp_position_dict[temp_position_dict[last_move][0]] = temp_position_dict[last_move][1]
+            # print(f"\ntemp_position_dict[temp_position_dict[last_move][0]]: {temp_position_dict[temp_position_dict[last_move][0]]}  = temp_position_dict[last_move][1]: {temp_position_dict[last_move][1]}")
             temp_position_dict.pop(last_move, None)
 
         #ex: 'piece.white_PAWN5'
-        spliced_pawn = "piece.white_PAWN" + promoted_piece[-1]
+        current_turn = phoenix.phoenix_get_turn_from_moves(temp_all_moves).lower()
+        last_turn = "black" if current_turn == "white" else "white"
+        # print(f"last_turn: {last_turn}, current_turn: {current_turn}")
+        spliced_pawn = f"piece.{last_turn}_PAWN" + promoted_piece[-1]
+        # print(f"\n{spliced_pawn}")
 
         #put the pawn back on its place
+        # print(f"\ntemp_position_dict[spliced_pawn]: {temp_position_dict[spliced_pawn]}, last_move[:2]: {last_move[:2]}")
         temp_position_dict[spliced_pawn] = last_move[:2]
+        # print(f"\ntemp pos dict: affter all da stuff happenin{temp_position_dict}")
+        # print(f"\nthere ya go love, go own wiff it then eh")
     else: 
         #undo the move
         temp_position_dict[phoenix.get_what_is_on_square_specific(last_move[-2:], position_dict=temp_position_dict)] = last_move[:2]
 
         #if there is one, put the removed piece back on its square
         #example:  'd3c2': ('Piece.white_PAWN3', 'c2')}
+        # print(temp_position_dict)
         if last_move in temp_position_dict:
             temp_position_dict[temp_position_dict[last_move][0]] = temp_position_dict[last_move][1]
             temp_position_dict.pop(last_move, None)
