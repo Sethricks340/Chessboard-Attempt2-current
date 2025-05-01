@@ -38,7 +38,7 @@
     #FIXED: found some more 586 errors when finding the best move: 41, 42 --> splicing the renewed pawn was just white in undo, didn't search for color
     #FIXED: king should have different evaluation for end and middle games
 
-    #scenario: king should have different evaluation for end and middle games
+    #scenario: another 586 error popped up, added printing all moves so that it can be repeated
     #scenario: make it so a player can say "e2e4" and "pawn to e4"
     #scenario: make the new undo function work with 50 move draw and repetition
     #scenario: Work with other commands, like take over, restart, undo, etc;
