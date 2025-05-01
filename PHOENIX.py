@@ -597,13 +597,17 @@ class Phoenix:
     def decrement_string(self, s):
         return re.sub(r'(\d+)$', lambda x: str(int(x.group(1)) - 1), s)
 
-    def evaluate_postion(self, passed_position_dict, no_moves=False, passed_all_moves = []):
+    def evaluate_postion(self, passed_position_dict, no_moves=False, passed_all_moves = [], is_end_game = False):
+        # input("inside eval pos")
         if no_moves:
             turn = self.phoenix_get_turn_from_moves(passed_all_moves)
+            # print(f"position_dict before: {passed_position_dict}")
             if self.is_king_in_check(turn, position_dict=passed_position_dict, all_moves=passed_all_moves):
                 if turn == "white": return -100000
                 else: return 100000
             else: return 0
+        
+        # input(f"position_dict after: {passed_position_dict}")
 
         if self.check_for_insufficient_material_draw(passed_position_dict): return 0
 
@@ -614,10 +618,11 @@ class Phoenix:
             if not isinstance(position, str): continue
             piece_type = next((p for p in ("king", "queen", "rook", "bishop", "knight", "pawn") if p in piece.lower()), None)
             if piece_type == None: 
-                print(f"586 error: passed_postion_dict: {passed_position_dict}, piece, position: {piece, position}")
+                print(f"586 error: passed_postion_dict: {passed_position_dict}, piece, position: {piece, position}, passed_all_moves: {passed_all_moves}")
                 exit()
-                return 0 ####fix this
             #evaluate with respect to white
+            if piece_type == "king": 
+                piece_type = "king_end" if is_end_game else "king_middle"
             if "white" in piece.lower():
                 # input(f"white {piece}, {piece_type}, {position}")
                 position_eval += (PST_dict[piece_type][0] + PST_dict[piece_type][1][self.square_to_index(position)])
@@ -736,6 +741,38 @@ class Phoenix:
         # Print the list formatted as an 8x8 square
         for i in range(8):
             print(square_list[i * 8:(i + 1) * 8])
+
+    def is_endgame(self, passed_position_dict):
+        total_material = 0
+        has_white_queen = False
+        has_black_queen = False
+
+        for piece in passed_position_dict:
+            if not piece.lower().startswith("piece"): continue
+            if "king" in piece.lower():
+                continue
+            if "queen" in piece.lower():
+                if "white" in piece.lower():
+                    has_white_queen = True
+                else:
+                    has_black_queen = True
+                total_material += 9
+            elif "rook" in piece.lower():
+                total_material += 5
+            elif "bishop" in piece.lower():
+                total_material += 3
+            elif "knight" in piece.lower():
+                total_material += 3
+            elif "pawn" in piece.lower():
+                total_material += 1
+
+        if not has_white_queen and not has_black_queen:
+            return True
+        if (not has_white_queen or not has_black_queen) and total_material <= 13:
+            return True
+
+        return False
+
 
 #region PST_reversed
 #for black's perspective
@@ -930,8 +967,8 @@ PST_dict = {
 
     "queen": (900, white_queen_PST),
 
-    "king": (0, white_king_middle_PST)
-    # "king_middle": (0, white_king_middle_PST),
+    # "king": (0, white_king_middle_PST)
+    "king_middle": (0, white_king_middle_PST),
 
-    # "king_end": (0, white_king_end_PST),
+    "king_end": (0, white_king_end_PST)
 }

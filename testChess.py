@@ -36,7 +36,9 @@
     #FIXED: evaluate each position in the tree, and apply alpha beta to go faster and deeper
     #FIXED: add checkmate and stalemate, and insufficient material to phoenix.evaluate
     #FIXED: found some more 586 errors when finding the best move: 41, 42 --> splicing the renewed pawn was just white in undo, didn't search for color
+    #FIXED: king should have different evaluation for end and middle games
 
+    #scenario: king should have different evaluation for end and middle games
     #scenario: make it so a player can say "e2e4" and "pawn to e4"
     #scenario: make the new undo function work with 50 move draw and repetition
     #scenario: Work with other commands, like take over, restart, undo, etc;
@@ -566,6 +568,9 @@ first_move = True
 fifty_move_rule_count = 0
 fifty_move_rule_bool = False
 
+computer_play = False
+computer_color = ""
+
 #load in data from another game
 def set_position(moves_string_list):
     global moves_string, all_moves, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_move, board_positions_list
@@ -616,37 +621,27 @@ def main():
 def play_game_loop():
     global moves_string, all_moves, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_move, board_positions_list
     
-    # if phoenix.phoenix_get_turn_from_moves(all_moves).lower() == "black": 
-    #     print("Hmmm... let's see...")
-    #     start_time = time.time()
-
-
-    #     position_dict, all_moves, global_turn, board_positions_list, best_move = do_computer_move("black")
-    #     # input()
-    #     clear_screen()
-    #     print_board_visiual()
-    #     print(f"I'm going to do {best_move}.")
-    #     end_time = time.time()
-    #     elapsed = end_time - start_time
-    #     print(f"Phoenix took {elapsed:.4f} seconds with depth of 5")
-    #     play_game_loop()
-    # else:
-    #     if first_move:
-    #         words = input(f"Hello and welcome to the world of magic chess! My name is Phoenix. You can resume a recent game or start a new game. {get_turn_color().capitalize()} to move, please state a command: ")
-    #         first_move = False
-    #     else: words = input(f"{get_turn_color().capitalize()} to move. Please state a command: ")
+    if computer_play and computer_color.lower() == phoenix.phoenix_get_turn_from_moves(all_moves).lower():
+        print("Hmmm... let's see...")
+        start_time = time.time()
+        position_dict, all_moves, global_turn, board_positions_list, best_move = do_computer_move(computer_color)
+        clear_screen()
+        print_board_visiual()
+        print(f"I'm going to do {best_move}.")
+        end_time = time.time()
+        elapsed = end_time - start_time
+        print(f"Phoenix took {elapsed:.4f} seconds")
+        play_game_loop()
+    else:
+        if first_move:
+            words = input(f"Hello and welcome to the world of magic chess! My name is Phoenix. You can resume a recent game or start a new game. {get_turn_color().capitalize()} to move, please state a command: ")
+            first_move = False
+        else: words = input(f"{get_turn_color().capitalize()} to move. Please state a command: ")
     
-    # for move in phoenix.get_possible_moves(turn=phoenix.phoenix_get_turn_from_moves(all_moves), position_dict=position_dict, all_moves=all_moves):
-    #     print(f"{move}: {phoenix.rank_capture(move, rank_postion_dict=position_dict, rank_all_moves=all_moves)}")
-    
-    if first_move:
-        words = input(f"Hello and welcome to the world of magic chess! My name is Phoenix. You can resume a recent game or start a new game. {get_turn_color().capitalize()} to move, please state a command: ")
-        first_move = False
-    else: words = input(f"{phoenix.phoenix_get_turn_from_moves(all_moves).capitalize()} to move. Please state a command: ")
-
-    # print_phoenix_best_move()
-    # input()
-
+    # if first_move:
+    #     words = input(f"Hello and welcome to the world of magic chess! My name is Phoenix. You can resume a recent game or start a new game. {get_turn_color().capitalize()} to move, please state a command: ")
+    #     first_move = False
+    # else: words = input(f"{phoenix.phoenix_get_turn_from_moves(all_moves).capitalize()} to move. Please state a command: ")
 
     if words == "all moves":
         print_all_moves()
@@ -668,19 +663,9 @@ def play_game_loop():
         input()
         play_game_loop()
     elif words.lower() == "board score":
-        print(f"Board score: {phoenix.evaluate_postion(position_dict)}")
+        print(f"Board score: {phoenix.evaluate_postion(position_dict, all_moves)}")
         input()
         play_game_loop()
-    elif words.lower() == "eval moves":
-        ###logic
-        input()
-        play_game_loop()
-        
-
-    # input(f"before: {position_dict}")
-    # print()
-    # input(f"after: {undo_last_move(position_dict.copy())}")
-
 
     intention_check = check_intentions(words) 
     #if there is an intention instead of a move   
@@ -769,7 +754,7 @@ def do_computer_move(turn_color):
 def return_phoenix_best_move(turn_color):
     global moves_string, all_moves, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_move, fifty_move_rule_bool, fifty_move_rule_count
 
-    max_player = True if turn_color == "white" else False
+    max_player = True if computer_color == "white" else False
 
     position_dict_copy = position_dict.copy()
     all_moves_copy = all_moves.copy()
@@ -780,14 +765,15 @@ def return_phoenix_best_move(turn_color):
         phoenix.phoenix_get_turn_from_moves(all_moves),
         position_dict_copy,
         all_moves_copy,
-        maximizing_player=max_player  #True for white, false for black
+        maximizing_player=max_player,  #True for white, false for black
+        is_end_game = True if phoenix.is_endgame(position_dict) else False
     )
     return move
 
 def print_phoenix_best_move(turn_color):
     global moves_string, all_moves, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_time, fifty_move_rule_bool, fifty_move_rule_count
 
-    max_player = True if turn_color == "white" else False
+    max_player = True if computer_color == "white" else False
 
     position_dict_copy = position_dict.copy()
     all_moves_copy = all_moves.copy()
@@ -802,7 +788,8 @@ def print_phoenix_best_move(turn_color):
     phoenix.phoenix_get_turn_from_moves(all_moves),
     position_dict_copy,
     all_moves_copy,
-    maximizing_player=max_player  #True for white, false for black
+    maximizing_player=max_player,  #True for white, false for black
+    is_end_game = True if phoenix.is_endgame(position_dict) else False
     )
 
     end_time = time.time()
@@ -1252,7 +1239,10 @@ def implement_intention(intention, computer_color=""):
     elif intention == "takeover": computer_takeover(computer_color)
     else: return
 
-def computer_takeover(color): pass
+def computer_takeover(color):
+    global computer_color, computer_play
+    computer_play = True
+    computer_color = color
 
 #####this was the original function, commented for reference
 # import copy
@@ -1297,10 +1287,11 @@ def get_moves_tree(depth, turn, position_dict, all_moves, board_positions_list):
     else:
         return move_dict
 
-def get_best_move(depth, turn, temp_position_dict, temp_all_moves, maximizing_player, alpha=float('-inf'), beta=float('inf'), moves_list = [],):
+def get_best_move(depth, turn, temp_position_dict, temp_all_moves, maximizing_player, alpha=float('-inf'), beta=float('inf'), moves_list = [], is_end_game=False):
+    # is_end_game = True if phoenix.is_endgame(temp_position_dict) else False
     if depth == 0:
         # print(f"{moves_list}: {phoenix.evaluate_postion(temp_position_dict)}")
-        return None, phoenix.evaluate_postion(temp_position_dict)
+        return None, phoenix.evaluate_postion(temp_position_dict, no_moves=False, passed_all_moves=temp_all_moves, is_end_game=is_end_game)
 
     possible_moves = phoenix.get_possible_moves(turn=phoenix.phoenix_get_turn_from_moves(temp_all_moves), position_dict=temp_position_dict, all_moves=all_moves)
     # input(f"before sorting: {possible_moves}")
@@ -1311,7 +1302,7 @@ def get_best_move(depth, turn, temp_position_dict, temp_all_moves, maximizing_pl
     # input(f"after sorting: {possible_moves}")
     if not possible_moves:
         # print(f"{moves_list}: {phoenix.evaluate_postion(temp_position_dict)}")
-        return None, phoenix.evaluate_postion(temp_position_dict, no_moves=True, passed_all_moves=temp_all_moves)
+        return None, phoenix.evaluate_postion(temp_position_dict, no_moves=True, passed_all_moves=temp_all_moves, is_end_game=is_end_game)
 
     # input(f"333 sorting: {possile_moves}")
     best_move = None
@@ -1432,7 +1423,7 @@ def print_intention(intention, possible=True, computer_color=""):
         if possible: print("Ending the game. (Logic not yet created)")
         else: print("Game is already in starting position.")
     elif intention == "takeover":
-        if possible: print(f"{computer_color} will be taken over by the computer (when there is one, the logic isn't created)")
+        if possible: print(f"{computer_color.capitalize()} will be taken over by the Phoenix.")
         else: print("Game has already been taken over.")
     elif intention == "list":
         print(f"{intention} intention logic not yet created.")
@@ -1444,7 +1435,7 @@ def is_intention_possible(intention):
     elif intention == "start": return False if all_moves else True
     elif intention == "restart": return True if all_moves else False
     elif intention == "end": return True
-    elif intention == "takeover": return True
+    elif intention == "takeover" and computer_play == False: return True
     elif intention == "list": return True
     else: return False
  
@@ -1563,8 +1554,17 @@ def process_intention(intention_check):
     intention_message = get_confirm_message(intention_check)
     
     def execute_intention(do_intention=False, do_print_intention=False, cancel_intention=False, confirmation_not_clear=False, computer_takeover = False):
-        computer_color = ""
-        if computer_takeover: computer_color = input("What color would you like the computer to take over for? (Logic not yet created) ")
+        global computer_color
+        if computer_takeover: 
+            while True:
+                computer_color = input("What color would you like the computer to take over? ")
+                if "white" in computer_color and "black" not in computer_color: 
+                    computer_color = "white"
+                    break
+                elif "black" in computer_color and "white" not in computer_color: 
+                    computer_color = "black"
+                    break
+                else: print("Sorry, I didn't get that.")
         if do_intention: implement_intention(intention_check, computer_color=computer_color)
         clear_screen() #do always
         print_board_visiual() #do always
