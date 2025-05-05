@@ -5,8 +5,15 @@ import time
 
 class Piper_Speak:
     def __init__(self):
+
+        #canidates:
+        self.model_file = r"C:\Users\sethr\Chessboard-Attempt2-current\piper\Voices\Phoenix Male GB\en_GB-northern_english_male-medium.onnx"
+        # self.model_file = r"C:\Users\sethr\Chessboard-Attempt2-current\piper\Voices\Phoenix Female GB\en_GB-southern_english_female-low.onnx"
+        # self.model_file = r"C:\Users\sethr\Chessboard-Attempt2-current\piper\Voices\Phoenix Male US\en_US-hfc_male-medium.onnx"
+        # self.model_file = r"C:\Users\sethr\Chessboard-Attempt2-current\piper\Voices\Phoenix Female US\en_US-hfc_female-medium.onnx"
+
         self.output_file = r"C:\Users\sethr\Chessboard-Attempt2-current\piper\testing.wav"
-        self.model_file = r"C:\Users\sethr\Chessboard-Attempt2-current\piper\en_GB-northern_english_male-medium.onnx"
+
         self.piper_file = r"C:\Users\sethr\Chessboard-Attempt2-current\piper\piper.exe"
 
     def Speak(self, text):

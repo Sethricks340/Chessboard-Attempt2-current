@@ -142,10 +142,10 @@ def clear_screen():
 # moves_string = ['g1f3', 'g8f6', 'g2g4', 'g7g5', 'f1h3', 'f8h6', 'e1g1', 'e8g8']
 
 #24 testing illegal castling scenarios. (black: kingside: can queenside: can't, white: kingside: can queenside: can)
-# moves_string = ['g1f3', 'g8f6', 'g2g3', 'g7g6', 'f1h3', 'f8h6', 'c2c3', 'c7c6', 'd1b3', 'd8b6', 'd2d4', 'b8a6', 'c1f4', 'd7d5', 'b1a3', 'c8f5', 'b3d5']
+moves_string = ['g1f3', 'g8f6', 'g2g3', 'g7g6', 'f1h3', 'f8h6', 'c2c3', 'c7c6', 'd1b3', 'd8b6', 'd2d4', 'b8a6', 'c1f4', 'd7d5', 'b1a3', 'c8f5', 'b3d5']
 
 #25 #about to be four move checkmate, black is about to loose
-# moves_string = ['e2e3', 'b8a6', 'd1h5', 'g8h6', 'f1c4', 'h6g4',]
+moves_string = ['e2e3', 'b8a6', 'd1h5', 'g8h6', 'f1c4', 'h6g4',]
 
 #26 #about to be four move checkmate, white is about to loose
 # moves_string = ['g1h3', 'e7e6', 'b1a3', 'd8h4', 'a3b1', 'f8c5', 'h3g1']
@@ -268,7 +268,7 @@ def clear_screen():
                 # 'b7b6', 'c5c3', 'g8f6', 'f2f3', 'e7e5', 'c1g5', 'h7h6', 
                 # 'g5f6', 'd8f6', 'g1e2', 'f8d6', 'e2g3', 'c8b7']
 
-moves_string = []
+# moves_string = []
 
 #used to update the current list of moves made, and transitively the current position. Can be used in tandem with above set position to set a position before playing 
 all_moves = moves_string
@@ -632,12 +632,12 @@ def play_game_loop():
     pyperclip.copy(moves_string_to_copy)
 
     if computer_play and computer_color.lower() == phoenix.phoenix_get_turn_from_moves(all_moves).lower():
-        print("Hmmm... let's see...")
+        print_and_speak("okay... let's see...")
         start_time = time.time()
         position_dict, all_moves, global_turn, board_positions_list, best_move = do_computer_move(computer_color)
         clear_screen()
         print_board_visiual()
-        print(f"I'm going to do {best_move}.")
+        print_and_speak(f"I'm going to do {best_move}.")
         end_time = time.time()
         elapsed = end_time - start_time
         print(f"Phoenix took {elapsed:.4f} seconds")
@@ -646,8 +646,7 @@ def play_game_loop():
     else:
         if first_move:
             prompt = f"Hello and welcome to the world of magic chess! My name is Phoenix. You can resume a recent game or start a new game. {phoenix.phoenix_get_turn_from_moves(all_moves).capitalize()} to move, please state a command: "
-            print(prompt)
-            # piper_speak.Speak(prompt)
+            # print_and_speak(prompt)
             words = input()
             first_move = False
         else: words = input(f"{phoenix.phoenix_get_turn_from_moves(all_moves).capitalize()} to move. Please state a command: ")
@@ -700,31 +699,34 @@ def play_game_loop():
 
     #if there are no available moves for the person that did not just make a move in this function (aka whose turn it is), then it is either a checkmate or a stalemate
     if len(phoenix.get_possible_moves(turn = phoenix.phoenix_get_turn_from_moves(all_moves), position_dict=position_dict, all_moves=all_moves)) == 0:
-        if phoenix.is_king_in_check(get_turn_color(), position_dict=position_dict, all_moves=all_moves): print(f"Game over, {'black' if get_turn_color().lower() == 'white' else 'white'} wins by checkmate")
-        else: print(f"Game over by stalemate. {get_turn_color().lower()} doesn't have any legal moves.")
-        print("Thanks for playing, play again soon! \n-Pheonix")
+        if phoenix.is_king_in_check(get_turn_color(), position_dict=position_dict, all_moves=all_moves): print_and_speak(f"Game over, {'black' if get_turn_color().lower() == 'white' else 'white'} wins by checkmate")
+        else: print_and_speak(f"Game over by stalemate. {get_turn_color().lower()} doesn't have any legal moves.")
+        print_and_speak("Thanks for playing, play again soon! -Phoenix")
         exit()
 
     # print(f"check_for_repetition_draw(): {check_for_repetition_draw()}")
     if check_for_repetition_draw():
-        print(f"Game over - stalemate by repetition")
-        print("Thanks for playing, play again soon! \n-Pheonix")
+        print_and_speak(f"Game over - stalemate by repetition")
+        print_and_speak("Thanks for playing, play again soon! -Phoenix")
         exit()
 
     if fifty_move_rule_bool:
-        print(f"Game over - draw by 50 move rule")
-        print("Thanks for playing, play again soon! \n-Pheonix")
+        print_and_speak(f"Game over - draw by 50 move rule")
+        print_and_speak("Thanks for playing, play again soon! -Phoenix")
         exit()
 
     if phoenix.check_for_insufficient_material_draw(position_dict):
-        print(f"Game over - draw by insufficient material")
-        print("Thanks for playing, play again soon! \n-Pheonix")
+        print_and_speak(f"Game over - draw by insufficient material")
+        print_and_speak("Thanks for playing, play again soon! -Phoenix")
         exit()
 
     #print (or say) the command
     if not possible:
         print_and_speak(command)
-    else:
+    if piece and piece.lower().startswith("castle"):
+        piece_copy = piece.lower().replace("castle", "castling") + "..."
+        print_and_speak(piece_copy)
+    elif piece != None:
         words_print = f"Moving {piece} to {command[-2:]}..."
         print_and_speak(words_print)
 
@@ -737,7 +739,7 @@ def play_game_loop():
     if words != "quit":
         play_game_loop()
     else:
-        print("Thanks for playing, play again soon! \n-Pheonix")
+        print("Thanks for playing, play again soon! -Phoenix")
 
 #can also be used to test things before the game starts
 def set_initials():
@@ -1258,7 +1260,7 @@ def implement_intention(intention, computer_color=""):
     elif intention == "restart": restart_game()
     elif intention == "takeover": computer_takeover(computer_color)
     elif intention == "end":
-        print("Thanks for playing, play again soon! \n-Pheonix")
+        print("Thanks for playing, play again soon! -Phoenix")
         exit()
     else: return
 
