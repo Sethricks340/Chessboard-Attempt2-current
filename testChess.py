@@ -51,7 +51,10 @@ from collections import Counter
 import copy
 from copy import deepcopy
 from PHOENIX import Phoenix
+from piper.TestingPiper import Piper_Speak
+import pyperclip
 phoenix = Phoenix()
+piper_speak = Piper_Speak()
 
 def clear_screen():
     if os.name == 'nt':  # Windows
@@ -617,10 +620,17 @@ def main():
     set_initials()
     play_game_loop()
 
+def print_and_speak(words):
+    print(words)
+    piper_speak.Speak(words)
+
 #the game loop
 def play_game_loop():
     global moves_string, all_moves, position_dict, symbols_dict, board_dict, pieces, intents, castles, letter_squares_separate, number_squares_separate, squares_together, global_turn, first_move, board_positions_list
-    
+
+    moves_string_to_copy = f"moves_string: {all_moves}"
+    pyperclip.copy(moves_string_to_copy)
+
     if computer_play and computer_color.lower() == phoenix.phoenix_get_turn_from_moves(all_moves).lower():
         print("Hmmm... let's see...")
         start_time = time.time()
@@ -631,12 +641,16 @@ def play_game_loop():
         end_time = time.time()
         elapsed = end_time - start_time
         print(f"Phoenix took {elapsed:.4f} seconds")
+        if phoenix.is_king_in_check(phoenix.phoenix_get_turn_from_moves(all_moves).capitalize(), position_dict=position_dict, all_moves=all_moves): print(f"{phoenix.phoenix_get_turn_from_moves(all_moves)} king is in check")
         play_game_loop()
     else:
         if first_move:
-            words = input(f"Hello and welcome to the world of magic chess! My name is Phoenix. You can resume a recent game or start a new game. {get_turn_color().capitalize()} to move, please state a command: ")
+            prompt = f"Hello and welcome to the world of magic chess! My name is Phoenix. You can resume a recent game or start a new game. {phoenix.phoenix_get_turn_from_moves(all_moves).capitalize()} to move, please state a command: "
+            print(prompt)
+            # piper_speak.Speak(prompt)
+            words = input()
             first_move = False
-        else: words = input(f"{get_turn_color().capitalize()} to move. Please state a command: ")
+        else: words = input(f"{phoenix.phoenix_get_turn_from_moves(all_moves).capitalize()} to move. Please state a command: ")
     
     # if first_move:
     #     words = input(f"Hello and welcome to the world of magic chess! My name is Phoenix. You can resume a recent game or start a new game. {get_turn_color().capitalize()} to move, please state a command: ")
@@ -708,7 +722,12 @@ def play_game_loop():
         exit()
 
     #print (or say) the command
-    print(command)
+    if not possible:
+        print_and_speak(command)
+    else:
+        words_print = f"Moving {piece} to {command[-2:]}..."
+        print_and_speak(words_print)
+
     if phoenix.is_king_in_check(get_turn_color(), position_dict=position_dict, all_moves=all_moves): print(f"{get_turn_color()} king is in check")
     # print(f"current position status: {phoenix.evaluate_postion(position_dict)}")
     
@@ -761,7 +780,7 @@ def return_phoenix_best_move(turn_color):
 
 
     move, evaluation = get_best_move(
-        3,
+        2,
         phoenix.phoenix_get_turn_from_moves(all_moves),
         position_dict_copy,
         all_moves_copy,
@@ -1234,9 +1253,13 @@ def check_confirmation_response(text):
 def implement_intention(intention, computer_color=""):
     if intention == "undo": 
         undo_last_move(position_dict, all_moves)
+        if computer_play: undo_last_move(position_dict, all_moves)
         reset_global_turn()
     elif intention == "restart": restart_game()
     elif intention == "takeover": computer_takeover(computer_color)
+    elif intention == "end":
+        print("Thanks for playing, play again soon! \n-Pheonix")
+        exit()
     else: return
 
 def computer_takeover(color):
@@ -1290,19 +1313,20 @@ def get_moves_tree(depth, turn, position_dict, all_moves, board_positions_list):
 def get_best_move(depth, turn, temp_position_dict, temp_all_moves, maximizing_player, alpha=float('-inf'), beta=float('inf'), moves_list = [], is_end_game=False):
     # is_end_game = True if phoenix.is_endgame(temp_position_dict) else False
     if depth == 0:
-        # print(f"{moves_list}: {phoenix.evaluate_postion(temp_position_dict)}")
+        print(f"{moves_list}: {phoenix.evaluate_postion(temp_position_dict)}")
         return None, phoenix.evaluate_postion(temp_position_dict, no_moves=False, passed_all_moves=temp_all_moves, is_end_game=is_end_game)
 
     possible_moves = phoenix.get_possible_moves(turn=phoenix.phoenix_get_turn_from_moves(temp_all_moves), position_dict=temp_position_dict, all_moves=all_moves)
     # input(f"before sorting: {possible_moves}")
+    if not possible_moves:
+        # print(f"{moves_list}: {phoenix.evaluate_postion(temp_position_dict)}")
+        return None, phoenix.evaluate_postion(temp_position_dict, no_moves=True, passed_all_moves=temp_all_moves, is_end_game=is_end_game)
+    
     possible_moves.sort(
         key=lambda move: phoenix.rank_capture(move, rank_postion_dict=temp_position_dict, rank_all_moves=temp_all_moves),
         reverse=maximizing_player
     )
     # input(f"after sorting: {possible_moves}")
-    if not possible_moves:
-        # print(f"{moves_list}: {phoenix.evaluate_postion(temp_position_dict)}")
-        return None, phoenix.evaluate_postion(temp_position_dict, no_moves=True, passed_all_moves=temp_all_moves, is_end_game=is_end_game)
 
     # input(f"333 sorting: {possile_moves}")
     best_move = None
@@ -1431,7 +1455,10 @@ def print_intention(intention, possible=True, computer_color=""):
 
 def is_intention_possible(intention):
     # undo, start, restart, end, takeover, list
-    if intention == "undo": return True if all_moves else False
+    if intention == "undo": 
+        if computer_play and len(all_moves) == 1:
+            return False
+        return True if all_moves else False
     elif intention == "start": return False if all_moves else True
     elif intention == "restart": return True if all_moves else False
     elif intention == "end": return True
@@ -1480,48 +1507,33 @@ def undo_last_move(temp_position_dict, temp_all_moves):
         # input()
 
     elif len(last_move) == 5: 
-        # print("are you sure you want to under this? (I don't care, imma gonna do it anyway, and i'' giveya alltha fancy garblegook ya wanna fancy iffa fats alrite wif ya :))")
-        # print(f"\ntemp pos dict: b4 all da stuff happenin{temp_position_dict}")
-        #get the promoted piece, removed it from the dictionary
         #ex: 'piece.PROMOTED_WHITE_QUEEN5'
         promoted_piece = phoenix.get_what_is_on_square_specific(last_move[2:4], position_dict=temp_position_dict)
-        # print(f"\nheres the promoted piece love...{promoted_piece}")
-        # print(f"\nand eres ya mate in the pos dict with da key of promoted piece {temp_position_dict[promoted_piece]}")
-        # print(f"\nimma remove dat now love if dats okay with ya")
         temp_position_dict.pop(promoted_piece, None)
 
         #if there is one, put the removed piece back on its square
         if last_move in temp_position_dict:
-            # print(f"\ntemp_position_dict[temp_position_dict[last_move][0]]: {temp_position_dict[temp_position_dict[last_move][0]]}  = temp_position_dict[last_move][1]: {temp_position_dict[last_move][1]}")
             temp_position_dict[temp_position_dict[last_move][0]] = temp_position_dict[last_move][1]
-            # print(f"\ntemp_position_dict[temp_position_dict[last_move][0]]: {temp_position_dict[temp_position_dict[last_move][0]]}  = temp_position_dict[last_move][1]: {temp_position_dict[last_move][1]}")
             temp_position_dict.pop(last_move, None)
 
         #ex: 'piece.white_PAWN5'
         current_turn = phoenix.phoenix_get_turn_from_moves(temp_all_moves).lower()
         last_turn = "black" if current_turn == "white" else "white"
-        # print(f"last_turn: {last_turn}, current_turn: {current_turn}")
         spliced_pawn = f"piece.{last_turn}_PAWN" + promoted_piece[-1]
-        # print(f"\n{spliced_pawn}")
 
         #put the pawn back on its place
-        # print(f"\ntemp_position_dict[spliced_pawn]: {temp_position_dict[spliced_pawn]}, last_move[:2]: {last_move[:2]}")
         temp_position_dict[spliced_pawn] = last_move[:2]
-        # print(f"\ntemp pos dict: affter all da stuff happenin{temp_position_dict}")
-        # print(f"\nthere ya go love, go own wiff it then eh")
     else: 
         #undo the move
         temp_position_dict[phoenix.get_what_is_on_square_specific(last_move[-2:], position_dict=temp_position_dict)] = last_move[:2]
 
         #if there is one, put the removed piece back on its square
         #example:  'd3c2': ('Piece.white_PAWN3', 'c2')}
-        # print(temp_position_dict)
         if last_move in temp_position_dict:
             temp_position_dict[temp_position_dict[last_move][0]] = temp_position_dict[last_move][1]
             temp_position_dict.pop(last_move, None)
 
     temp_all_moves.pop()
-    # reset_global_turn()
     return temp_position_dict, temp_all_moves
 
 def restart_game():
@@ -1727,7 +1739,7 @@ def parse_castle_command(move):
 
     if move in ["Castle Kingside", "Castle Queenside"]:
         # if is_single_move_legal(castle_moves[(turn, move)]):
-        input(phoenix.get_possible_moves(turn=turn, position_dict=position_dict, all_moves=all_moves))
+        # input(phoenix.get_possible_moves(turn=turn, position_dict=position_dict, all_moves=all_moves))
         if castle_moves[(turn, move)].lower() in phoenix.get_possible_moves(turn=phoenix.phoenix_get_turn_from_moves(all_moves), position_dict=position_dict, all_moves=all_moves):
             return castle_moves[(turn, move)], True
         else: 
