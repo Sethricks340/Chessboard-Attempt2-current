@@ -439,7 +439,7 @@ board_dict = {
 
 #all of the chess pieces, and what they could be mistaken for
 pieces = {
-    "king": ["king", "kings", "team"],
+    "king": ["king", "kings", "team", "came"],
     "queen": ["queen", "queens", "lady"],
     "rook": ["rook", "rooks", "castle"],
     "bishop": ["bishop", "bishops", "clergy"],
