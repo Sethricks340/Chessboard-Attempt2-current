@@ -55,6 +55,12 @@ from piper.TestingPiper import Piper_Speak
 import pyperclip
 phoenix = Phoenix()
 piper_speak = Piper_Speak()
+from test_microphone import VoiceInput
+print(f"0000101")
+vi = VoiceInput("C:/Users/sethr/Chessboard-Attempt2-current/vosk-model-small-en-us-0.15/vosk-model-small-en-us-0.15", device=17)
+# user_speech = vi.listen()
+# print(f"You said: {user_speech}")
+print(f"000")
 
 def clear_screen():
     if os.name == 'nt':  # Windows
@@ -142,10 +148,10 @@ def clear_screen():
 # moves_string = ['g1f3', 'g8f6', 'g2g4', 'g7g5', 'f1h3', 'f8h6', 'e1g1', 'e8g8']
 
 #24 testing illegal castling scenarios. (black: kingside: can queenside: can't, white: kingside: can queenside: can)
-moves_string = ['g1f3', 'g8f6', 'g2g3', 'g7g6', 'f1h3', 'f8h6', 'c2c3', 'c7c6', 'd1b3', 'd8b6', 'd2d4', 'b8a6', 'c1f4', 'd7d5', 'b1a3', 'c8f5', 'b3d5']
+# moves_string = ['g1f3', 'g8f6', 'g2g3', 'g7g6', 'f1h3', 'f8h6', 'c2c3', 'c7c6', 'd1b3', 'd8b6', 'd2d4', 'b8a6', 'c1f4', 'd7d5', 'b1a3', 'c8f5', 'b3d5']
 
 #25 #about to be four move checkmate, black is about to loose
-moves_string = ['e2e3', 'b8a6', 'd1h5', 'g8h6', 'f1c4', 'h6g4',]
+# moves_string = ['e2e3', 'b8a6', 'd1h5', 'g8h6', 'f1c4', 'h6g4',]
 
 #26 #about to be four move checkmate, white is about to loose
 # moves_string = ['g1h3', 'e7e6', 'b1a3', 'd8h4', 'a3b1', 'f8c5', 'h3g1']
@@ -267,6 +273,24 @@ moves_string = ['e2e3', 'b8a6', 'd1h5', 'g8h6', 'f1c4', 'h6g4',]
 # moves_string = ['e2e4', 'b8c6', 'd2d4', 'c6d4', 'd1d4', 'c7c5', 'd4c5', 
                 # 'b7b6', 'c5c3', 'g8f6', 'f2f3', 'e7e5', 'c1g5', 'h7h6', 
                 # 'g5f6', 'd8f6', 'g1e2', 'f8d6', 'e2g3', 'c8b7']
+
+#52 there is trouble moving rook with vosk command
+# moves_string = ['g1f3', 'b8c6', 'b1c3', 'g8f6', 'e2e4', 'd7d6', 'd2d4', 
+#                 'c8e6', 'd4d5', 'f6d5', 'c3d5', 'e6d5', 'e4d5', 'c6b4', 
+#                 'c1d2', 'b4d5', 'f1d3', 'h7h5', 'e1g1', 'e7e6', 'd3e4', 
+#                 'd5f6', 'e4b7', 'a8b8', 'b7a6', 'b8b2']
+
+#53 trouble castling kingside with vosk command
+moves_string = ['e2e4', 'b8c6', 'd2d4', 'g8f6', 'e4e5', 'f6d5', 
+                'g1f3', 'e7e6', 'f1b5', 'f8b4', 'c2c3', 'c6e5', 
+                'c3b4', 'e5f3', 'g2f3', 'd5b4', 'c1d2', 'b4d5', 
+                'b1c3', 'd5c3', 'd2c3', 'e8g8']
+
+#54 trouble king to h3 
+moves_string = ['e2e4', 'b8c6', 'd2d4', 'g8f6', 'e4e5', 'f6d5', 
+                'g1f3', 'e7e6', 'f1b5', 'f8b4', 'c2c3', 'c6e5', 
+                'c3b4', 'e5f3', 'g2f3', 'd5b4', 'c1d2', 'b4d5', 
+                'b1c3', 'd5c3', 'd2c3', 'e8g8', 'e1g1', 'd8g5']
 
 # moves_string = []
 
@@ -415,12 +439,12 @@ board_dict = {
 
 #all of the chess pieces, and what they could be mistaken for
 pieces = {
-    "king": ["king"],
-    "queen": ["queen", "lady"],
-    "rook": ["rook", "castle"],
-    "bishop": ["bishop", "clergy"],
-    "knight": ["knight", "night", "horse", "nigh", "nite"],
-    "pawn": ["pawn", "pond", "upon", "ponder", "panda", "power", "pontiff", "pine"]
+    "king": ["king", "kings", "team"],
+    "queen": ["queen", "queens", "lady"],
+    "rook": ["rook", "rooks", "castle"],
+    "bishop": ["bishop", "bishops", "clergy"],
+    "knight": ["knight", "knights", "night", "horse", "nigh", "nite"],
+    "pawn": ["pawn", "pawns", "pond", "upon", "ponder", "panda", "power", "pontiff", "pine", "on"]
 }
 
 ##I'm having trouble deciphering one intent from another, because of how they use a lot of the same words
@@ -468,11 +492,11 @@ letter_squares_separate = {
     "B": ["b", "bee", "be"],
     "C": ["c", "see", "sea"],
     "D": ["d", "dee"],
-    "E": ["e", "he", "eat ", "ie"],
+    "E": ["e", "he", "eat", "ie"],
     #All the f's are giving me a real headache. Vosk really doesn't recognize it. 
     "F": ["f", "have", "def", "after", "ask"],
     "G": ["g", "gee", "geez"],
-    "H": ["h"]
+    "H": ["h", "aged", "age", "each"]
 }
 
 #all of the numbers of squares, and what they could be mistaken for
@@ -641,21 +665,28 @@ def play_game_loop():
         end_time = time.time()
         elapsed = end_time - start_time
         print(f"Phoenix took {elapsed:.4f} seconds")
-        if phoenix.is_king_in_check(phoenix.phoenix_get_turn_from_moves(all_moves).capitalize(), position_dict=position_dict, all_moves=all_moves): print(f"{phoenix.phoenix_get_turn_from_moves(all_moves)} king is in check")
+        if phoenix.is_king_in_check(phoenix.phoenix_get_turn_from_moves(all_moves).capitalize(), position_dict=position_dict, all_moves=all_moves): print_and_speak(f"{phoenix.phoenix_get_turn_from_moves(all_moves)} king is in check")
         play_game_loop()
     else:
         if first_move:
             prompt = f"Hello and welcome to the world of magic chess! My name is Phoenix. You can resume a recent game or start a new game. {phoenix.phoenix_get_turn_from_moves(all_moves).capitalize()} to move, please state a command: "
-            # print_and_speak(prompt)
-            words = input()
+            prompt = f"temp intro"
+            # print("hello")
+            print_and_speak(prompt)
+            # print("hello")
+            words = vi.listen()
+            input(f"You said: {words}")
+            # words = input(prompt)
             first_move = False
-        else: words = input(f"{phoenix.phoenix_get_turn_from_moves(all_moves).capitalize()} to move. Please state a command: ")
+            # input()
+        else: 
+            prompt = f"{phoenix.phoenix_get_turn_from_moves(all_moves).capitalize()} to move. Please state a command: "
+            print_and_speak(prompt)
+            words = vi.listen()
+            input(f"You said: {words}")
+            # words = input(prompt)
+            # input()
     
-    # if first_move:
-    #     words = input(f"Hello and welcome to the world of magic chess! My name is Phoenix. You can resume a recent game or start a new game. {get_turn_color().capitalize()} to move, please state a command: ")
-    #     first_move = False
-    # else: words = input(f"{phoenix.phoenix_get_turn_from_moves(all_moves).capitalize()} to move. Please state a command: ")
-
     if words == "all moves":
         print_all_moves()
         play_game_loop()
@@ -687,8 +718,6 @@ def play_game_loop():
     #decipher the command out of the words
     #if the move isn't possible, then the command is the error message
     (command, possible), piece = decipher_command(words)
-
-    # input(piece)
 
     if possible: 
         position_dict, all_moves, global_turn, board_positions_list = phoenix.implement_command(command, piece, position_dict=position_dict, all_moves=all_moves, board_positions_list=board_positions_list)
@@ -723,14 +752,14 @@ def play_game_loop():
     #print (or say) the command
     if not possible:
         print_and_speak(command)
-    if piece and piece.lower().startswith("castle"):
+    elif piece and piece.lower().startswith("castle"):
         piece_copy = piece.lower().replace("castle", "castling") + "..."
         print_and_speak(piece_copy)
     elif piece != None:
         words_print = f"Moving {piece} to {command[-2:]}..."
         print_and_speak(words_print)
 
-    if phoenix.is_king_in_check(get_turn_color(), position_dict=position_dict, all_moves=all_moves): print(f"{get_turn_color()} king is in check")
+    if phoenix.is_king_in_check(get_turn_color(), position_dict=position_dict, all_moves=all_moves): print_and_speak(f"{get_turn_color()} king is in check")
     # print(f"current position status: {phoenix.evaluate_postion(position_dict)}")
     
     # print(phoenix.get_legal_pawn_normal_moves(phoenix.phoenix_get_turn_from_moves(all_moves), position_dict, all_moves))
@@ -739,7 +768,7 @@ def play_game_loop():
     if words != "quit":
         play_game_loop()
     else:
-        print("Thanks for playing, play again soon! -Phoenix")
+        print_and_speak("Thanks for playing, play again soon! -Phoenix")
 
 #can also be used to test things before the game starts
 def set_initials():
@@ -969,58 +998,6 @@ def check_for_50_move_draw(move):
         if fifty_move_rule_count >= 100: fifty_move_rule_bool = True
         return True
 
-# def check_for_insufficient_material_draw():
-#     black_bishop_count_total = 0
-#     black_dark_bishop_count = 0
-#     black_light_bishop_count = 0
-
-#     white_bishop_count_total = 0
-#     white_dark_bishop_count = 0
-#     white_light_bishop_count = 0
-
-#     black_knight_count = 0
-#     white_knight_count = 0
-
-#     for piece, position in position_dict.items():
-#         #any position that has a queen is not insufficient material
-#         if "queen" in piece.lower() and position and position != "xx": return False
-#         #same with rook
-#         if "rook" in piece.lower() and position and position != "xx": return False
-#         #same with pawn (can be promoted)
-#         if "pawn" in piece.lower() and position and position != "xx": return False
-#         #black bishop count
-#         if "bishop" in piece.lower() and "black" in piece.lower() and position and position != "xx": 
-#             black_bishop_count_total += 1
-#             if is_dark_square(position): black_dark_bishop_count += 1
-#             else: black_light_bishop_count += 1
-#         #white bishop count
-#         if "bishop" in piece.lower() and "white" in piece.lower() and position and position != "xx": 
-#             white_bishop_count_total += 1
-#             if is_dark_square(position): white_dark_bishop_count += 1
-#             else: white_light_bishop_count += 1
-#         #black bishop count
-#         if "knight" in piece.lower() and "black" in piece.lower() and position and position != "xx": black_knight_count += 1
-#         #white bishop count
-#         if "knight" in piece.lower() and "white" in piece.lower() and position and position != "xx": white_knight_count += 1
-
-#     # king vs king
-
-#     if all(x == 0 for x in [black_bishop_count_total, white_bishop_count_total, black_knight_count, white_knight_count]): return True
-
-#     # king and bishop vs king
-#     elif black_bishop_count_total + white_bishop_count_total == 1: return True
-    
-#     # king and knight vs king
-#     elif black_knight_count + white_knight_count == 1: return True
-    
-#     # king and bishop vs king and bishop (same-colored bishops)
-#     #One black dark bishop and one white dark bishop, and no light bishops
-#     elif ((black_dark_bishop_count == 1 and white_dark_bishop_count == 1 and black_light_bishop_count == 0 and white_light_bishop_count == 0) or 
-#     # or One black light bishop and one white light bishop, and no dark bishops
-#     (black_light_bishop_count == 1 and white_light_bishop_count == 1 and black_dark_bishop_count == 0 and white_dark_bishop_count == 0)) and \
-#     (black_bishop_count_total + white_bishop_count_total == 2): return True #And no other bishops
-#     else: return False #example: two black bishops and one white bishops left
-
 #used by check for insufficient material to see if a bishop is on a dark or light
 # def is_dark_square(square):
 #     file = square[0].lower()  # e.g., 'e'
@@ -1172,7 +1149,10 @@ def parse_word_command(piece, wanted_position, command):
 
 #used when more than one piece of the same type can move to the same square, to clarify which one to move
 def clarify_which_piece(wanted_position):
-    clarified_words = input("Please clarify which piece you would like to move: ")
+    prompt = "Please clarify which piece you would like to move: "
+    print_and_speak(prompt)
+    clarified_words = vi.listen()
+    # clarified_words = input("Please clarify which piece you would like to move: ")
     square = check_square(clarified_words)
     while True:
         if square:
@@ -1182,22 +1162,34 @@ def clarify_which_piece(wanted_position):
                 elif f"{square.lower()}{wanted_position.lower()}" in phoenix.get_possible_moves(turn=get_turn_color(), position_dict=position_dict, all_moves=all_moves):
                     return square.lower()
                 else: 
-                    clarified_words = input("Sorry, I didn't get that. Please clarify which piece you would like to move: ")
+                    prompt = "Sorry, I didn't get that. Please clarify which piece you would like to move: "
+                    print_and_speak(prompt)
+                    clarified_words = vi.listen()
+                    # clarified_words = input("Sorry, I didn't get that. Please clarify which piece you would like to move: ")
                     square = check_square(clarified_words)
             else:
                 if f"{square.lower()}{wanted_position.lower()}" in phoenix.get_possible_moves(turn=get_turn_color(), position_dict=position_dict, all_moves=all_moves):
                     return square.lower()
                 else:
-                    clarified_words = input("Sorry, I didn't get that. Please clarify which piece you would like to move: ")
+                    prompt = "Sorry, I didn't get that. Please clarify which piece you would like to move: "
+                    print_and_speak(prompt)
+                    clarified_words = vi.listen()
+                    # clarified_words = input("Sorry, I didn't get that. Please clarify which piece you would like to move: ")
                     square = check_square(clarified_words)
         else: 
-            clarified_words = input("Sorry, I didn't get that. Please clarify which piece you would like to move: ")
+            prompt = "Sorry, I didn't get that. Please clarify which piece you would like to move: "
+            print_and_speak(prompt)
+            clarified_words = vi.listen()
+            # clarified_words = input("Sorry, I didn't get that. Please clarify which piece you would like to move: ")
             square = check_square(clarified_words)
 
 #used to ask what the user wants to promote their pawn to
 def ask_pawn_promotion():
     #  if piece == "pawn" and (wanted_position[-1] == "8" or wanted_position[-1] == "1"):
-    promoted = input("What would you like to promote the pawn to?: ")
+    prompt = "What would you like to promote the pawn to?: "
+    print_and_speak(prompt)
+    promoted = vi.listen()
+    # promoted = input("What would you like to promote the pawn to?: ")
     while True:
         found_piece = check_for_pieces(promoted)
         if found_piece and found_piece != "pawn" and found_piece != "king": 
@@ -1207,7 +1199,10 @@ def ask_pawn_promotion():
                 promoted_symbol = found_piece[0]
             break
         else: 
-            promoted = input("Sorry, I didn't get that. Would you like to promote the pawn to?: ")
+            prompt = "Sorry, I didn't get that. Would you like to promote the pawn to?: "
+            print_and_speak(prompt)
+            promoted = vi.listen()
+            # promoted = input("Sorry, I didn't get that. Would you like to promote the pawn to?: ")
     return promoted_symbol
 
 #used to remove everything before the wake word
@@ -1260,7 +1255,7 @@ def implement_intention(intention, computer_color=""):
     elif intention == "restart": restart_game()
     elif intention == "takeover": computer_takeover(computer_color)
     elif intention == "end":
-        print("Thanks for playing, play again soon! -Phoenix")
+        print_and_speak("Thanks for playing, play again soon! -Phoenix")
         exit()
     else: return
 
@@ -1437,23 +1432,23 @@ def print_tree(tree, indent=0, parent_has_more=False):
 
 def print_intention(intention, possible=True, computer_color=""):
     if intention == "undo":
-        if possible: print("Undoing the last move.")
-        else: print("No move to undo.")
+        if possible: print_and_speak("Undoing the last move.")
+        else: print_and_speak("No move to undo.")
     elif intention == "start":
-        if possible: print("Starting a new game. (Logic not yet created)")
-        else: print("Game is already in progress.")
+        if possible: print_and_speak("Starting a new game. (Logic not yet created)")
+        else: print_and_speak("Game is already in progress.")
     elif intention == "restart":
-        if possible: print("Restarting the game.")
-        else: print("Game is already in starting position.")
+        if possible: print_and_speak("Restarting the game.")
+        else: print_and_speak("Game is already in starting position.")
     elif intention == "end":
-        if possible: print("Ending the game. (Logic not yet created)")
-        else: print("Game is already in starting position.")
+        if possible: print_and_speak("Ending the game. (Logic not yet created)")
+        else: print_and_speak("Game is already in starting position.")
     elif intention == "takeover":
-        if possible: print(f"{computer_color.capitalize()} will be taken over by the Phoenix.")
-        else: print("Game has already been taken over.")
+        if possible: print_and_speak(f"{computer_color.capitalize()} will be taken over by Phoenix.")
+        else: print_and_speak("Game has already been taken over.")
     elif intention == "list":
-        print(f"{intention} intention logic not yet created.")
-    else: print(f"{intention} intention logic not recognized.")
+        print_and_speak(f"{intention} intention logic not yet created.")
+    else: print_and_speak(f"{intention} intention logic not recognized.")
 
 def is_intention_possible(intention):
     # undo, start, restart, end, takeover, list
@@ -1571,40 +1566,49 @@ def process_intention(intention_check):
         global computer_color
         if computer_takeover: 
             while True:
-                computer_color = input("What color would you like the computer to take over? ")
+                prompt = "What color would you like the computer to take over? "
+                print_and_speak(prompt)
+                computer_color = vi.listen()
+                # computer_color = input("What color would you like the computer to take over? ")
                 if "white" in computer_color and "black" not in computer_color: 
                     computer_color = "white"
                     break
                 elif "black" in computer_color and "white" not in computer_color: 
                     computer_color = "black"
                     break
-                else: print("Sorry, I didn't get that.")
+                else: print_and_speak("Sorry, I didn't get that.")
         if do_intention: implement_intention(intention_check, computer_color=computer_color)
         clear_screen() #do always
         print_board_visiual() #do always
         if do_print_intention: print_intention(intention_check, possible=intention_possible, computer_color=computer_color)
-        if cancel_intention: print(f"Canceling {intention_check} command.")
-        if confirmation_not_clear: print("Sorry, I didn't get that. Please try again.")
+        if cancel_intention: print_and_speak(f"Canceling {intention_check} command.")
+        if confirmation_not_clear: print_and_speak("Sorry, I didn't get that. Please try again.")
         play_game_loop() #do always
 
     #if possible, see if it needs to be confirmed
     if intention_possible: 
         #if confirmation is needed
         if intention_message: 
-            intention_confirmation = input(intention_message)
-            response = check_confirmation_response(intention_confirmation)
+            # prompt = "What color would you like the computer to take over? "
+            print_and_speak(intention_message)
+            intention_confirmation = vi.listen()
+            # intention_confirmation = input(intention_message)
 
-            #if the user responds yes or no
-            if response:
-                #positive
-                if response.lower() == "affirmative": 
-                    if intention_check == "takeover": execute_intention(do_intention=True, do_print_intention=True, computer_takeover = True)
-                    else: execute_intention(do_intention=True, do_print_intention=True)
-                #negative
-                else: execute_intention(cancel_intention=True)
-            
-            #confirmation wasn't clear
-            else: execute_intention(confirmation_not_clear=True)
+            while True:
+                response = check_confirmation_response(intention_confirmation)
+
+                #if the user responds yes or no
+                if response:
+                    #positive
+                    if response.lower() == "affirmative": 
+                        if intention_check == "takeover": execute_intention(do_intention=True, do_print_intention=True, computer_takeover = True)
+                        else: execute_intention(do_intention=True, do_print_intention=True)
+                    #negative
+                    else: execute_intention(cancel_intention=True)
+                
+                #confirmation wasn't clear
+                else: #execute_intention(confirmation_not_clear=True)
+                    print_and_speak("Sorry, I didn't get that. Please try again.")
         
         #if possible but no confirmation needed
         else: execute_intention(do_intention=True, do_print_intention=True)
