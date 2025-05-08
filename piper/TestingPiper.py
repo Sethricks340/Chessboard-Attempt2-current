@@ -6,6 +6,7 @@ import time
 class Piper_Speak:
     def __init__(self):
 
+        # print("initializing piper...")
         #canidates:
         self.model_file = r"C:\Users\sethr\Chessboard-Attempt2-current\piper\Voices\Phoenix Male GB\en_GB-northern_english_male-medium.onnx"
         # self.model_file = r"C:\Users\sethr\Chessboard-Attempt2-current\piper\Voices\Phoenix Female GB\en_GB-southern_english_female-low.onnx"

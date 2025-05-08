@@ -56,11 +56,11 @@ import pyperclip
 phoenix = Phoenix()
 piper_speak = Piper_Speak()
 from test_microphone import VoiceInput
-print(f"0000101")
-vi = VoiceInput("C:/Users/sethr/Chessboard-Attempt2-current/vosk-model-small-en-us-0.15/vosk-model-small-en-us-0.15", device=17)
+# print(f"0000101")
+vi = VoiceInput("C:/Users/sethr/Chessboard-Attempt2-current/vosk-model-small-en-us-0.15/vosk-model-small-en-us-0.15", device=None)
 # user_speech = vi.listen()
 # print(f"You said: {user_speech}")
-print(f"000")
+# print(f"000")
 
 def clear_screen():
     if os.name == 'nt':  # Windows
@@ -670,12 +670,12 @@ def play_game_loop():
     else:
         if first_move:
             prompt = f"Hello and welcome to the world of magic chess! My name is Phoenix. You can resume a recent game or start a new game. {phoenix.phoenix_get_turn_from_moves(all_moves).capitalize()} to move, please state a command: "
-            prompt = f"temp intro"
+            # prompt = f"temp intro"
             # print("hello")
             print_and_speak(prompt)
             # print("hello")
             words = vi.listen()
-            input(f"You said: {words}")
+            # input(f"You said: {words}")
             # words = input(prompt)
             first_move = False
             # input()
@@ -683,7 +683,7 @@ def play_game_loop():
             prompt = f"{phoenix.phoenix_get_turn_from_moves(all_moves).capitalize()} to move. Please state a command: "
             print_and_speak(prompt)
             words = vi.listen()
-            input(f"You said: {words}")
+            # input(f"You said: {words}")
             # words = input(prompt)
             # input()
     
@@ -1310,7 +1310,7 @@ def get_moves_tree(depth, turn, position_dict, all_moves, board_positions_list):
 def get_best_move(depth, turn, temp_position_dict, temp_all_moves, maximizing_player, alpha=float('-inf'), beta=float('inf'), moves_list = [], is_end_game=False):
     # is_end_game = True if phoenix.is_endgame(temp_position_dict) else False
     if depth == 0:
-        print(f"{moves_list}: {phoenix.evaluate_postion(temp_position_dict)}")
+        # print(f"{moves_list}: {phoenix.evaluate_postion(temp_position_dict)}")
         return None, phoenix.evaluate_postion(temp_position_dict, no_moves=False, passed_all_moves=temp_all_moves, is_end_game=is_end_game)
 
     possible_moves = phoenix.get_possible_moves(turn=phoenix.phoenix_get_turn_from_moves(temp_all_moves), position_dict=temp_position_dict, all_moves=all_moves)

@@ -13,7 +13,7 @@ class VoiceInput:
         start_time = time.time()
         self.model = Model(model_path)
         end_time = time.time()
-        print(f"Model loaded in {end_time - start_time:.4f} seconds")
+        # print(f"Model loaded in {end_time - start_time:.4f} seconds")
 
         if samplerate is None:
             device_info = sd.query_devices(self.device, "input")
