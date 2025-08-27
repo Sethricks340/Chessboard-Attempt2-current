@@ -7,7 +7,13 @@ The rack pops out vertically sometimes when it is at the end and hitting the spr
 
 Movements are off by just a few degrees. This adds up over time.
 
+"Breaking out: new serial data detected" prints a million times when breaking out, and sometimes doesn't break out
+
+Electromagnet wires potentially could get tangled up and stressed/broken with current arrangment
+
 TODO: 
+
+Screw electromagnet onto holder
 
 try to understand ISRs that chat wrote 
 
@@ -15,23 +21,11 @@ convert polar to cartesian
 
 figure out how to keep the rack from popping out 
 
-change homing sequence to look at polar, not ticks
-
 */
 
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
 #include <Servo.h>
-
-struct EncoderValues {
-  int encoder1;
-  int encoder2;
-};
-
-// struct PolarForm {
-//   float radius;
-//   float angle;
-// };
 
 Servo motorServo;   // Plate
 Servo motorServo2;  // Pinion
@@ -97,6 +91,8 @@ ISR(PCINT2_vect) { // Port D: 4,5,7
   uint8_t idx2 = ((e2_old << 2) | e2_new) & 0x0F;
   encoder2Pos += enc_states[idx2];
   e2_old = e2_new;
+
+  get_polar(encoder1Pos, encoder2Pos);
 }
 
 // For PB0 (pin 8) changes
@@ -108,6 +104,8 @@ ISR(PCINT0_vect) {
   uint8_t idx2 = ((e2_old << 2) | e2_new) & 0x0F;
   encoder2Pos += enc_states[idx2];
   e2_old = e2_new;
+
+  get_polar(encoder1Pos, encoder2Pos);
 }
 
 const float degrees_per_tick = 1;   // ≈ 1 degree per tick
@@ -118,18 +116,12 @@ const byte REED_PIN = 2;  // D2 on Arduino Nano (INT0)
 volatile bool reedTriggered = false;
 volatile bool ignoreReed = true;
 
-// Debounce variables
-volatile unsigned long lastReedInterrupt = 0;
-const unsigned long debounceDelay = 100;  // milliseconds
-
 void go_to_rack_end(bool forward = false, unsigned long maxtime = 5000);
-void plate_tick(bool Clockwise = false, int ticks = 1, bool both = false);
-void rack_tick(bool Decrease = false, int ticks = 1);
+void plate_tick(bool Clockwise = false, int degrees = 1, bool both = false);
+void rack_tick(bool Decrease = false, int milli_m = 1);
 void both_tick_sequential(bool both = false, int ticks = 1);
 void both_tick_simultaneous(bool Clockwise = false, int ticks = 1);
 void find_reed_initial(bool half = false);
-
-const unsigned long TIMEOUT_MS = 5000;  // 5 second timeout
 
 void setup() {
   pinMode(ENC_A, INPUT_PULLUP);
@@ -154,7 +146,6 @@ void setup() {
   lcd.backlight();
   Serial.begin(9600);
   Serial.println("READY");
-  print_LCD("READY", 0, true);
 
   motorServo.attach(SERVO_PIN);
   motorServo2.attach(SERVO_PIN2);
@@ -164,38 +155,27 @@ void setup() {
   pinMode(REED_PIN, INPUT_PULLUP);
   attachInterrupt(digitalPinToInterrupt(REED_PIN), reedChange, CHANGE);
   delay(200);
-  zero_encoders();
+  zero_RE_and_polars();
   delay(200);
 }
 
 void loop() {
   if (Serial.available() > 0) {
     String received = Serial.readStringUntil('\n');  // read from Pi
-    print_LCD(received, 0, true);
     String msg = "Message received: " + String(received);
     Serial.println(msg);
 
     interpret_message(received);
   }
+  // Serial.print("Radius: "); Serial.println(globalRadius);
+  // Serial.print("Degrees: "); Serial.println(globalDegrees);
 }
 
-void print_LCD(String message, int line, bool clear) {
-  if (clear) {
-    lcd.clear();
-  }
-
-  if (!line) {
-    lcd.setCursor(0, 0);
-  } else {
-    lcd.setCursor(0, 1);
-  }
-
-  lcd.print(message);
-}
-
-void zero_encoders() {
+void zero_RE_and_polars() {
   encoder1Pos = 0;    // Plate
   encoder2Pos = 0;    // Rack
+  globalDegrees = 0;
+  globalRadius = 0;
 }
 
 void reedChange() {
@@ -205,14 +185,6 @@ void reedChange() {
     motorServo.writeMicroseconds(STOP_US);
     motorServo2.writeMicroseconds(STOP_US);
   }
-}
-
-EncoderValues read_encoders(){
-  EncoderValues vals;
-  vals.encoder1 = encoder1Pos;
-  vals.encoder2 = encoder2Pos;
-  get_polar(vals.encoder1, vals.encoder2);
-  return vals;
 }
 
 void interpret_message(String message) {
@@ -230,11 +202,11 @@ void interpret_message(String message) {
   }
 
   if (message.startsWith("rack inc")) {
-    rack_tick(false, get_ticks_from_message(9, message));
+    rack_tick(false, get_ticks_from_message(9, message) * radius_per_tick);
   }
 
   if (message.startsWith("rack dec")) {
-    rack_tick(true, get_ticks_from_message(9, message));
+    rack_tick(true, get_ticks_from_message(9, message) * radius_per_tick);
   }
 
   if (message.startsWith("both CCW se")) {
@@ -265,7 +237,7 @@ void interpret_message(String message) {
   }
 
   if (message == "zeros"){
-    zero_encoders();
+    zero_RE_and_polars();
   }
 
 }
@@ -305,15 +277,17 @@ void find_reed_initial(bool half = false) {
   // Step 2: now reed is released → start caring about it
   ignoreReed = false;
 
-  EncoderValues e = read_encoders();
-  int pastPos = e.encoder1;
+  // EncoderValues e = read_encoders();
+  // int pastPos = e.encoder1;
+  int pastPos = globalDegrees;
   int currPos = pastPos;
   int ticks_not_triggered = 100;
 
-  // Step 3: Move until the reed is not triggered, and have moved 100 ticks
+  // Step 3: Move until the reed is not triggered, and have moved 100 degrees
   while (!(!reedTriggered && abs(pastPos - currPos) > ticks_not_triggered)) {
-    EncoderValues e = read_encoders();
-    currPos = e.encoder1;
+    // EncoderValues e = read_encoders();
+    // currPos = e.encoder1;
+    currPos = globalDegrees;
     motorServo.writeMicroseconds(PLATE_HALF_CW_US);
     motorServo2.writeMicroseconds(RACK_HALF_DEC_US);
 
@@ -421,7 +395,7 @@ void find_edge_of_reed(){
   }
 
   // Step 5: Inc rack significantly (so we know reed can't be triggered)
-    rack_tick(false, 250);
+    rack_tick(false, 250 * radius_per_tick);
 
   // Step 6: Move both CW 
     both_tick_sequential(true, 10);
@@ -446,27 +420,25 @@ void find_edge_of_reed(){
 void center_home(){
   // Used to go to polar: 0 deg<39.6mm (40)
   // Only call after calibrating with go_to_rack_end, find_reed_initial(true), and find_edge_of_reed
-  rack_tick(true, 70); // Move rack in 70 ticks (electromagnet on center)
+  rack_tick(true, 70 * radius_per_tick); // Move rack in 70 ticks (electromagnet on center)
   both_tick_simultaneous(false, 10); // Arm is at around 90 degrees
   both_tick_simultaneous(false, 90); // Arm is at around 0 degrees, still centered
-  zero_encoders();
-  rack_tick(false, 138); // increase rack by half, so rack is centered on plate
+  zero_RE_and_polars();
+  rack_tick(false, 138 * radius_per_tick); // increase rack by half, so rack is centered on plate
 }
 
 void both_tick_sequential(bool both = false, int ticks = 1) {
   plate_tick(both, ticks);
-  rack_tick(both, ticks);
+  rack_tick(both, ticks * radius_per_tick);
 }
 
 void both_tick_simultaneous(bool Clockwise = false, int ticks = 1){
   plate_tick(Clockwise, ticks, true);
 }
 
-void plate_tick(bool Clockwise = false, int ticks = 1, bool both = false) {
-  EncoderValues e = read_encoders();
-
-  int past_RE = e.encoder1;
-  int curr_RE = past_RE;
+void plate_tick(bool Clockwise = false, int degrees = 1, bool both = false) {
+  int past_deg = globalDegrees;
+  int curr_deg = past_deg;
   const int SLOWDOWN_THRESHOLD = 8;
 
   int fullSpeedUS = Clockwise ? PLATE_FULL_CW_US : PLATE_FULL_CCW_US;
@@ -474,9 +446,9 @@ void plate_tick(bool Clockwise = false, int ticks = 1, bool both = false) {
   int fullSpeedUS2 = Clockwise ? RACK_FULL_DEC_US : RACK_FULL_INC_US;
   int halfSpeedUS2 = Clockwise ? RACK_HALF_DEC_US : RACK_HALF_INC_US;
 
-  // Move until desired ticks reached
-  while (abs(curr_RE - past_RE) < ticks) {
-    int remaining = ticks - abs(curr_RE - past_RE);
+  // Move until desired degrees reached
+  while (abs(curr_deg - past_deg) < degrees) {
+    int remaining = degrees - abs(curr_deg - past_deg);
 
     // Slow down when close to goal
     int directionUS1 = remaining <= SLOWDOWN_THRESHOLD ? halfSpeedUS : fullSpeedUS;
@@ -485,8 +457,7 @@ void plate_tick(bool Clockwise = false, int ticks = 1, bool both = false) {
     motorServo.writeMicroseconds(directionUS1);
     if (both) motorServo2.writeMicroseconds(directionUS2);
 
-    EncoderValues e = read_encoders();
-    curr_RE = e.encoder1;
+    curr_deg = globalDegrees;
 
     if (serial_interrupt()) {
       motorServo.writeMicroseconds(STOP_US);
@@ -502,24 +473,22 @@ void plate_tick(bool Clockwise = false, int ticks = 1, bool both = false) {
   if (both) motorServo2.writeMicroseconds(STOP_US);
 }
 
-void rack_tick(bool Decrease = false, int ticks = 1) {
-  EncoderValues e = read_encoders();
-  int past_RE2 = e.encoder2;
-  int current_RE2 = past_RE2;
+void rack_tick(bool Decrease = false, int milli_m = 1) {
+  int past_Radius = globalRadius; // In mm
+  int current_Radius = past_Radius;
 
   int fullSpeedUS = Decrease ? RACK_FULL_DEC_US : RACK_FULL_INC_US;
   int halfSpeedUS = Decrease ? RACK_HALF_DEC_US : RACK_HALF_INC_US;
 
-  // Move until desired ticks reached
-  while (abs(current_RE2 - past_RE2) < ticks) {
-    int remaining = ticks - abs(current_RE2 - past_RE2);
+  // Move until desired milli_m reached
+  while (abs(current_Radius - past_Radius) < milli_m) {
+    int remaining = milli_m - abs(current_Radius - past_Radius);
 
     // Slow down when close to goal
     int directionUS = remaining <= 8 ? halfSpeedUS : fullSpeedUS;
     motorServo2.writeMicroseconds(directionUS);
 
-    EncoderValues e = read_encoders();
-    current_RE2 = e.encoder2;
+    current_Radius = globalRadius;
 
     if (serial_interrupt()) {
       motorServo2.writeMicroseconds(STOP_US);
@@ -535,20 +504,10 @@ void go_to_rack_end(bool forward = false, unsigned long maxtime = 5000) {
   unsigned long startTime = millis();
   unsigned long endTime = startTime + maxtime;  // Maximum time for rack movement
 
-  int last_pinion_value = 0;
-  unsigned long lastMoveTime = millis();      // Track when the encoder last moved
-
   // Move arm to the end of the rack
   while (millis() < endTime) {
     // Check 'forward' and move accordingly
     motorServo2.writeMicroseconds(forward ? RACK_FULL_DEC_US : RACK_FULL_INC_US);
-    EncoderValues e = read_encoders();
-
-    // Reset lastMoveTime if movement detected
-    if (e.encoder2 != last_pinion_value) {
-      last_pinion_value = e.encoder2;
-      lastMoveTime = millis();
-    }
 
     // Interrupt-like check for serial input
     if (serial_interrupt()) {
@@ -557,16 +516,14 @@ void go_to_rack_end(bool forward = false, unsigned long maxtime = 5000) {
     }
   }
 
-  EncoderValues e = read_encoders();
-  int past_RE_2 = e.encoder2;
-  int current_RE2 = past_RE_2;
+  int past_Radius = globalRadius;
+  int current_Radius = past_Radius;
 
   if (!forward) {
     //Move arm in slightly
-    while (abs(current_RE2 - past_RE_2) < 100) {
+    while (abs(current_Radius - past_Radius) < 100 * radius_per_tick) { // In mm
       motorServo2.writeMicroseconds(RACK_HALF_DEC_US);  // Pinion motor
-      EncoderValues e = read_encoders();
-      current_RE2 = e.encoder2;
+      current_Radius = globalRadius;
 
       if (serial_interrupt()) {
         motorServo.writeMicroseconds(STOP_US);
@@ -578,10 +535,9 @@ void go_to_rack_end(bool forward = false, unsigned long maxtime = 5000) {
 
   else {
     //Move arm out slightly
-    while (abs(current_RE2 - past_RE_2) < 100) {
+    while (abs(current_Radius - past_Radius) < 100 * radius_per_tick) { // In mm
       motorServo2.writeMicroseconds(RACK_HALF_INC_US);  // Pinion motor
-      EncoderValues e = read_encoders();
-      current_RE2 = e.encoder2;
+      current_Radius = globalRadius;
 
       if (serial_interrupt()) {
         motorServo.writeMicroseconds(STOP_US);
@@ -597,9 +553,6 @@ void go_to_rack_end(bool forward = false, unsigned long maxtime = 5000) {
 }
 
 void get_polar(int encoder1, int encoder2) {
-  // PolarForm vals;
-  // EncoderValues e = read_encoders();
-
   // degrees_per_tick = 1;   // ≈ 1 degree per tick
   globalDegrees = degrees_per_tick * float(encoder1);
   while (true){
