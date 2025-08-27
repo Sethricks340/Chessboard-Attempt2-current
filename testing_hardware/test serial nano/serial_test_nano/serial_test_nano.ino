@@ -1,8 +1,6 @@
 /*
 Known Issues:
 
-W/ the current wire setup, they keep getting in the way of the home sequence. Need to be cleaned up and put down.
-
 The rack pops out vertically sometimes when it is at the end and hitting the spring.
 
 Movements are off by just a few degrees. This adds up over time.
@@ -13,11 +11,15 @@ Electromagnet wires potentially could get tangled up and stressed/broken with cu
 
 TODO: 
 
+Go to point (polar) (don't read and then add, but use current value and less or greater than to go to it)
+
+Go to point (cartesian->polar)
+
 Screw electromagnet onto holder
 
 try to understand ISRs that chat wrote 
 
-convert polar to cartesian 
+convert polar to cartesian in code 
 
 figure out how to keep the rack from popping out 
 
