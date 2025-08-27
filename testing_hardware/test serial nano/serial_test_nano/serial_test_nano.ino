@@ -211,7 +211,7 @@ EncoderValues read_encoders(){
   EncoderValues vals;
   vals.encoder1 = encoder1Pos;
   vals.encoder2 = encoder2Pos;
-  get_polar(vals.encoder1, vals.encoder2)
+  get_polar(vals.encoder1, vals.encoder2);
   return vals;
 }
 
