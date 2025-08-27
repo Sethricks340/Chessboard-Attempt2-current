@@ -292,7 +292,7 @@ moves_string = ['e2e4', 'b8c6', 'd2d4', 'g8f6', 'e4e5', 'f6d5',
                 'c3b4', 'e5f3', 'g2f3', 'd5b4', 'c1d2', 'b4d5', 
                 'b1c3', 'd5c3', 'd2c3', 'e8g8', 'e1g1', 'd8g5']
 
-# moves_string = []
+moves_string = []
 
 #used to update the current list of moves made, and transitively the current position. Can be used in tandem with above set position to set a position before playing 
 all_moves = moves_string
@@ -1310,6 +1310,7 @@ def get_moves_tree(depth, turn, position_dict, all_moves, board_positions_list):
 def get_best_move(depth, turn, temp_position_dict, temp_all_moves, maximizing_player, alpha=float('-inf'), beta=float('inf'), moves_list = [], is_end_game=False):
     # is_end_game = True if phoenix.is_endgame(temp_position_dict) else False
     if depth == 0:
+        print(f"this is where the percentage will go: []")
         # print(f"{moves_list}: {phoenix.evaluate_postion(temp_position_dict)}")
         return None, phoenix.evaluate_postion(temp_position_dict, no_moves=False, passed_all_moves=temp_all_moves, is_end_game=is_end_game)
 
