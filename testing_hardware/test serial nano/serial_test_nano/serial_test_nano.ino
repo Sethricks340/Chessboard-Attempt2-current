@@ -13,6 +13,8 @@ Go home sequence sometimes fails when the magnet starts close to the reed, even 
 
 TODO: 
 
+  Cartesian can have floats?
+
   Screw electromagnet onto holder
 
   try to understand ISRs that chat wrote 
@@ -294,23 +296,58 @@ void interpret_message(String message) {
   }
 
   if (message == "test cart") {
-      Serial.println("Enter X:");
+      Serial.println("Enter X Start:");
       while (!Serial.available());  // wait for input
-      int x = Serial.parseInt();
-      Serial.println(x);
+      int x1 = Serial.parseInt();
+      Serial.println(x1);
 
-      Serial.println("Enter Y:");
+      Serial.println("Enter Y Start:");
       while (!Serial.available());  // wait for input
-      double y = Serial.parseInt();
-      Serial.println(y);
+      double y1 = Serial.parseInt();
+      Serial.println(y1);
 
-      Polar polar = cartesian_to_polar(x, y);
-      Serial.println("r: " + String(polar.r) + " - theta: " + String(polar.theta));
-      gotToPolarCoord(polar.theta, polar.r);
+      Serial.println("Enter X End:");
+      while (!Serial.available());  // wait for input
+      int x2 = Serial.parseInt();
+      Serial.println(x2);
+
+      Serial.println("Enter Y End:");
+      while (!Serial.available());  // wait for input
+      double y2 = Serial.parseInt();
+      Serial.println(y2);
+
+      Polar polar1 = cartesian_to_polar(x1, y1);
+      Polar polar2 = cartesian_to_polar(x2, y2);
+      Serial.println("r: " + String(polar1.r) + " - theta: " + String(polar1.theta));
+      Serial.println("r: " + String(polar2.r) + " - theta: " + String(polar2.theta));
+      gotToPolarCoord(polar1.theta, polar1.r);
+
+      float slope = (y2 - y1) / (x2 -x1); 
+      float b_value = y1 - slope * x1;
+
+      bool Clockwise = shortestAngularDirection(polar1.theta, polar2.theta);
+
+      if (Clockwise) {
+          for (float deg = polar1.theta; angularDistance(deg, polar2.theta) > degrees_per_tick; deg -= 2) {
+              gotToPolarCoord(deg, calcRadFromTheta(deg, b_value, slope));
+              // calcRadFromTheta(deg, b_value, slope);
+          } 
+      } else {
+          for (float deg = polar1.theta; angularDistance(deg, polar2.theta) > degrees_per_tick; deg += 2) {
+              gotToPolarCoord(deg, calcRadFromTheta(deg, b_value, slope));
+              // calcRadFromTheta(deg, b_value, slope);
+          } 
+      }
   }
-
-
 }
+
+float calcRadFromTheta(float theta, float b, float m){
+    float rad = theta * PI / 180.0;
+    float denom = sin(rad) - m * cos(rad);
+    if (abs(denom) < 1e-6) denom = 1e-6; // prevent division by zero
+    return (b * mm_per_unit) / denom;
+}
+
 
 bool parseGotoCommand(String message, float &radius, int &degrees) {
     message.trim(); // remove any leading/trailing whitespace
@@ -688,7 +725,7 @@ void gotToPolarCoord(float degreesTarget, float radiusTarget){
   motorServo2.writeMicroseconds(STOP_US);
 
   bool Clockwise = shortestAngularDirection(globalDegrees, degreesTarget);
-  Serial.println("Result:" + String(Clockwise));
+  // Serial.println("Result:" + String(Clockwise));
   fullSpeedUS = Clockwise ? PLATE_FULL_CW_US : PLATE_FULL_CCW_US;
   halfSpeedUS = Clockwise ? PLATE_HALF_CW_US : PLATE_HALF_CCW_US;
 
