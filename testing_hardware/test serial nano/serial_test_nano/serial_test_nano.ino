@@ -9,15 +9,13 @@ The rack pops out vertically sometimes when it is at the end and hitting the spr
 
 Electromagnet wires potentially could get tangled up and stressed/broken with current arrangment
 
-TODO: 
+Go home sequence sometimes fails when the magnet starts close to the reed, even though I tried to fix that previously
 
-  Go to point (cartesian->polar)
+TODO: 
 
   Screw electromagnet onto holder
 
   try to understand ISRs that chat wrote 
-
-  convert polar to cartesian in code 
 
   figure out how to keep the rack from popping out 
 
@@ -71,6 +69,11 @@ volatile uint8_t e1_old = 3;
 // Encoder 2 state
 volatile uint8_t e2_old = 3;
 
+struct Polar {
+  double r;
+  double theta;  // degrees
+};
+
 ISR(PCINT2_vect) { // Port D: 4,5,7
   // --- Encoder 1 ---
   uint8_t e1_new = 0;
@@ -110,6 +113,7 @@ ISR(PCINT0_vect) {
 
 const float degrees_per_tick = 1;   // ≈ 1 degree per tick
 const float radius_per_tick = 78.87 / 275;  // ≈ 0.2868 mm per tick
+const float mm_per_unit = 18.35;
 
 // --- Interrupt pin ---
 const byte REED_PIN = 2;  // D2 on Arduino Nano (INT0)
@@ -245,8 +249,6 @@ void interpret_message(String message) {
     zero_RE_and_polars();
   }
 
-
-  //rest of code //
   // Example: goto 90 150
   if (message.startsWith("goto")){
     int degrees; float radius;
@@ -276,6 +278,35 @@ void interpret_message(String message) {
       else{
         Serial.println("Counter-Clockwise");
       }
+  }
+
+  if (message == "test small steps") {
+    float targetRadius = globalRadius;  // keep radius fixed, or set explicitly
+    for (int deg = 135; deg >= 45; deg-=2) {
+      gotToPolarCoord(deg, targetRadius);
+
+      // give the system time to settle
+      delay(50);  
+
+      // allow break-out if new serial command arrives
+      if (serial_interrupt()) return;
+    }
+  }
+
+  if (message == "test cart") {
+      Serial.println("Enter X:");
+      while (!Serial.available());  // wait for input
+      int x = Serial.parseInt();
+      Serial.println(x);
+
+      Serial.println("Enter Y:");
+      while (!Serial.available());  // wait for input
+      double y = Serial.parseInt();
+      Serial.println(y);
+
+      Polar polar = cartesian_to_polar(x, y);
+      Serial.println("r: " + String(polar.r) + " - theta: " + String(polar.theta));
+      gotToPolarCoord(polar.theta, polar.r);
   }
 
 
@@ -727,6 +758,17 @@ bool shortestAngularDirection(double startTheta, double endTheta) {
       return true;
     }
 }
+
+Polar cartesian_to_polar(double x_init, double y_init) {
+  Polar polar;
+  polar.r = sqrt(x_init * x_init + y_init * y_init) * mm_per_unit;
+  polar.theta = atan2(y_init, x_init) * 180.0 / PI; // convert radians to degrees
+  return polar;
+}
+
+
+
+
 
 bool serial_interrupt() {
   // "Interrupt-like" check for new data
