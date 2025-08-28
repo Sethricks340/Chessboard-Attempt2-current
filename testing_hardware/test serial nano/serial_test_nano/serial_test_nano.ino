@@ -1,9 +1,9 @@
 /*
+Git repo: C:\Users\sethr\Chessboard-Attempt2-current
+
 Known Issues:
 
 The rack pops out vertically sometimes when it is at the end and hitting the spring.
-
-Movements are off by just a few degrees. This adds up over time.
 
 "Breaking out: new serial data detected" prints a million times when breaking out, and sometimes doesn't break out
 
@@ -11,17 +11,15 @@ Electromagnet wires potentially could get tangled up and stressed/broken with cu
 
 TODO: 
 
-Go to point (polar) (don't read and then add, but use current value and less or greater than to go to it)
+  Go to point (cartesian->polar)
 
-Go to point (cartesian->polar)
+  Screw electromagnet onto holder
 
-Screw electromagnet onto holder
+  try to understand ISRs that chat wrote 
 
-try to understand ISRs that chat wrote 
+  convert polar to cartesian in code 
 
-convert polar to cartesian in code 
-
-figure out how to keep the rack from popping out 
+  figure out how to keep the rack from popping out 
 
 */
 
@@ -238,10 +236,67 @@ void interpret_message(String message) {
     Serial.println(encoder2Pos);
   }
 
+  if (message == "print polar"){
+    Serial.println(globalRadius);
+    Serial.println(globalDegrees);
+  }
+
   if (message == "zeros"){
     zero_RE_and_polars();
   }
 
+
+  //rest of code //
+  // Example: goto 90 150
+  if (message.startsWith("goto")){
+    int degrees; float radius;
+    if (parseGotoCommand(message, radius, degrees)) {
+        Serial.print("Radius = "); Serial.println(radius);
+        Serial.print("Degrees = "); Serial.println(degrees);
+        gotToPolarCoord(degrees, radius);
+    } else {
+        Serial.println("Invalid goto command!");
+    }
+  }
+
+  if (message == "test direction") {
+      Serial.println("Enter startTheta:");
+      while (!Serial.available());  // wait for input
+      double startTheta = Serial.parseFloat();
+      Serial.println(startTheta);
+
+      Serial.println("Enter endTheta:");
+      while (!Serial.available());  // wait for input
+      double endTheta = Serial.parseFloat();
+      Serial.println(endTheta);
+
+      if (shortestAngularDirection(startTheta, endTheta)){
+        Serial.println("Clockwise");
+      }
+      else{
+        Serial.println("Counter-Clockwise");
+      }
+  }
+
+
+}
+
+bool parseGotoCommand(String message, float &radius, int &degrees) {
+    message.trim(); // remove any leading/trailing whitespace
+    if (message.startsWith("goto ")) {
+        message = message.substring(5); // remove "goto "
+        int spaceIndex = message.indexOf(' ');
+        if (spaceIndex == -1) return false;
+
+        String rStr = message.substring(0, spaceIndex);
+        String dStr = message.substring(spaceIndex + 1);
+
+        radius = rStr.toFloat();
+        degrees = dStr.toInt();
+
+        return true;
+    }
+    return false;
 }
 
 int get_ticks_from_message(int len, String message){
@@ -556,12 +611,12 @@ void go_to_rack_end(bool forward = false, unsigned long maxtime = 5000) {
 
 void get_polar(int encoder1, int encoder2) {
   // degrees_per_tick = 1;   // ≈ 1 degree per tick
-  globalDegrees = degrees_per_tick * float(encoder1);
+  globalDegrees = - degrees_per_tick * float(encoder1);  // Negative -> flips so CCW is pos and CW is neg, reverse of homing logic
   while (true){
     if (globalDegrees >= 360) {
       globalDegrees -= 360;
     }
-    else if (globalDegrees <= -360){
+    else if (globalDegrees < 0){
       globalDegrees += 360;
     }
     else {
@@ -578,6 +633,99 @@ void get_polar(int encoder1, int encoder2) {
   // radius_per_tick = 78.87 / 275;  // ≈ 0.2868 mm per tick
   // Range of encoder2 should be 0-275
   globalRadius = (radius_per_tick * float(encoder2));
+}
+
+void gotToPolarCoord(float degreesTarget, float radiusTarget){
+  
+  int fullSpeedUS = radiusTarget < globalRadius ? RACK_FULL_DEC_US : RACK_FULL_INC_US;
+  int halfSpeedUS = radiusTarget < globalRadius ? RACK_HALF_DEC_US : RACK_HALF_INC_US;
+
+  // Do rack first (radiusTarget)
+  while(abs(radiusTarget - globalRadius) > radius_per_tick){ // ≈ radius_per_tick = 0.2868 mm
+    int remaining = abs(radiusTarget - globalRadius);
+
+    // Slow down when close to goal
+    int directionUS = remaining <= 15 ? halfSpeedUS : fullSpeedUS;
+    motorServo2.writeMicroseconds(directionUS);
+
+    if (serial_interrupt()) {
+      motorServo2.writeMicroseconds(STOP_US);
+      return;
+    }
+  }
+
+  motorServo2.writeMicroseconds(STOP_US);
+
+  bool Clockwise = shortestAngularDirection(globalDegrees, degreesTarget);
+  Serial.println("Result:" + String(Clockwise));
+  fullSpeedUS = Clockwise ? PLATE_FULL_CW_US : PLATE_FULL_CCW_US;
+  halfSpeedUS = Clockwise ? PLATE_HALF_CW_US : PLATE_HALF_CCW_US;
+
+  // Do plate second (degreesTarget), but move rack at same speed/direction
+    while(angularDistance(globalDegrees, degreesTarget) > degrees_per_tick){ // ≈ degrees_per_tick = 0.2868 mm
+      int remaining = abs(degreesTarget - globalDegrees);
+
+      // Serial.println("degreesTarget:" + String(degreesTarget));    // Caution: These print statements will cause the loop to be slow and inadvertently miss steps
+      // Serial.println("globalDegrees:" + String(globalDegrees));
+      // Serial.println("remaining:" + String(remaining));
+
+      // Slow down when close to goal
+      int directionUS = remaining <= 8 ? halfSpeedUS : fullSpeedUS;
+      motorServo.writeMicroseconds(directionUS);
+      motorServo2.writeMicroseconds(directionUS);
+
+      if (serial_interrupt()) {
+        motorServo.writeMicroseconds(STOP_US);
+        motorServo2.writeMicroseconds(STOP_US);
+        return;
+      }
+  }
+  
+  motorServo.writeMicroseconds(STOP_US);
+  motorServo2.writeMicroseconds(STOP_US);
+  
+}
+
+float angularDistance(float a, float b) {
+  // Returns the shortest angular distance from one theta to another
+  float diff = fmod((b - a + 540.0), 360.0) - 180.0; 
+  return fabs(diff);
+}
+
+bool shortestAngularDirection(double startTheta, double endTheta) {
+    // Clockwise -> returns true
+    // Counter-Clockwise -> returns false
+
+    // normalize to [0,360)
+    double t1 = fmod(startTheta, 360.0); if (t1 < 0) t1 += 360.0;
+    double t2 = fmod(endTheta, 360.0); if (t2 < 0) t2 += 360.0;
+
+    // signed difference t2 - t1
+    double delta = t2 - t1;
+
+    // normalize delta into (-180, 180]
+    while (delta <= -180.0) delta += 360.0;
+    while (delta > 180.0)  delta -= 360.0;
+
+    if (fabs(delta) < degrees_per_tick){
+        // Serial.println("same " + String(0.0));
+        return true;
+    }
+
+    // tie at ±180°: pick a policy (here I pick clockwise for tie)
+    if (fabs(fabs(delta) - 180.0) < degrees_per_tick){
+        // Serial.println("clockwise " + String(180.0));
+        return true;
+    }
+
+    if (delta > 0){
+      // Serial.println("counter-clockwise " + String(delta)); // positive => CCW by delta
+      return false;
+    }
+    else{
+      // Serial.println("clockwise " + String(-delta)); // negative => CW by -delta
+      return true;
+    }
 }
 
 bool serial_interrupt() {
