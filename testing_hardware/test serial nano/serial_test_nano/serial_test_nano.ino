@@ -787,14 +787,8 @@ void center_home(){
   // Only call after calibrating with go_to_rack_end, find_reed_initial(true), and find_edge_of_reed
 
   zero_RE_and_polars();
-  // Goto -17 100
-  // gotToPolarCoord(100, -17);
-
-  // zero_RE_and_polars();
-  
-  // Goto 39 0
-  // gotToPolarCoord(0, 39);
-  gotToPolarCoord(100, 22); //TODO: Still need to test this. Combines the previous two. 
+  // Goto 22 100
+  gotToPolarCoord(100, 22);
 }
 
 void both_tick_sequential(bool both = false, int ticks = 1) {
