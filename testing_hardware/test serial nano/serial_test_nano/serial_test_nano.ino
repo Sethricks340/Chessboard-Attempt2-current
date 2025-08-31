@@ -788,12 +788,13 @@ void center_home(){
 
   zero_RE_and_polars();
   // Goto -17 100
-  gotToPolarCoord(100, -17);
+  // gotToPolarCoord(100, -17);
 
-  zero_RE_and_polars();
+  // zero_RE_and_polars();
   
   // Goto 39 0
-  gotToPolarCoord(0, 39);
+  // gotToPolarCoord(0, 39);
+  gotToPolarCoord(100, 22); //TODO: Still need to test this. Combines the previous two. 
 }
 
 void both_tick_sequential(bool both = false, int ticks = 1) {
