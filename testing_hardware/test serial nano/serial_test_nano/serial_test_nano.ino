@@ -14,6 +14,8 @@ Go home sequence sometimes fails when the magnet starts close to the reed, even 
 (-3,3) -> (3,3) works semi-well, along with (3,-3) -> (-3,-3)
   BUT (3,3) -> (3, -3) and (-3, -3) -> (-3,3) don't work at all. The radius doesn't even try to adjust.
 
+homing sequence seems to have stopped working. it looks like the culprit is plate_tick. Plate tick is causing issues in the find reed initial and the center home functions
+
 TODO: 
 
   Cartesian can have floats?
@@ -121,7 +123,10 @@ ISR(PCINT0_vect) {
 const float degrees_per_tick = 1;   // ≈ 1 degree per tick
 const float radius_per_tick = 78.87 / 275;  // ≈ 0.2868 mm per tick
 const float mm_per_unit = 18.35;
-volatile float average_angular_speed = 0;
+volatile float average_CW_speed = 0;
+volatile float average_CCW_speed = 0;
+volatile float average_INC_speed = 0;
+volatile float average_DEC_speed = 0;
 
 // --- Interrupt pin ---
 const byte REED_PIN = 2;  // D2 on Arduino Nano (INT0)
@@ -138,6 +143,9 @@ void rack_tick(bool Decrease = false, int milli_m = 1);
 void both_tick_sequential(bool both = false, int ticks = 1);
 void both_tick_simultaneous(bool Clockwise = false, int ticks = 1);
 void find_reed_initial(bool half = false);
+float calc_linear_speed(bool increase = true);
+float calc_angular_speed(bool clockwise = true);
+void get_average_speeds(bool gohome = false);
 
 void setup() {
   pinMode(ENC_A, INPUT_PULLUP);
@@ -196,7 +204,8 @@ void zero_RE_and_polars() {
 
 void reedChange() {
   reedTriggered = (digitalRead(REED_PIN) == LOW);
-  if (!ignoreReed && reedTriggered) {
+  // if (!ignoreReed && reedTriggered) {
+  if (false) {
     //Stop the motors as soon as the switch is triggered
     motorServo.writeMicroseconds(STOP_US);
     motorServo2.writeMicroseconds(STOP_US);
@@ -222,7 +231,9 @@ void interpret_message(String message) {
   }
 
   if (message.startsWith("rack dec")) {
+    Serial.println(globalRadius, globalDegrees);
     rack_tick(true, get_ticks_from_message(9, message) * radius_per_tick);
+    Serial.println(globalRadius, globalDegrees);
   }
 
   if (message.startsWith("both CCW se")) {
@@ -410,33 +421,69 @@ void interpret_message(String message) {
 
   //TODO: Do this first before trying to do the second test cart
   if (message == "test calc speeds"){
-    calc_average_angular_speed();
-    Serial.println("average angular speed (deg/s): " + String(average_angular_speed, 2));
+    calc_average_angular_speed(); 
+    Serial.println("average clockwise speed (deg/s): " + String(average_CW_speed, 2));
+    Serial.println("average counter-clockwise speed (deg/s): " + String(average_CCW_speed, 2));
 
-    // motorServo2.writeMicroseconds(RACK_FULL_INC_US);
-    // Calculate mm/s with rack 
+    calc_average_linear_speed();
+    Serial.println("average inc speed (mm/s): " + String(average_INC_speed, 2));
+    Serial.println("average dec speed (mm/s): " + String(average_DEC_speed, 2));
   }
+  if (message == "print average speeds"){
+    Serial.println("average clockwise speed (deg/s): " + String(average_CW_speed, 2));
+    Serial.println("average counter-clockwise speed (deg/s): " + String(average_CCW_speed, 2));
+    Serial.println("average inc speed (mm/s): " + String(average_INC_speed, 2));
+    Serial.println("average dec speed (mm/s): " + String(average_DEC_speed, 2));
+  }
+  if (message == "write polar"){
+      Serial.println("Enter R (mm):");
+      while (!Serial.available());  // wait for input
+      float temp_radius = Serial.parseFloat();
+      globalRadius = temp_radius;
+
+      Serial.println("Enter Theta (Degrees):");
+      while (!Serial.available());  // wait for input
+      int temp_degrees = Serial.parseInt();
+      globalDegrees = temp_degrees;
+  }
+}
+
+void get_average_speeds(bool gohome = false){
+  calc_average_angular_speed(); 
+  calc_average_linear_speed();
+  if (gohome) gotToPolarCoord(0, 39);
 }
 
 void calc_average_angular_speed(){
     // Calculate average angular speed (deg/s) with plate
-    float angular_speed = 0;
+    float CW_speed = 0;
+    float CCW_speed = 0;
+    bool clockwise = true;
 
     for (int i = 0; i < 10; i++) {
-        angular_speed += calc_angular_speed();
+        if (clockwise){
+          CW_speed += calc_angular_speed(clockwise);
+        }
+        else{
+          CCW_speed += calc_angular_speed(clockwise);
+        }
+        clockwise = !clockwise;
         delay(300);
     }
 
-    angular_speed /= 10.0;
-    average_angular_speed = angular_speed;
+    CCW_speed /= 5.0;
+    CW_speed /= 5.0;
+    average_CW_speed = CW_speed;
+    average_CCW_speed = CCW_speed;
 }
 
-float calc_angular_speed(){
+float calc_angular_speed(bool clockwise = true){
     int startDeg = globalDegrees;
     unsigned long total_time_ms = 0;
 
+    int direction_US = clockwise ? PLATE_FULL_CW_US : PLATE_FULL_CCW_US;
     unsigned long start_ms = millis();
-    motorServo.writeMicroseconds(PLATE_FULL_CW_US);
+    motorServo.writeMicroseconds(direction_US);
 
     while (true){
         // Use angularDistance to handle wrap-around
@@ -457,6 +504,57 @@ float calc_angular_speed(){
 
     float deg_per_sec = (angularDistance(startDeg, globalDegrees) * 1000.0f) / float(total_time_ms); // degrees / second
     return deg_per_sec;
+}
+
+void calc_average_linear_speed(){
+    // Calculate average angular speed (deg/s) with plate
+    float inc_speed = 0;
+    float dec_speed = 0;
+
+    bool increase = true;
+    for (int i = 0; i < 10; i++) {
+
+      if (increase){
+        inc_speed += calc_linear_speed(increase);
+      }
+      else{
+        dec_speed += calc_linear_speed(increase);
+      }
+      increase = !increase;
+      delay(300);
+    }
+
+    inc_speed /= 5.0;
+    dec_speed /= 5.0;
+    average_INC_speed = inc_speed;
+    average_DEC_speed = dec_speed;
+}
+
+float calc_linear_speed(bool increase = true){
+  int startR = globalRadius;
+  unsigned long total_time_ms = 0;
+
+  int direction_US = increase ? RACK_FULL_INC_US : RACK_FULL_DEC_US;
+  unsigned long start_ms = millis();
+  motorServo2.writeMicroseconds(direction_US);
+
+  while (true){
+      if (abs(startR - globalRadius) >= 20.0f){
+          motorServo2.writeMicroseconds(STOP_US);
+          total_time_ms = millis() - start_ms;
+          break;
+      }
+
+      if (serial_interrupt()){
+          motorServo2.writeMicroseconds(STOP_US);
+          return 0.0f;
+      }
+  }
+
+  if (total_time_ms == 0) return 0.0f; // guard
+
+  float deg_per_sec = (abs(startR - globalRadius) * 1000.0f) / float(total_time_ms); // degrees / second
+  return deg_per_sec;
 }
 
 void addPolar(float t, float r) {
@@ -519,6 +617,7 @@ void go_home_sequence() {
   find_reed_initial(true); // Find the reed switch
   find_edge_of_reed();     // Orient around reed switch
   center_home();           // Go to center home. Polar: 0 deg<39.6mm (40)
+  // get_average_speeds(true);
 }
 
 void find_reed_initial(bool half = false) {
@@ -686,16 +785,20 @@ void find_edge_of_reed(){
 void center_home(){
   // Used to go to polar: 0 deg<39.6mm (40)
   // Only call after calibrating with go_to_rack_end, find_reed_initial(true), and find_edge_of_reed
-  rack_tick(true, 70 * radius_per_tick); // Move rack in 70 ticks (electromagnet on center)
-  both_tick_simultaneous(false, 10); // Arm is at around 90 degrees
-  both_tick_simultaneous(false, 90); // Arm is at around 0 degrees, still centered
+
   zero_RE_and_polars();
-  rack_tick(false, 138 * radius_per_tick); // increase rack by half, so rack is centered on plate
+  // Goto -17 100
+  gotToPolarCoord(100, -17);
+
+  zero_RE_and_polars();
+  
+  // Goto 39 0
+  gotToPolarCoord(0, 39);
 }
 
 void both_tick_sequential(bool both = false, int ticks = 1) {
   plate_tick(both, ticks);
-  rack_tick(both, ticks * radius_per_tick);
+  rack_tick(both, ticks * 2 * radius_per_tick);
 }
 
 void both_tick_simultaneous(bool Clockwise = false, int ticks = 1){
@@ -713,7 +816,8 @@ void plate_tick(bool Clockwise = false, int degrees = 1, bool both = false) {
   int halfSpeedUS2 = Clockwise ? RACK_HALF_DEC_US : RACK_HALF_INC_US;
 
   // Move until desired degrees reached
-  while (abs(curr_deg - past_deg) < degrees) {
+  // while (abs(curr_deg - past_deg) < degrees) {
+  while (angularDistance(curr_deg, past_deg) < degrees) {
     int remaining = degrees - abs(curr_deg - past_deg);
 
     // Slow down when close to goal
