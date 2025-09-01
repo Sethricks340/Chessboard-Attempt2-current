@@ -123,10 +123,17 @@ ISR(PCINT0_vect) {
 const float degrees_per_tick = 1;   // ≈ 1 degree per tick
 const float radius_per_tick = 78.87 / 275;  // ≈ 0.2868 mm per tick
 const float mm_per_unit = 18.35;
+
 volatile float average_CW_speed = 0;
 volatile float average_CCW_speed = 0;
 volatile float average_INC_speed = 0;
 volatile float average_DEC_speed = 0;
+
+// Message received: test calc speeds
+// average clockwise speed (deg/s): 83.12
+// average counter-clockwise speed (deg/s): 82.33
+// average inc speed (mm/s): 25.42
+// average dec speed (mm/s): 24.18
 
 // --- Interrupt pin ---
 const byte REED_PIN = 2;  // D2 on Arduino Nano (INT0)
@@ -200,6 +207,19 @@ void zero_RE_and_polars() {
   encoder2Pos = 0;    // Rack
   globalDegrees = 0;
   globalRadius = 0;
+}
+
+void setREandPolars(int degrees, int radius) {
+    // Set polar globals
+    globalDegrees = degrees;
+    globalRadius = radius;
+
+    // Convert polar position into encoder ticks
+    // ≈ 1 degree per tick
+    encoder1Pos = degrees;  // plate
+    // radius_per_tick = 78.87 / 275;  // ≈ 0.2868 mm per tick
+    encoder2Pos = radius * (275/78.87);    // rack
+
 }
 
 void reedChange() {
@@ -388,32 +408,71 @@ void interpret_message(String message) {
   if (message == "test cart with speeds"){
 
       double x1, y1, x2, y2;
-      x1 = -3; y1 = 3; x2 = 3; y2 = 3;
+      x1 = -3; y1 = 3; x2 = 3; y2 = 3;  // 135 to 45
+      // x1 = 3; y1 = 3; x2 = -3; y2 = 3;  // 45 to 135
 
       Polar polar1 = cartesian_to_polar(x1, y1);
       Polar polar2 = cartesian_to_polar(x2, y2);
 
       float slope = (y2 - y1) / (x2 -x1); 
       float b_value = y1 - slope * x1;
-      float mm_per_deg;
+      float mm_per_deg, mm_per_s, ratio_speed;
+      int TEMP_RACK_US = 0;
 
       bool Clockwise = shortestAngularDirection(polar1.theta, polar2.theta);
 
       // gotToPolarCoord(polar1.theta, polar1.r);
 
+      // Message received: test calc speeds
+      // average clockwise speed (deg/s): 83.12
+      // average counter-clockwise speed (deg/s): 82.33
+      // average inc speed (mm/s): 25.42
+      // average dec speed (mm/s): 24.18
+
+      // TODO: Delete this
+      average_DEC_speed = 24.18;
+      average_INC_speed = 25.42;
+      average_CW_speed = 83.12;
+      average_CCW_speed = 82.33;
+
       if (Clockwise) {
           for (float theta_deg = polar1.theta; angularDistance(theta_deg, polar2.theta) > degrees_per_tick; theta_deg--) {
             mm_per_deg = drdtheta_deg(theta_deg, b_value, slope);  // mm/deg
-            // Take mm_per_deg and times it by degree/second
-            // This will be mm/s
-            // Take max mm/s (rack at full speed) 
+            mm_per_deg = -mm_per_deg; // Sign flip, because moving in negative direction
+
+            // Take mm_per_deg and times it by degree/second, this will be mm/s
+            mm_per_s = mm_per_deg * average_CW_speed; // average_CW_speed is in deg/sec. So mm/deg * deg/sec = mm/sec
+
             // Take mm_per_deg devided by the max mm/s (rack at full speed)
+            if (mm_per_deg <= 0){
+              ratio_speed = mm_per_s / average_DEC_speed; // This will be the ratio of max speed. 
+              TEMP_RACK_US = 1500 + (ratio_speed * 500);
+            }else{
+              ratio_speed = mm_per_s / average_INC_speed; // This will be the ratio of max speed. 
+              TEMP_RACK_US = 1500 - (ratio_speed * 500);
+            }
+
             // Times this by the us of max speed
             // This will be the scaled us! Hopefully it will be at a speed the motor can actually move at
+            Serial.print("theta_deg: ");
+            Serial.println(String(theta_deg));
+            Serial.print("mm_per_deg: ");
+            Serial.println(String(mm_per_deg));
+            Serial.print("mm_per_s: " );
+            Serial.println(String(mm_per_s));
+            Serial.print("ratio_speed: " );
+            Serial.println(String(ratio_speed));
+            Serial.print("TEMP_RACK_US: " );
+            Serial.println(String(TEMP_RACK_US)); // TODO: This is invalid because it is returning values greater than 2000 US and less than 1000 US
+            Serial.println(" ");
+
+            // Issues: It looks like the rack might have to move faster than the plate at the ends. This means that we will either have to let it go max speed at hope for the best (bad idea)
+            //      or we should scale them both down. 
           } 
       } else {
           for (float theta_deg = polar1.theta; angularDistance(theta_deg, polar2.theta) > degrees_per_tick; theta_deg++) {
             float mm_per_deg = drdtheta_deg(theta_deg, b_value, slope);  // mm/deg
+            Serial.println(String(mm_per_deg));
           } 
       }
       // gotToPolarCoord(polar2.theta, polar2.r);
@@ -439,12 +498,13 @@ void interpret_message(String message) {
       Serial.println("Enter R (mm):");
       while (!Serial.available());  // wait for input
       float temp_radius = Serial.parseFloat();
-      globalRadius = temp_radius;
+      // globalRadius = temp_radius;
 
       Serial.println("Enter Theta (Degrees):");
       while (!Serial.available());  // wait for input
       int temp_degrees = Serial.parseInt();
-      globalDegrees = temp_degrees;
+      // globalDegrees = temp_degrees;
+      setREandPolars(temp_degrees, temp_radius);
   }
 }
 
@@ -545,7 +605,7 @@ float calc_linear_speed(bool increase = true){
           break;
       }
 
-      if (serial_interrupt()){
+      if (serial_interrupt()){ 
           motorServo2.writeMicroseconds(STOP_US);
           return 0.0f;
       }
@@ -787,8 +847,9 @@ void center_home(){
   // Only call after calibrating with go_to_rack_end, find_reed_initial(true), and find_edge_of_reed
 
   zero_RE_and_polars();
-  // Goto 22 100
+  // Goto 22 < 100
   gotToPolarCoord(100, 22);
+  setREandPolars(0, 39); // Set to 39 < 0
 }
 
 void both_tick_sequential(bool both = false, int ticks = 1) {
@@ -943,6 +1004,7 @@ void get_polar(int encoder1, int encoder2) {
   globalRadius = (radius_per_tick * float(encoder2));
 }
 
+// TODO: Reverse degrees and radius to be in standard polar format
 void gotToPolarCoord(float degreesTarget, float radiusTarget){
   
   int fullSpeedUS = radiusTarget < globalRadius ? RACK_FULL_DEC_US : RACK_FULL_INC_US;
