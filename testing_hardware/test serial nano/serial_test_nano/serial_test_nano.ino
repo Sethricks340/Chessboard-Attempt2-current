@@ -153,6 +153,7 @@ void find_reed_initial(bool half = false);
 float calc_linear_speed(bool increase = true);
 float calc_angular_speed(bool clockwise = true);
 void get_average_speeds(bool gohome = false);
+void gotToPolarCoord(float degreesTarget, float radiusTarget, bool full=false);
 
 void setup() {
   pinMode(ENC_A, INPUT_PULLUP);
@@ -338,28 +339,29 @@ void interpret_message(String message) {
 
   if (message == "test cart") {
     resetPolarTable();
-      // Serial.println("Enter X Start:");
-      // while (!Serial.available());  // wait for input
-      // int x1 = Serial.parseInt();
-      // Serial.println(x1);
+    Serial.println("Enter X Start:");
+    while (!Serial.available());  // wait for input
+    int x1 = Serial.parseInt();
+    Serial.println(x1);
 
-      // Serial.println("Enter Y Start:");
-      // while (!Serial.available());  // wait for input
-      // double y1 = Serial.parseInt();
-      // Serial.println(y1);
+    Serial.println("Enter Y Start:");
+    while (!Serial.available());  // wait for input
+    double y1 = Serial.parseInt();
+    Serial.println(y1);
 
-      // Serial.println("Enter X End:");
-      // while (!Serial.available());  // wait for input
-      // int x2 = Serial.parseInt();
-      // Serial.println(x2);
+    Serial.println("Enter X End:");
+    while (!Serial.available());  // wait for input
+    int x2 = Serial.parseInt();
+    Serial.println(x2);
 
-      // Serial.println("Enter Y End:");
-      // while (!Serial.available());  // wait for input
-      // double y2 = Serial.parseInt();
-      // Serial.println(y2);
+    Serial.println("Enter Y End:");
+    while (!Serial.available());  // wait for input
+    double y2 = Serial.parseInt();
+    Serial.println(y2);
 
-      double x1, y1, x2, y2;
-      x1 = -3; y1 = 3; x2 = 3; y2 = 3;
+      // double x1, y1, x2, y2;
+      // x1 = -3; y1 = 3; x2 = 3; y2 = 3;
+      // x1 = -3; y1 = 1; x2 = 3; y2 = 2;
 
       Polar polar1 = cartesian_to_polar(x1, y1);
       Polar polar2 = cartesian_to_polar(x2, y2);
@@ -401,7 +403,7 @@ void interpret_message(String message) {
         // Serial.print(lookupTable[i].theta);
         // Serial.print(" -> Radius: ");
         // Serial.println(lookupTable[i].r);
-        gotToPolarCoord(lookupTable[i].theta, lookupTable[i].r);
+        gotToPolarCoord(lookupTable[i].theta, lookupTable[i].r, true);
       }
   }
 
@@ -1005,17 +1007,19 @@ void get_polar(int encoder1, int encoder2) {
 }
 
 // TODO: Reverse degrees and radius to be in standard polar format
-void gotToPolarCoord(float degreesTarget, float radiusTarget){
+void gotToPolarCoord(float degreesTarget, float radiusTarget, bool full=false){
   
   int fullSpeedUS = radiusTarget < globalRadius ? RACK_FULL_DEC_US : RACK_FULL_INC_US;
   int halfSpeedUS = radiusTarget < globalRadius ? RACK_HALF_DEC_US : RACK_HALF_INC_US;
+  int directionUS;
 
   // Do rack first (radiusTarget)
   while(abs(radiusTarget - globalRadius) > radius_per_tick){ // ≈ radius_per_tick = 0.2868 mm
     int remaining = abs(radiusTarget - globalRadius);
 
     // Slow down when close to goal
-    int directionUS = remaining <= 8 ? halfSpeedUS : fullSpeedUS;
+    if (!full) directionUS = remaining <= 8 ? halfSpeedUS : fullSpeedUS;
+    else directionUS = fullSpeedUS;
     motorServo2.writeMicroseconds(directionUS);
 
     if (serial_interrupt()) {
@@ -1040,7 +1044,8 @@ void gotToPolarCoord(float degreesTarget, float radiusTarget){
       // Serial.println("remaining:" + String(remaining));
 
       // Slow down when close to goal
-      int directionUS = remaining <= 8 ? halfSpeedUS : fullSpeedUS;
+      if (!full) directionUS = remaining <= 8 ? halfSpeedUS : fullSpeedUS;
+      else directionUS = fullSpeedUS;
       motorServo.writeMicroseconds(directionUS);
       motorServo2.writeMicroseconds(directionUS);
 
