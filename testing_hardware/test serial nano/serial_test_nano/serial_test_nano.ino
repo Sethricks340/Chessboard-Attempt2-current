@@ -325,19 +325,6 @@ void interpret_message(String message) {
       }
   }
 
-  if (message == "test small steps") {
-    float targetRadius = globalRadius;  // keep radius fixed
-    for (int deg = 135; deg >= 45; deg-=2) {
-      gotToPolarCoord(deg, targetRadius);
-
-      // give the system time to settle
-      delay(50);  
-
-      // allow break-out if new serial command arrives
-      if (serial_interrupt()) return;
-    }
-  }
-
   if (message == "test cart") {
     resetPolarTable();
     Serial.println("Enter X Start:");
@@ -405,10 +392,9 @@ void interpret_message(String message) {
 }
 
 void doCartMove(float globalDegrees, float degreesTarget){
-  // for (int i = 0; i < LookupTableLength; i++) {
-  //   gotToPolarCoord(lookupTable[i].theta, lookupTable[i].r, true);
-  // }
-  FollowPolarPathSimultaneous();
+  for (int i = 0; i < LookupTableLength; i++) {
+    gotToPolarCoord(lookupTable[i].theta, lookupTable[i].r, true);
+  }
 }
 
 void addPolar(float t, float r) {
@@ -809,83 +795,6 @@ void gotToRadius(float radiusTarget, bool full=false){
   }
 
   motorServo2.writeMicroseconds(STOP_US);
-}
-  
-void FollowPolarPathSimultaneous(){
-  
-  int directionUS, fullSpeedUS, halfSpeedUS, deg_remaining, mm_remaining;
-  float degreesTarget, radiusTarget;
-  // bool full=true;
-  bool full=false;
-  bool plate_break = false;
-  bool rack_break = false;
-  bool rack_dec = false;
-  bool plate_dec = false;
-
-  for (int i = 0; i < LookupTableLength; i++) {
-    fullSpeedUS = radiusTarget < globalRadius ? RACK_FULL_DEC_US : RACK_FULL_INC_US;
-    rack_dec = (radiusTarget < globalRadius);
-    plate_dec = (degreesTarget < globalDegrees);
-    halfSpeedUS = radiusTarget < globalRadius ? RACK_HALF_DEC_US : RACK_HALF_INC_US;
-    degreesTarget = lookupTable[i].theta;
-    radiusTarget = lookupTable[i].r;
-    plate_break = false;
-    rack_break = false;
-    bool Clockwise = shortestAngularDirection(globalDegrees, degreesTarget);
-    Serial.println("Result:" + String(Clockwise));
-    int fullSpeedPlateUS = Clockwise ? PLATE_FULL_CW_US : PLATE_FULL_CCW_US;
-    int halfSpeedPlateUS = Clockwise ? PLATE_HALF_CW_US : PLATE_HALF_CCW_US;
-    int lastRackUS = -1;
-
-    while (true){
-      // if(angularDistance(globalDegrees, degreesTarget) > degrees_per_tick){
-      if ((angularDistance(globalDegrees, degreesTarget) > degrees_per_tick) && ((plate_dec && globalDegrees > degreesTarget) || (!plate_dec && globalDegrees < degreesTarget))) {
-
-        Serial.print("first if   globalDegrees -> "); Serial.print(globalDegrees); Serial.print(" -  degreesTarget -> "); Serial.println(degreesTarget);
-        deg_remaining = abs(degreesTarget - globalDegrees);
-        if (!full) directionUS = deg_remaining <= 8 ? halfSpeedPlateUS : fullSpeedPlateUS;
-        else directionUS = fullSpeedPlateUS;
-        motorServo.writeMicroseconds(directionUS);
-        motorServo2.writeMicroseconds(directionUS);
-      }
-      else{
-        Serial.println("first else");
-        motorServo.writeMicroseconds(STOP_US);
-        motorServo2.writeMicroseconds(STOP_US);
-        plate_break = true;
-      }
-
-      // if(abs(radiusTarget - globalRadius) > radius_per_tick){
-      if ((rack_dec && globalRadius > radiusTarget + radius_per_tick) || (!rack_dec && globalRadius < radiusTarget - radius_per_tick)) {
-        Serial.print("second if   globalRadius -> "); Serial.print(globalRadius); Serial.print(" -  radiusTarget -> "); Serial.println(radiusTarget);
-        mm_remaining = abs(radiusTarget - globalRadius);
-        if (!full) directionUS = mm_remaining <= 8 ? halfSpeedUS : fullSpeedUS;
-        else directionUS = fullSpeedUS;
-        Serial.println(String(lastRackUS) + String(directionUS));
-        motorServo2.writeMicroseconds(directionUS);
-        // delay(10);
-        // lastRackUS = directionUS;
-      }
-      else{
-        Serial.println("second else");
-        motorServo2.writeMicroseconds(STOP_US);
-        rack_break = true;
-      }
-
-      if (rack_break && plate_break){
-        Serial.println("break");
-        motorServo.writeMicroseconds(STOP_US);
-        motorServo2.writeMicroseconds(STOP_US);
-        break;
-      }
-
-      if (serial_interrupt()) {
-        motorServo.writeMicroseconds(STOP_US);
-        motorServo2.writeMicroseconds(STOP_US);
-        return;
-      }
-    }
-  }
 }
 
 void gotToPolarCoord(float degreesTarget, float radiusTarget, bool full=false){
