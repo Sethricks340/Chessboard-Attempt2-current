@@ -357,72 +357,48 @@ void interpret_message(String message) {
       }
   }
 
+  if (message == "test sequence"){
+    doCartMove('a', 'g');
+    doCartMove('g', 'W');
+    doCartMove('W', 'Q');
+    doCartMove('Q', 'a');
+    doCartMove('a', 'W');
+    doCartMove('W', 'g');
+    doCartMove('g', 'Q');
+    doCartMove('Q', 'a');
+  }
+
   if (message.startsWith("test cart")) {
 
     String letters = message.substring(9); 
     letters.trim();
     if (letters.length() != 2){
-      // Serial.println("error with test cart! -> wrong length");
       return;
     }
     char first = letters.charAt(0);
     char second = letters.charAt(1);
     if (!isAlpha(first) || !isAlpha(second)) {
-      // Serial.println("error: one or both characters are not letters!");
+      return;
     }
     if (first == second){
-      // Serial.println("error: both characters are the same letter!");
       return;
     }
 
+    doCartMove(first, second);
+
+  }
+}
+
+void doCartMove(char first, char second){
     double x1, y1, x2, y2;
 
     Tuple t = getTuple(first);
-    // Serial.print(first);
-    // Serial.print(" = (");
-    // Serial.print(t.x);
     x1 = t.x;
-    // Serial.print(",");
-    // Serial.print(t.y);
     y1 = t.y;
-    // Serial.println(")");
 
     t = getTuple(second);
-    // Serial.print(second);
-    // Serial.print(" = (");
-    // Serial.print(t.x);
     x2 = t.x;
-    // Serial.print(",");
-    // Serial.print(t.y);
     y2 = t.y;
-    // Serial.println(")");
-
-
-    // resetPolarTable();
-    // Serial.println("Enter X Start:");
-    // while (!Serial.available());  // wait for input
-    // int x1 = Serial.parseInt();
-    // Serial.println(x1);
-
-    // Serial.println("Enter Y Start:");
-    // while (!Serial.available());  // wait for input
-    // double y1 = Serial.parseInt();
-    // Serial.println(y1);
-
-    // Serial.println("Enter X End:");
-    // while (!Serial.available());  // wait for input
-    // int x2 = Serial.parseInt();
-    // Serial.println(x2);
-
-    // Serial.println("Enter Y End:");
-    // while (!Serial.available());  // wait for input
-    // double y2 = Serial.parseInt();
-    // Serial.println(y2);
-
-    // double x1, y1, x2, y2;
-    // x1 = -3; y1 = 3; x2 = 3; y2 = 3;
-
-    // gotToPolarCoord(polar1.theta, polar1.r);  //TODO: Uncomennt this
 
     bool vertical = false;
     bool throughCenter = false;
@@ -435,31 +411,23 @@ void interpret_message(String message) {
       swapValues(x1, y1);
       swapValues(x2, y2);
       // Flip over y axis
-      swapValues(x1, x2);
-      swapValues(y1, y2);
+      // swapValues(x1, x2);
+      // swapValues(y1, y2);
 
-      // Serial.print("first = (");
-      // Serial.print(String(x1));
-      // Serial.print(",");
-      // Serial.print(String(y1));
-      // Serial.println(")");
-
-      // Serial.print("second = (");
-      // Serial.print(String(x2));
-      // Serial.print(",");
-      // Serial.print(String(y2));
-      // Serial.println(")");
-
-      // Serial.println("m is infinity (vertical line)");
-      // return;
+      // Flip over y axis (negate x)
+      x1 = -x1;
+      x2 = -x2;
     }
 
     Polar polar1 = cartesian_to_polar(x1, y1);
     Polar polar2 = cartesian_to_polar(x2, y2);
-    // // Serial.print("Theta1: "); Serial.println(String(polar1.theta));
-    // // Serial.print("r1: "); Serial.println(String(polar1.r));
-    // // Serial.print("Theta2: "); Serial.println(String(polar2.theta));
-    // // Serial.print("r2: "); Serial.println(String(polar2.r));
+
+    Serial.println(String(polar1.theta));
+    Serial.println(String(polar1.r));
+    Serial.println(String(polar2.theta));
+    Serial.println(String(polar2.r));
+
+    // return; //TODO: remove this
 
     float slope;
     if (!vertical) slope = (y2 - y1) / (x2 - x1); 
@@ -468,7 +436,7 @@ void interpret_message(String message) {
 
     if (abs(b_value) < 0.001 && (x1 == -x2 || y1 == -y2)){ // Small tolerance for floating b value, line also needs to pass through the center
       throughCenter = true;
-      Serial.println("Line through center (will need to stop in center and turn)");
+      // Serial.println("Line through center (will need to stop in center and turn)");
 
       gotToPolarCoord(polar1.theta, polar1.r, false);
       gotToPolarCoord(polar2.theta, 0, false);
@@ -478,11 +446,14 @@ void interpret_message(String message) {
     }
 
     bool Clockwise = shortestAngularDirection(polar1.theta, polar2.theta);
-    // return; // TODO: get rid of this
+    Serial.println(String(Clockwise));
 
     if (Clockwise) {
         for (float deg = polar1.theta; angularDistance(deg, polar2.theta) > degrees_per_tick; deg -= 1) {
             float radius = calcRadiusFromTheta(deg, b_value, slope);
+            // Serial.println(String(deg - 90));
+            // Serial.println(String(radius));
+            // Serial.println(" ");
             if (vertical) gotToPolarCoord(deg - 90, radius, false);
             else gotToPolarCoord(deg, radius, false);
 
@@ -490,15 +461,15 @@ void interpret_message(String message) {
     } else {
         for (float deg = polar1.theta; angularDistance(deg, polar2.theta) > degrees_per_tick; deg += 1) {
             float radius = calcRadiusFromTheta(deg, b_value, slope);
+            // Serial.println(String(deg - 90));
+            // Serial.println(String(radius));
+            // Serial.println(" ");
             if (vertical) gotToPolarCoord(deg - 90, radius, false);
-            gotToPolarCoord(deg, radius, false);
+            else gotToPolarCoord(deg, radius, false);
         } 
     }
-
-    // doCartMove(polar1.theta, polar2.theta);
-    // gotToPolarCoord(polar2.theta, polar2.r); 
-  }
 }
+
 
 template<typename T>
 void swapValues(T &a, T &b) {
@@ -900,9 +871,9 @@ void gotToRadius(float radiusTarget, bool full=false){
 
 void gotToPolarCoord(float degreesTarget, float radiusTarget, bool full=false){
 
-  Serial.print("Theta: "); Serial.println(String(degreesTarget));
-  Serial.print("R: "); Serial.println(String(radiusTarget));
-  Serial.println(" ");
+  // Serial.print("Theta: "); Serial.println(String(degreesTarget));
+  // Serial.print("R: "); Serial.println(String(radiusTarget));
+  // Serial.println(" ");
 
   //TODO: REMOVE THIS RETURN
   // return;
