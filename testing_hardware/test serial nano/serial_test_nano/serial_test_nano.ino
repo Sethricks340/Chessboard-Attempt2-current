@@ -42,13 +42,17 @@ const int STOP_US = 1500;
 
 const int PLATE_FULL_CW_US = 2000;
 const int PLATE_FULL_CCW_US = 1000;
-const int PLATE_HALF_CW_US = 1600;
-const int PLATE_HALF_CCW_US = 1400;
+// const int PLATE_HALF_CW_US = 1600;
+const int PLATE_HALF_CW_US = 1750;
+// const int PLATE_HALF_CCW_US = 1400;
+const int PLATE_HALF_CCW_US = 1350;
 
 const int RACK_FULL_DEC_US = 2000;
 const int RACK_FULL_INC_US = 1000;
-const int RACK_HALF_DEC_US = 1600;
-const int RACK_HALF_INC_US = 1400;
+// const int RACK_HALF_DEC_US = 1600;
+const int RACK_HALF_DEC_US = 1750;
+// const int RACK_HALF_INC_US = 1400;
+const int RACK_HALF_INC_US = 1350;
 
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 
@@ -139,10 +143,6 @@ volatile float average_DEC_speed = 0;
 const byte REED_PIN = 2;  // D2 on Arduino Nano (INT0)
 volatile bool reedTriggered = false;
 volatile bool ignoreReed = true;
-
-int LookupTableLength = 0;
-const int MAX_POINTS = 50;
-Polar lookupTable[MAX_POINTS];
 
 void go_to_rack_end(bool forward = false, unsigned long maxtime = 5000);
 void plate_tick(bool Clockwise = false, int degrees = 1, bool both = false);
@@ -253,9 +253,7 @@ void interpret_message(String message) {
   }
 
   if (message.startsWith("rack dec")) {
-    Serial.println(globalRadius, globalDegrees);
     rack_tick(true, get_ticks_from_message(9, message) * radius_per_tick);
-    Serial.println(globalRadius, globalDegrees);
   }
 
   if (message.startsWith("both CCW se")) {
@@ -326,7 +324,7 @@ void interpret_message(String message) {
   }
 
   if (message == "test cart") {
-    resetPolarTable();
+    // resetPolarTable();
     Serial.println("Enter X Start:");
     while (!Serial.available());  // wait for input
     int x1 = Serial.parseInt();
@@ -347,66 +345,53 @@ void interpret_message(String message) {
     double y2 = Serial.parseInt();
     Serial.println(y2);
 
-      // double x1, y1, x2, y2;
-      // x1 = -3; y1 = 3; x2 = 3; y2 = 3;
+    // double x1, y1, x2, y2;
+    // x1 = -3; y1 = 3; x2 = 3; y2 = 3;
 
-      Polar polar1 = cartesian_to_polar(x1, y1);
-      Polar polar2 = cartesian_to_polar(x2, y2);
-      gotToPolarCoord(polar1.theta, polar1.r); //UNCOMMENT THIS
+    Polar polar1 = cartesian_to_polar(x1, y1);
+    Polar polar2 = cartesian_to_polar(x2, y2);
+    gotToPolarCoord(polar1.theta, polar1.r); 
 
-      float slope = (y2 - y1) / (x2 -x1); 
-      float b_value = y1 - slope * x1;
+    bool vertical = false;
+    bool throughCenter = false;
 
-      bool Clockwise = shortestAngularDirection(polar1.theta, polar2.theta);
+    if (x1 == x2) 
+    {
+      vertical = true;
+      Serial.println("m is infinity (vertical line)");
+      return;
+    }
 
-      if (Clockwise) {
-          for (float deg = polar1.theta; angularDistance(deg, polar2.theta) > degrees_per_tick; deg -= 2) {
-              float radius = calcRadiusFromTheta(deg, b_value, slope);
-              addPolar(deg, radius);
-          } 
-      } else {
-          for (float deg = polar1.theta; angularDistance(deg, polar2.theta) > degrees_per_tick; deg += 2) {
-              float radius = calcRadiusFromTheta(deg, b_value, slope);
-              addPolar(deg, radius);
-          } 
-      }
-      addPolar(polar2.theta, polar2.r);
+    if (throughCenter){
+      throughCenter = true;
+      Serial.println("Line through center (will need to stop in center and turn)");
+      return;
+    }
 
-    doCartMove(polar1.theta, polar2.theta);
-    gotToPolarCoord(polar2.theta, polar2.r); //UNCOMMENT THIS
+    float slope = (y2 - y1) / (x2 -x1); 
+    float b_value = y1 - slope * x1;
 
+    bool Clockwise = shortestAngularDirection(polar1.theta, polar2.theta);
+
+    if (Clockwise) {
+        for (float deg = polar1.theta; angularDistance(deg, polar2.theta) > degrees_per_tick; deg -= 1) {
+            float radius = calcRadiusFromTheta(deg, b_value, slope);
+            // addPolar(deg, radius);
+            gotToPolarCoord(deg, radius, true);
+
+        } 
+    } else {
+        for (float deg = polar1.theta; angularDistance(deg, polar2.theta) > degrees_per_tick; deg += 1) {
+            float radius = calcRadiusFromTheta(deg, b_value, slope);
+            // addPolar(deg, radius);
+            gotToPolarCoord(deg, radius, true);
+        } 
+    }
+    // addPolar(polar2.theta, polar2.r);
+
+  // doCartMove(polar1.theta, polar2.theta);
+  gotToPolarCoord(polar2.theta, polar2.r); 
   }
-
-  if (message == "write polar"){
-      Serial.println("Enter R (mm):");
-      while (!Serial.available());  // wait for input
-      float temp_radius = Serial.parseFloat();
-      // globalRadius = temp_radius;
-
-      Serial.println("Enter Theta (Degrees):");
-      while (!Serial.available());  // wait for input
-      int temp_degrees = Serial.parseInt();
-      // globalDegrees = temp_degrees;
-      setREandPolars(temp_degrees, temp_radius);
-  }
-}
-
-void doCartMove(float globalDegrees, float degreesTarget){
-  for (int i = 0; i < LookupTableLength; i++) {
-    gotToPolarCoord(lookupTable[i].theta, lookupTable[i].r, true);
-  }
-}
-
-void addPolar(float t, float r) {
-  if (LookupTableLength < MAX_POINTS) {
-    lookupTable[LookupTableLength].theta = t;
-    lookupTable[LookupTableLength].r = r;
-    LookupTableLength++;
-  }
-}
-
-void resetPolarTable() {
-  LookupTableLength = 0;
 }
 
 float calcRadiusFromTheta(float theta, float b, float m){
@@ -538,6 +523,9 @@ void find_edge_of_reed(){
       if (!reedTriggered){
         success_on_inc = true;
         break;
+      }
+      else{
+        motorServo2.writeMicroseconds(RACK_HALF_INC_US);
       }
       if (millis() >= endTime){
         success_on_inc = false;
@@ -798,6 +786,13 @@ void gotToRadius(float radiusTarget, bool full=false){
 }
 
 void gotToPolarCoord(float degreesTarget, float radiusTarget, bool full=false){
+
+  Serial.print("Theta: "); Serial.println(String(degreesTarget));
+  Serial.print("R: "); Serial.println(String(radiusTarget));
+  Serial.println(" ");
+
+  //TODO: REMOVE THIS RETURN
+  // return;
 
   gotToRadius(radiusTarget, full);
 
